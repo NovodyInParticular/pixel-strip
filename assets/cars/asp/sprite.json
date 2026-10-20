@@ -1,0 +1,32 @@
+{
+  "dir": "cars/asp",
+  "width": 89,
+  "height": 40,
+  "rearWheel": [
+    21,
+    28.6
+  ],
+  "frontWheel": [
+    65,
+    28.6
+  ],
+  "wheelSize": 18,
+  "wheelFrames": 4,
+  "blurFrames": 3,
+  "spokes": 3,
+  "headlight": [
+    83.4,
+    24.4
+  ],
+  "taillight": [
+    3.8,
+    24.0
+  ],
+  "exhaust": [
+    29.0,
+    29.1
+  ],
+  "groundY": 35.5,
+  "frontX": 85,
+  "popup": false
+}

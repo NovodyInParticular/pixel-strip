@@ -1,0 +1,32 @@
+{
+  "dir": "cars/kite",
+  "width": 82,
+  "height": 40,
+  "rearWheel": [
+    16,
+    29.9
+  ],
+  "frontWheel": [
+    63,
+    29.9
+  ],
+  "wheelSize": 16,
+  "wheelFrames": 4,
+  "blurFrames": 3,
+  "spokes": 8,
+  "headlight": [
+    78.2,
+    24.4
+  ],
+  "taillight": [
+    3.7,
+    23.200000000000003
+  ],
+  "exhaust": [
+    6.0,
+    30.0
+  ],
+  "groundY": 35.5,
+  "frontX": 78,
+  "popup": false
+}

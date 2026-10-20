@@ -1,0 +1,41 @@
+{
+  "id": "kite",
+  "name": "Kite VTX",
+  "brand": "Hikari",
+  "year": 1994,
+  "era": "90s",
+  "hp": 125,
+  "powerRating": "net",
+  "peakHpRpm": 6600,
+  "torqueNm": 144,
+  "peakTorqueRpm": 5200,
+  "idleRpm": 750,
+  "redline": 7200,
+  "weightKg": 1066,
+  "drivetrain": "FWD",
+  "rearWeight": 0.38,
+  "wheelbaseM": 2.57,
+  "cgHeightM": 0.5,
+  "gears": [
+    3.25,
+    1.9,
+    1.25,
+    0.909,
+    0.702
+  ],
+  "finalDrive": 4.25,
+  "shiftTime": 0.25,
+  "clutchTime": 0.32,
+  "clutchTorque": 1.5,
+  "tireRadiusM": 0.287,
+  "grip": 0.88,
+  "engineInertia": 0.1,
+  "wheelInertia": 1.8,
+  "dragArea": 0.6,
+  "nitrous": {
+    "hp": 0,
+    "charges": 0,
+    "seconds": 0
+  },
+  "defaultPaint": 2
+}

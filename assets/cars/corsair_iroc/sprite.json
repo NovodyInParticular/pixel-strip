@@ -1,0 +1,32 @@
+{
+  "dir": "cars/corsair_iroc",
+  "width": 97,
+  "height": 40,
+  "rearWheel": [
+    27,
+    29.1
+  ],
+  "frontWheel": [
+    74,
+    29.1
+  ],
+  "wheelSize": 18,
+  "wheelFrames": 4,
+  "blurFrames": 3,
+  "spokes": 5,
+  "headlight": [
+    93.2,
+    25.2
+  ],
+  "taillight": [
+    3.8,
+    24.0
+  ],
+  "exhaust": [
+    6.0,
+    30.6
+  ],
+  "groundY": 35.5,
+  "frontX": 93,
+  "popup": false
+}

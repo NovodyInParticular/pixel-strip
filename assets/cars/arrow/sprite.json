@@ -1,0 +1,32 @@
+{
+  "dir": "cars/arrow",
+  "width": 88,
+  "height": 40,
+  "rearWheel": [
+    19,
+    29.5
+  ],
+  "frontWheel": [
+    66,
+    29.5
+  ],
+  "wheelSize": 16,
+  "wheelFrames": 4,
+  "blurFrames": 3,
+  "spokes": 5,
+  "headlight": [
+    84.2,
+    24.1
+  ],
+  "taillight": [
+    3.8,
+    23.700000000000003
+  ],
+  "exhaust": [
+    6.0,
+    30.0
+  ],
+  "groundY": 35.5,
+  "frontX": 84,
+  "popup": false
+}

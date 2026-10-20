@@ -1,0 +1,32 @@
+{
+  "dir": "cars/kaminari_mk1",
+  "width": 91,
+  "height": 40,
+  "rearWheel": [
+    22,
+    29.3
+  ],
+  "frontWheel": [
+    70,
+    29.3
+  ],
+  "wheelSize": 18,
+  "wheelFrames": 4,
+  "blurFrames": 3,
+  "spokes": 6,
+  "headlight": [
+    87.2,
+    23.5
+  ],
+  "taillight": [
+    3.8,
+    23.1
+  ],
+  "exhaust": [
+    6.0,
+    30.0
+  ],
+  "groundY": 35.5,
+  "frontX": 87,
+  "popup": false
+}

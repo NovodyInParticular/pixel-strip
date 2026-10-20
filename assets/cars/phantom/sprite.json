@@ -1,0 +1,32 @@
+{
+  "dir": "cars/phantom",
+  "width": 100,
+  "height": 40,
+  "rearWheel": [
+    27,
+    29.0
+  ],
+  "frontWheel": [
+    77,
+    29.0
+  ],
+  "wheelSize": 18,
+  "wheelFrames": 4,
+  "blurFrames": 3,
+  "spokes": 10,
+  "headlight": [
+    96.2,
+    23.3
+  ],
+  "taillight": [
+    3.8,
+    24.1
+  ],
+  "exhaust": [
+    6.0,
+    29.8
+  ],
+  "groundY": 35.5,
+  "frontX": 96,
+  "popup": false
+}

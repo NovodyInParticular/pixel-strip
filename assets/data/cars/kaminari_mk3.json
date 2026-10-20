@@ -1,0 +1,42 @@
+{
+  "id": "kaminari_mk3",
+  "name": "Kaminari GT-X Mk3",
+  "brand": "Raijin",
+  "year": 1999,
+  "era": "90s",
+  "hp": 330,
+  "powerRating": "net",
+  "peakHpRpm": 7000,
+  "torqueNm": 392,
+  "peakTorqueRpm": 4400,
+  "idleRpm": 900,
+  "redline": 8000,
+  "weightKg": 1560,
+  "drivetrain": "AWD",
+  "rearWeight": 0.45,
+  "wheelbaseM": 2.66,
+  "cgHeightM": 0.5,
+  "gears": [
+    3.827,
+    2.36,
+    1.685,
+    1.312,
+    1.0,
+    0.793
+  ],
+  "finalDrive": 3.545,
+  "shiftTime": 0.24,
+  "clutchTime": 0.32,
+  "clutchTorque": 1.5,
+  "tireRadiusM": 0.326,
+  "grip": 1.0,
+  "engineInertia": 0.2,
+  "wheelInertia": 2.6,
+  "dragArea": 0.7,
+  "nitrous": {
+    "hp": 0,
+    "charges": 0,
+    "seconds": 0
+  },
+  "defaultPaint": 9
+}

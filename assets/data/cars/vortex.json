@@ -1,0 +1,42 @@
+{
+  "id": "vortex",
+  "name": "Vortex ZX-1",
+  "brand": "Crestline",
+  "year": 1990,
+  "era": "90s",
+  "hp": 375,
+  "powerRating": "net",
+  "peakHpRpm": 5800,
+  "torqueNm": 502,
+  "peakTorqueRpm": 4800,
+  "idleRpm": 750,
+  "redline": 7000,
+  "weightKg": 1572,
+  "drivetrain": "RWD",
+  "rearWeight": 0.49,
+  "wheelbaseM": 2.44,
+  "cgHeightM": 0.47,
+  "gears": [
+    2.68,
+    1.8,
+    1.31,
+    1.0,
+    0.75,
+    0.5
+  ],
+  "finalDrive": 3.45,
+  "shiftTime": 0.27,
+  "clutchTime": 0.32,
+  "clutchTorque": 1.5,
+  "tireRadiusM": 0.326,
+  "grip": 1.0,
+  "engineInertia": 0.24,
+  "wheelInertia": 2.8,
+  "dragArea": 0.58,
+  "nitrous": {
+    "hp": 0,
+    "charges": 0,
+    "seconds": 0
+  },
+  "defaultPaint": 0
+}

@@ -1,0 +1,41 @@
+{
+  "id": "spiral_turbo",
+  "name": "Spiral Turbo",
+  "brand": "Kitsune",
+  "year": 1987,
+  "era": "80s",
+  "hp": 182,
+  "powerRating": "net",
+  "peakHpRpm": 6500,
+  "torqueNm": 248,
+  "peakTorqueRpm": 3500,
+  "idleRpm": 800,
+  "redline": 7000,
+  "weightKg": 1293,
+  "drivetrain": "RWD",
+  "rearWeight": 0.49,
+  "wheelbaseM": 2.43,
+  "cgHeightM": 0.48,
+  "gears": [
+    3.475,
+    2.002,
+    1.366,
+    1.0,
+    0.758
+  ],
+  "finalDrive": 4.1,
+  "shiftTime": 0.27,
+  "clutchTime": 0.32,
+  "clutchTorque": 1.5,
+  "tireRadiusM": 0.313,
+  "grip": 0.9,
+  "engineInertia": 0.1,
+  "wheelInertia": 2.0,
+  "dragArea": 0.56,
+  "nitrous": {
+    "hp": 0,
+    "charges": 0,
+    "seconds": 0
+  },
+  "defaultPaint": 7
+}

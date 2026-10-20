@@ -1,0 +1,42 @@
+{
+  "id": "tsunami",
+  "name": "Tsunami TT",
+  "brand": "Hayate",
+  "year": 1994,
+  "era": "90s",
+  "hp": 320,
+  "powerRating": "net",
+  "peakHpRpm": 5600,
+  "torqueNm": 427,
+  "peakTorqueRpm": 4000,
+  "idleRpm": 750,
+  "redline": 6800,
+  "weightKg": 1565,
+  "drivetrain": "RWD",
+  "rearWeight": 0.47,
+  "wheelbaseM": 2.55,
+  "cgHeightM": 0.49,
+  "gears": [
+    3.827,
+    2.36,
+    1.685,
+    1.312,
+    1.0,
+    0.793
+  ],
+  "finalDrive": 3.13,
+  "shiftTime": 0.25,
+  "clutchTime": 0.32,
+  "clutchTorque": 1.5,
+  "tireRadiusM": 0.318,
+  "grip": 1.0,
+  "engineInertia": 0.22,
+  "wheelInertia": 2.6,
+  "dragArea": 0.6,
+  "nitrous": {
+    "hp": 0,
+    "charges": 0,
+    "seconds": 0
+  },
+  "defaultPaint": 3
+}

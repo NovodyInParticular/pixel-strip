@@ -1,0 +1,32 @@
+{
+  "dir": "cars/spiral_turbo",
+  "width": 86,
+  "height": 40,
+  "rearWheel": [
+    22,
+    29.5
+  ],
+  "frontWheel": [
+    66,
+    29.5
+  ],
+  "wheelSize": 16,
+  "wheelFrames": 4,
+  "blurFrames": 3,
+  "spokes": 5,
+  "headlight": [
+    82.4,
+    26.6
+  ],
+  "taillight": [
+    3.8,
+    23.8
+  ],
+  "exhaust": [
+    6.0,
+    30.2
+  ],
+  "groundY": 35.5,
+  "frontX": 82,
+  "popup": true
+}

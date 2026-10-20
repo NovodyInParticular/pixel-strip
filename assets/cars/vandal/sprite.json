@@ -1,0 +1,32 @@
+{
+  "dir": "cars/vandal",
+  "width": 104,
+  "height": 40,
+  "rearWheel": [
+    24.0,
+    28.2
+  ],
+  "frontWheel": [
+    80.5,
+    28.2
+  ],
+  "wheelSize": 20,
+  "wheelFrames": 4,
+  "blurFrames": 3,
+  "spokes": 5,
+  "headlight": [
+    100.4,
+    21.5
+  ],
+  "taillight": [
+    3.8,
+    20.6
+  ],
+  "exhaust": [
+    6.0,
+    29.6
+  ],
+  "groundY": 35.5,
+  "frontX": 100,
+  "popup": false
+}

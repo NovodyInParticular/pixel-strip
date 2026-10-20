@@ -1,0 +1,32 @@
+{
+  "dir": "cars/vortex",
+  "width": 90,
+  "height": 40,
+  "rearWheel": [
+    22,
+    28.9
+  ],
+  "frontWheel": [
+    66,
+    28.9
+  ],
+  "wheelSize": 18,
+  "wheelFrames": 4,
+  "blurFrames": 3,
+  "spokes": 12,
+  "headlight": [
+    86.4,
+    27.4
+  ],
+  "taillight": [
+    3.8,
+    23.8
+  ],
+  "exhaust": [
+    6.0,
+    30.4
+  ],
+  "groundY": 35.5,
+  "frontX": 86,
+  "popup": true
+}

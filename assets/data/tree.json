@@ -1,0 +1,53 @@
+{
+  "width": 30,
+  "height": 92,
+  "cell": 11,
+  "sprites": {
+    "prestage": 0,
+    "amber": 1,
+    "green": 2,
+    "red": 3,
+    "stage": 0
+  },
+  "columns": [
+    9,
+    21
+  ],
+  "rows": [
+    {
+      "kind": "prestage",
+      "y": 6,
+      "size": 2
+    },
+    {
+      "kind": "stage",
+      "y": 12,
+      "size": 2
+    },
+    {
+      "kind": "amber",
+      "y": 22,
+      "size": 4
+    },
+    {
+      "kind": "amber",
+      "y": 32,
+      "size": 4
+    },
+    {
+      "kind": "amber",
+      "y": 42,
+      "size": 4
+    },
+    {
+      "kind": "green",
+      "y": 53,
+      "size": 4
+    },
+    {
+      "kind": "red",
+      "y": 64,
+      "size": 4
+    }
+  ]
+}

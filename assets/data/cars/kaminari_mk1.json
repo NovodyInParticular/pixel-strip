@@ -1,0 +1,41 @@
+{
+  "id": "kaminari_mk1",
+  "name": "Kaminari GT-X Mk1",
+  "brand": "Raijin",
+  "year": 1989,
+  "era": "90s",
+  "hp": 276,
+  "powerRating": "net",
+  "peakHpRpm": 6800,
+  "torqueNm": 353,
+  "peakTorqueRpm": 4400,
+  "idleRpm": 900,
+  "redline": 8000,
+  "weightKg": 1430,
+  "drivetrain": "AWD",
+  "rearWeight": 0.41,
+  "wheelbaseM": 2.62,
+  "cgHeightM": 0.5,
+  "gears": [
+    3.214,
+    1.925,
+    1.302,
+    1.0,
+    0.752
+  ],
+  "finalDrive": 4.111,
+  "shiftTime": 0.26,
+  "clutchTime": 0.32,
+  "clutchTorque": 1.5,
+  "tireRadiusM": 0.316,
+  "grip": 0.95,
+  "engineInertia": 0.19,
+  "wheelInertia": 2.4,
+  "dragArea": 0.7,
+  "nitrous": {
+    "hp": 0,
+    "charges": 0,
+    "seconds": 0
+  },
+  "defaultPaint": 7
+}

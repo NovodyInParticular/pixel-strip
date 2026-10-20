@@ -1,0 +1,32 @@
+{
+  "dir": "cars/spiral_r",
+  "width": 86,
+  "height": 40,
+  "rearWheel": [
+    21,
+    29.3
+  ],
+  "frontWheel": [
+    65,
+    29.3
+  ],
+  "wheelSize": 18,
+  "wheelFrames": 4,
+  "blurFrames": 3,
+  "spokes": 5,
+  "headlight": [
+    82.2,
+    27.0
+  ],
+  "taillight": [
+    3.8,
+    23.799999999999997
+  ],
+  "exhaust": [
+    6.0,
+    30.3
+  ],
+  "groundY": 35.5,
+  "frontX": 82,
+  "popup": true
+}

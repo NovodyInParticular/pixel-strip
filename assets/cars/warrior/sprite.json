@@ -1,0 +1,32 @@
+{
+  "dir": "cars/warrior",
+  "width": 102,
+  "height": 40,
+  "rearWheel": [
+    27,
+    28.9
+  ],
+  "frontWheel": [
+    80,
+    28.9
+  ],
+  "wheelSize": 18,
+  "wheelFrames": 4,
+  "blurFrames": 3,
+  "spokes": 10,
+  "headlight": [
+    98.4,
+    23.1
+  ],
+  "taillight": [
+    3.8,
+    24.2
+  ],
+  "exhaust": [
+    6.0,
+    29.6
+  ],
+  "groundY": 35.5,
+  "frontX": 98,
+  "popup": false
+}

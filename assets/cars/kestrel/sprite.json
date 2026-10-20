@@ -1,0 +1,32 @@
+{
+  "dir": "cars/kestrel",
+  "width": 84,
+  "height": 40,
+  "rearWheel": [
+    21,
+    29.9
+  ],
+  "frontWheel": [
+    65,
+    29.9
+  ],
+  "wheelSize": 16,
+  "wheelFrames": 4,
+  "blurFrames": 3,
+  "spokes": 6,
+  "headlight": [
+    80.6,
+    26.700000000000003
+  ],
+  "taillight": [
+    3.8,
+    24.0
+  ],
+  "exhaust": [
+    6.0,
+    29.6
+  ],
+  "groundY": 35.5,
+  "frontX": 80,
+  "popup": true
+}

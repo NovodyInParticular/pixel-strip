@@ -1,0 +1,32 @@
+{
+  "dir": "cars/typhoon",
+  "width": 91,
+  "height": 40,
+  "rearWheel": [
+    23,
+    29.1
+  ],
+  "frontWheel": [
+    68,
+    29.1
+  ],
+  "wheelSize": 18,
+  "wheelFrames": 4,
+  "blurFrames": 3,
+  "spokes": 6,
+  "headlight": [
+    87.2,
+    26.8
+  ],
+  "taillight": [
+    3.8,
+    23.700000000000003
+  ],
+  "exhaust": [
+    6.0,
+    30.3
+  ],
+  "groundY": 35.5,
+  "frontX": 87,
+  "popup": true
+}

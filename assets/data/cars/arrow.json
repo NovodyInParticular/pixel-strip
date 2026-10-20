@@ -1,0 +1,41 @@
+{
+  "id": "arrow",
+  "name": "Arrow RS-X",
+  "brand": "Hikari",
+  "year": 1997,
+  "era": "90s",
+  "hp": 195,
+  "powerRating": "net",
+  "peakHpRpm": 8000,
+  "torqueNm": 176,
+  "peakTorqueRpm": 7500,
+  "idleRpm": 850,
+  "redline": 8400,
+  "weightKg": 1197,
+  "drivetrain": "FWD",
+  "rearWeight": 0.38,
+  "wheelbaseM": 2.57,
+  "cgHeightM": 0.48,
+  "gears": [
+    3.23,
+    2.105,
+    1.458,
+    1.107,
+    0.848
+  ],
+  "finalDrive": 4.4,
+  "shiftTime": 0.24,
+  "clutchTime": 0.32,
+  "clutchTorque": 1.5,
+  "tireRadiusM": 0.297,
+  "grip": 0.95,
+  "engineInertia": 0.11,
+  "wheelInertia": 2.0,
+  "dragArea": 0.62,
+  "nitrous": {
+    "hp": 0,
+    "charges": 0,
+    "seconds": 0
+  },
+  "defaultPaint": 6
+}

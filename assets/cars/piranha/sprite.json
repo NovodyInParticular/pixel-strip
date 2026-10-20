@@ -1,0 +1,32 @@
+{
+  "dir": "cars/piranha",
+  "width": 94,
+  "height": 40,
+  "rearWheel": [
+    24,
+    28.7
+  ],
+  "frontWheel": [
+    74,
+    28.7
+  ],
+  "wheelSize": 18,
+  "wheelFrames": 4,
+  "blurFrames": 3,
+  "spokes": 5,
+  "headlight": [
+    90.2,
+    24.0
+  ],
+  "taillight": [
+    3.8,
+    24.2
+  ],
+  "exhaust": [
+    6.0,
+    30.0
+  ],
+  "groundY": 35.5,
+  "frontX": 90,
+  "popup": false
+}

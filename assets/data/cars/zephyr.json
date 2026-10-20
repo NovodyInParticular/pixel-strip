@@ -1,0 +1,41 @@
+{
+  "id": "zephyr",
+  "name": "Zephyr 300 Turbo",
+  "brand": "Raijin",
+  "year": 1986,
+  "era": "80s",
+  "hp": 200,
+  "powerRating": "net",
+  "peakHpRpm": 5200,
+  "torqueNm": 308,
+  "peakTorqueRpm": 3600,
+  "idleRpm": 750,
+  "redline": 6200,
+  "weightKg": 1474,
+  "drivetrain": "RWD",
+  "rearWeight": 0.46,
+  "wheelbaseM": 2.32,
+  "cgHeightM": 0.5,
+  "gears": [
+    3.321,
+    1.902,
+    1.308,
+    1.0,
+    0.759
+  ],
+  "finalDrive": 3.7,
+  "shiftTime": 0.28,
+  "clutchTime": 0.32,
+  "clutchTorque": 1.5,
+  "tireRadiusM": 0.315,
+  "grip": 0.9,
+  "engineInertia": 0.2,
+  "wheelInertia": 2.2,
+  "dragArea": 0.64,
+  "nitrous": {
+    "hp": 0,
+    "charges": 0,
+    "seconds": 0
+  },
+  "defaultPaint": 11
+}

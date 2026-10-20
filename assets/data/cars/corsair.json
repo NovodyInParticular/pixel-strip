@@ -1,0 +1,40 @@
+{
+  "id": "corsair",
+  "name": "Corsair SS 396",
+  "brand": "Crestline",
+  "year": 1969,
+  "era": "classic",
+  "hp": 375,
+  "powerRating": "gross",
+  "peakHpRpm": 5600,
+  "torqueNm": 563,
+  "peakTorqueRpm": 3600,
+  "idleRpm": 750,
+  "redline": 6000,
+  "weightKg": 1590,
+  "drivetrain": "RWD",
+  "rearWeight": 0.45,
+  "wheelbaseM": 2.74,
+  "cgHeightM": 0.54,
+  "gears": [
+    2.52,
+    1.88,
+    1.46,
+    1.0
+  ],
+  "finalDrive": 3.73,
+  "shiftTime": 0.3,
+  "clutchTime": 0.32,
+  "clutchTorque": 1.5,
+  "tireRadiusM": 0.33,
+  "grip": 0.84,
+  "engineInertia": 0.28,
+  "wheelInertia": 2.5,
+  "dragArea": 0.9,
+  "nitrous": {
+    "hp": 0,
+    "charges": 0,
+    "seconds": 0
+  },
+  "defaultPaint": 3
+}

@@ -1,0 +1,32 @@
+{
+  "dir": "cars/tsunami",
+  "width": 90,
+  "height": 40,
+  "rearWheel": [
+    22,
+    29.1
+  ],
+  "frontWheel": [
+    68,
+    29.1
+  ],
+  "wheelSize": 18,
+  "wheelFrames": 4,
+  "blurFrames": 3,
+  "spokes": 5,
+  "headlight": [
+    85.4,
+    24.3
+  ],
+  "taillight": [
+    3.8,
+    23.2
+  ],
+  "exhaust": [
+    6.0,
+    30.2
+  ],
+  "groundY": 35.5,
+  "frontX": 86,
+  "popup": false
+}

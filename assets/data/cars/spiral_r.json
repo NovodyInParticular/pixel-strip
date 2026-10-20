@@ -1,0 +1,41 @@
+{
+  "id": "spiral_r",
+  "name": "Spiral R",
+  "brand": "Kitsune",
+  "year": 1993,
+  "era": "90s",
+  "hp": 255,
+  "powerRating": "net",
+  "peakHpRpm": 6500,
+  "torqueNm": 294,
+  "peakTorqueRpm": 5000,
+  "idleRpm": 800,
+  "redline": 8000,
+  "weightKg": 1270,
+  "drivetrain": "RWD",
+  "rearWeight": 0.5,
+  "wheelbaseM": 2.43,
+  "cgHeightM": 0.46,
+  "gears": [
+    3.483,
+    2.015,
+    1.391,
+    1.0,
+    0.719
+  ],
+  "finalDrive": 4.1,
+  "shiftTime": 0.25,
+  "clutchTime": 0.32,
+  "clutchTorque": 1.5,
+  "tireRadiusM": 0.318,
+  "grip": 0.95,
+  "engineInertia": 0.1,
+  "wheelInertia": 2.4,
+  "dragArea": 0.56,
+  "nitrous": {
+    "hp": 0,
+    "charges": 0,
+    "seconds": 0
+  },
+  "defaultPaint": 4
+}
