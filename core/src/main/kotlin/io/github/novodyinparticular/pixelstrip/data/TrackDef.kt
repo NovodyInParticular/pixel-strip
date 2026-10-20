@@ -32,6 +32,13 @@ class TrackDef(
     val lampPool: Color?,
     val headlights: Boolean,
     val bloomGain: Float,
+    /** Surface grip multiplier (prepped strips ~1.25; wet or snowy less). */
+    val trackGrip: Float,
+    /** "rain", "snow", "sand", "embers" or null. */
+    val weather: String?,
+    /** Wet asphalt: cars and lamps reflect in it. */
+    val wet: Boolean,
+    val song: String,
 ) {
     class Layer(
         val image: String,
@@ -46,6 +53,8 @@ class TrackDef(
         val chunk: Int,
         val blinkers: String?,
         val lamp: Pair<Float, Float>?,
+        /** Pixels per second this layer sinks (a setting sun). */
+        val sink: Float,
     )
 
     /** Placed once along the strip. [at] is metres from the start line; "finish" resolves per race. */
@@ -60,6 +69,9 @@ class TrackDef(
     )
 
     companion object {
+        /** Tracks open to quick races and ordinary rivals (not boss-only ones like San Antonio). */
+        val GENERAL = listOf("neon_city", "desert", "port", "coast", "airfield", "speedway")
+
         fun load(id: String): TrackDef = parse(JsonReader().parse(Gdx.files.internal("data/tracks/$id.json")))
 
         private fun layer(j: JsonValue, dir: String) = Layer(
@@ -75,6 +87,7 @@ class TrackDef(
             chunk = j.getInt("chunk", 0),
             blinkers = j.getString("blinkers", null)?.let { "$dir/$it" },
             lamp = j.get("lamp")?.let { it.getFloat(0) to it.getFloat(1) },
+            sink = j.getFloat("sink", 0f),
         )
 
         fun parse(j: JsonValue): TrackDef {
@@ -112,6 +125,10 @@ class TrackDef(
                 lampPool = pool?.let { Color(it.getFloat(0), it.getFloat(1), it.getFloat(2), it.getFloat(3)) },
                 headlights = j.getBoolean("headlights", false),
                 bloomGain = j.getFloat("bloomGain", 1f),
+                trackGrip = j.getFloat("trackGrip", 1.25f),
+                weather = j.getString("weather", null),
+                wet = j.getBoolean("wet", false),
+                song = j.getString("song", "neon_city"),
             )
         }
     }

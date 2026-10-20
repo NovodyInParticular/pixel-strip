@@ -16,6 +16,8 @@ import portraits
 import roster
 import scenes
 import track_neon
+import tracks
+import track_sa
 import tree
 import ui
 from common import P
@@ -37,6 +39,8 @@ def main():
         car.rim_sheets({p["wheel_r"] for p in roster.ROSTER})
     if only is None:
         track_neon.build()
+        tracks.build()
+        track_sa.build()
         ui.build()
         icon.build()
         tree.build()

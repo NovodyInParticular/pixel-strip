@@ -55,6 +55,7 @@
     },
     {
      "id": "joe",
+     "track": "sanantonio",
      "name": "JOE",
      "car": "kite_ef",
      "paint": 12,

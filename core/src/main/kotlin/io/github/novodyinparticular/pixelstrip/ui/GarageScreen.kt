@@ -7,6 +7,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.math.MathUtils
 import io.github.novodyinparticular.pixelstrip.PixelStrip
 import io.github.novodyinparticular.pixelstrip.race.CarLooks
+import io.github.novodyinparticular.pixelstrip.data.TrackDef
 import io.github.novodyinparticular.pixelstrip.race.RaceScreen
 import kotlin.math.floor
 import kotlin.math.sin
@@ -26,7 +27,7 @@ class GarageScreen(game: PixelStrip) : MenuScreen(game) {
     private val race = button("CAREER", BTN_RED, big = true, keys = intArrayOf(Input.Keys.ENTER)) { game.go(0) { CareerScreen(game) } }
     private val quick = button("QUICK RACE", Color(0.5f, 0.15f, 0.3f, 1f), keys = intArrayOf(Input.Keys.Q)) {
         val car = save.cars[index]
-        game.go(1) { RaceScreen(game, "neon_city", car) }
+        game.go(1) { RaceScreen(game, TrackDef.GENERAL.random(), car) }
     }
     private val testRun = button("TEST", Color(0.6f, 0.3f, 0.1f, 1f), keys = intArrayOf(Input.Keys.X)) {
         val car = save.cars[index]

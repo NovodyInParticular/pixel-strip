@@ -1,0 +1,144 @@
+{
+  "id": "sanantonio",
+  "name": "San Antonio",
+  "dir": "tracks/sanantonio",
+  "sky": "sky.png",
+  "lut": "lut.png",
+  "lutMix": 1.0,
+  "ambient": [
+    0.92,
+    0.7,
+    0.78
+  ],
+  "asphaltHaze": 0.25,
+  "roadTop": 203,
+  "roadBottom": 262,
+  "bloomGain": 1.5,
+  "headlights": true,
+  "stars": 30,
+  "starsMaxTop": 115,
+  "farLaneTop": 225,
+  "nearLaneTop": 253,
+  "lampPool": [
+    1.0,
+    0.78,
+    0.45,
+    0.3
+  ],
+  "layers": [
+    {
+      "image": "sun.png",
+      "glow": "sun_glow.png",
+      "top": 96,
+      "x": 120,
+      "parallax": 0.01,
+      "tile": false,
+      "sink": 0.5
+    },
+    {
+      "image": "clouds.png",
+      "top": 18,
+      "parallax": 0.04,
+      "drift": 4
+    },
+    {
+      "image": "tower.png",
+      "glow": "tower_glow.png",
+      "top": 4,
+      "x": 250,
+      "parallax": 0.03,
+      "tile": false
+    },
+    {
+      "image": "far.png",
+      "top": 66,
+      "parallax": 0.08,
+      "blinkers": "blinkers.txt"
+    },
+    {
+      "image": "mid.png",
+      "glow": "mid_glow.png",
+      "top": 28,
+      "parallax": 0.2
+    },
+    {
+      "image": "stands.png",
+      "glow": "stands_glow.png",
+      "top": 133,
+      "parallax": 0.55
+    },
+    {
+      "image": "crowd.png",
+      "top": 147,
+      "parallax": 0.55,
+      "frames": 3,
+      "frameTime": 0.18,
+      "chunk": 48
+    },
+    {
+      "image": "poles.png",
+      "glow": "poles_glow.png",
+      "top": 57,
+      "parallax": 0.9,
+      "lamp": [
+        198,
+        8
+      ]
+    },
+    {
+      "image": "wall.png",
+      "top": 157,
+      "parallax": 0.9,
+      "glow": "wall_glow.png"
+    },
+    {
+      "image": "road.png",
+      "top": 203,
+      "parallax": 1.0
+    }
+  ],
+  "props": [
+    {
+      "image": "rubber.png",
+      "at": -14,
+      "top": 203
+    },
+    {
+      "image": "start_line.png",
+      "at": 0,
+      "dx": -2,
+      "top": 203
+    },
+    {
+      "image": "welcome.png",
+      "glow": "welcome_glow.png",
+      "at": 0,
+      "dx": -70,
+      "top": 143,
+      "parallax": 0.9
+    },
+    {
+      "image": "finish_line.png",
+      "at": "finish",
+      "dx": -4,
+      "top": 203
+    },
+    {
+      "image": "finish_gantry.png",
+      "glow": "finish_gantry_glow.png",
+      "at": "finish",
+      "dx": -28,
+      "top": 92,
+      "parallax": 0.9
+    }
+  ],
+  "foreground": {
+    "image": "foreground.png",
+    "top": 236,
+    "parallax": 1.35
+  },
+  "trackGrip": 1.25,
+  "weather": null,
+  "wet": false,
+  "song": "sanantonio"
+}

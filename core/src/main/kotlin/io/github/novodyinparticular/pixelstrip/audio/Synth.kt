@@ -28,6 +28,10 @@ class Synth(val rate: Int) {
     private val active = ArrayList<Sfx>()
 
     @Volatile var crowd = 0f
+    /** Rain ambience level 0..1. */
+    @Volatile var rain = 0f
+    private var rainLevel = 0f
+    private var rainHp = 0f
     @Volatile var master = 0.8f
     @Volatile var musicVolume = 0.5f
 
@@ -54,6 +58,12 @@ class Synth(val rate: Int) {
             crowdLevel += (crowd - crowdLevel) * 0.0002f
             crowdLp += (noise() - crowdLp) * 0.08f
             s += crowdLp * crowdLevel * 0.35f
+            rainLevel += (rain - rainLevel) * 0.0002f
+            if (rainLevel > 0.001f) {
+                val nz = noise()
+                rainHp += (nz - rainHp) * 0.35f
+                s += (nz - rainHp) * rainLevel * 0.22f
+            }
             musicLevel += (musicVolume - musicLevel) * 0.0005f
             s += music.next() * musicLevel
             s *= master
@@ -198,7 +208,7 @@ class EngineVoice(private val synth: Synth) {
 
 /** One-shot effects. */
 class Sfx(private val kind: Kind, private val volume: Float) {
-    enum class Kind { CLUNK, POP, BLIP, BEEP, CHIME, CHEER, WHOOSH, SLAM }
+    enum class Kind { CLUNK, POP, BLIP, BEEP, CHIME, CHEER, WHOOSH, SLAM, THUNDER }
 
     private var n = 0
     private var phase = 0.0
@@ -215,6 +225,7 @@ class Sfx(private val kind: Kind, private val volume: Float) {
         Kind.CHEER -> 2.2f
         Kind.WHOOSH -> 0.45f
         Kind.SLAM -> 0.35f
+        Kind.THUNDER -> 2.6f
     }
 
     fun next(s: Synth): Float {
@@ -255,6 +266,11 @@ class Sfx(private val kind: Kind, private val volume: Float) {
             Kind.WHOOSH -> {
                 lp += (s.noise() - lp) * (0.02f + 0.3f * (t / length))
                 lp * 0.5f * sin(PI * t / length).toFloat()
+            }
+            Kind.THUNDER -> {
+                // a crack, then a long low roll
+                lp += (s.noise() - lp) * (if (t < 0.08f) 0.5f else 0.02f)
+                lp * (if (t < 0.08f) 1.2f else 0.9f) * env * (0.7f + 0.3f * sin(t * 13.0).toFloat())
             }
             Kind.SLAM -> {
                 lp += (s.noise() - lp) * 0.12f

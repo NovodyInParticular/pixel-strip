@@ -35,7 +35,7 @@ class VsScreen(game: PixelStrip, private val rival: Career.Rival, private val pi
 
     private fun go() {
         if (talking) return advance()
-        game.go(1) { RaceScreen(game, "neon_city", mine, rival = rival, pinkSlip = pinkSlip) }
+        game.go(1) { RaceScreen(game, rival.track, mine, rival = rival, pinkSlip = pinkSlip) }
     }
 
     private fun advance() {

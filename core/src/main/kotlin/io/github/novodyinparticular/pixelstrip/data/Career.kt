@@ -30,6 +30,8 @@ class Career(val tiers: List<Tier>) {
         val tier: String,
         /** Who's visible through the glass: "joe" for the boss drawn from the user's friend. */
         val driver: String?,
+        /** Where the race happens. Joe's San Antonio is his alone. */
+        val track: String,
     ) {
         /** The rival's car as an OwnedCar, so the usual effective-stats and looks code applies. */
         fun asCar(): OwnedCar = OwnedCar("rival_$id", carId, paint, parts.toMutableMap(), cosmetics.toMutableMap())
@@ -49,6 +51,7 @@ class Career(val tiers: List<Tier>) {
     companion object {
         fun load(): Career {
             val root = JsonReader().parse(Gdx.files.internal("data/career.json"))
+            var n = 0
             return Career(root.get("tiers").map { t ->
                 val tid = t.getString("id")
                 Tier(tid, t.getString("name"), t.getString("distance") == "quarter", t.get("rivals").map { r ->
@@ -62,6 +65,7 @@ class Career(val tiers: List<Tier>) {
                         parts, cos, r.getFloat("skill"), r.getLong("payout"), r.getFloat("x"), r.getFloat("y"),
                         r.getBoolean("boss", false), r.get("intro")?.asStringArray()?.toList() ?: emptyList(), tid,
                         r.getString("driver", null),
+                        r.getString("track", TrackDef.GENERAL[n++ % TrackDef.GENERAL.size]),
                     )
                 })
             })

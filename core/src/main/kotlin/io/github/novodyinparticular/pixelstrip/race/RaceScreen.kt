@@ -63,6 +63,8 @@ class RaceScreen(
     private val speedLines = SpeedLines(white)
     private val controls = Controls(post, font, white)
     private val lights = Lights()
+    private val weather = io.github.novodyinparticular.pixelstrip.world.Weather(track.weather, white)
+    private var lastCamX = 0f
     private val gantry = track.props.firstOrNull { it.atFinish && it.image.endsWith("finish_gantry.png") }
     private val lamps = ArrayList<Pair<Float, Float>>()
 
@@ -163,9 +165,9 @@ class RaceScreen(
     }
 
     private fun newRace() {
-        player = Vehicle(carDef).apply { trackGrip = Vehicle.DEFAULT_PREP }
+        player = Vehicle(carDef).apply { trackGrip = track.trackGrip }
         val close = shots?.close == true
-        ghost = Vehicle(opponentDef, powerScale = if (close || rival != null) 1f else 0.98f).apply { trackGrip = Vehicle.DEFAULT_PREP }
+        ghost = Vehicle(opponentDef, powerScale = if (close || rival != null) 1f else 0.98f).apply { trackGrip = track.trackGrip }
         ghostDriver = AutoDriver(ghost, skill = rival?.skill ?: if (close) 0.9f else 0.6f, trackGrip = ghost.trackGrip)
         payout = 0L
         wonPrize = false
@@ -329,7 +331,11 @@ class RaceScreen(
         audio.engine(0, player, owned.parts["exhaust"] ?: 0, 0.9f)
         if (!test) audio.engine(1, ghost, rivalCar?.parts?.get("exhaust") ?: 0, 0.5f) else audio.synth.engines[1].active = false
         audio.synth.crowd = if (phase == Phase.RACING) 0.25f + 0.6f * min(1f, player.v / 40f) else 0.15f
-        audio.music(if (rival?.boss == true) "boss" else "neon_city", if (phase == Phase.RACING) 0.12f else 0.3f)
+        audio.music(if (rival?.boss == true) "boss" else track.song, if (phase == Phase.RACING) 0.12f else 0.3f)
+        audio.synth.rain = if (track.weather == "rain") 0.5f else 0f
+        weather.update(dt, camX - lastCamX, post.width)
+        lastCamX = camX
+        if (weather.struck) audio.play(Sfx.Kind.THUNDER)
         if (tree.staged[1] && !stagedBeep) {
             stagedBeep = true
             audio.play(Sfx.Kind.BEEP)
@@ -552,6 +558,7 @@ class RaceScreen(
         trackView.drawSky(batch, w)
         trackView.drawWorld(batch, camPx, w)
         trackView.drawLights(batch, camPx, w)
+        if (track.wet) drawReflections(playerX, ghostX, nearGround, farGround, t)
         particles.draw(batch, camPx, front = false)
         drawFlame(ghost, ghostView, ghostX, farGround, 1)
         if (rival != null) {
@@ -568,6 +575,7 @@ class RaceScreen(
         }
         drawEtBoard(camPx, false)
         trackView.drawForeground(batch, camPx, w)
+        weather.draw(batch)
         speedLines.draw(batch, player.v)
         batch.end()
         post.scene.end()
@@ -585,6 +593,7 @@ class RaceScreen(
         tree.draw(batch, treeX, treeY, bulbsOnly = true)
         particles.drawGlow(batch, camPx)
         drawEtBoard(camPx, true)
+        weather.drawGlow(batch)
         drawFlame(player, playerView, playerX, nearGround, 0)
         drawFlame(ghost, ghostView, ghostX, farGround, 1)
         batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
@@ -616,8 +625,8 @@ class RaceScreen(
         post.bloomGain = track.bloomGain
         post.lutMix = track.lutMix
         post.crt = game.settings.crt
-        post.flash = flash * 0.45f
-        post.flashColor.set(flashColor)
+        post.flash = max(flash * 0.45f, weather.lightning * 0.55f)
+        post.flashColor.set(if (weather.lightning > flash) Color(0.85f, 0.9f, 1f, 1f) else flashColor)
         post.chromatic = if (player.nitrousActive) 0.9f else 0f
         post.radialBlur = if (player.nitrousActive) 0.22f else 0f
         post.zoom = zoom
@@ -642,6 +651,24 @@ class RaceScreen(
         val boardY = TrackRenderer.SCREEN_H - g.top - ET_BOARD_Y
         font.draw(batch, text, boardX, boardY, if (glow) Hud.RED else ET_RED, 1, if (glow) null else Color(0.1f, 0.02f, 0.04f, 1f))
     }
+
+    /** Wet asphalt: each car mirrored under itself, darker and cut into rippling strips. */
+    private fun drawReflections(playerX: Float, ghostX: Float, nearGround: Float, farGround: Float, t: Float) {
+        batch.flush()
+        // the hologram ghost (and the empty test lane) cast no reflection
+        for ((view, x, ground, skip) in listOf(
+            Quad(ghostView, ghostX, farGround, rival == null || test), Quad(playerView, playerX, nearGround, false))) {
+            if (skip) continue
+            val m = batch.transformMatrix.cpy()
+            batch.transformMatrix = m.cpy().translate(0f, ground * 2f - 2f, 0f).scale(1f, -1f, 1f)
+            batch.setColor(0.45f, 0.5f, 0.65f, 0.38f)
+            view.draw(batch, x + MathUtils.sin(t * 6f) * 0.6f, ground, t, lit = true, ambient = Color(0.45f, 0.5f, 0.65f, 1f))
+            batch.transformMatrix = m
+            batch.color = Color.WHITE
+        }
+    }
+
+    private data class Quad(val view: CarRenderer, val x: Float, val ground: Float, val skip: Boolean)
 
     private fun tachZone(): Hud.Zone? = when {
         phase == Phase.STAGING || phase == Phase.COUNTDOWN -> Hud.Zone(DragMath.launchRpm(carDef, player.trackGrip), 0.08f, 0.18f)

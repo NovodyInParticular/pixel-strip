@@ -136,7 +136,7 @@ class TrackRenderer(val def: TrackDef, private val art: Art) {
     private fun drawLayer(batch: SpriteBatch, l: TrackDef.Layer, camX: Float, screenW: Int, image: String = l.image) {
         val tex = art.tex(image)
         val frameH = tex.height / l.frames
-        val y = bottomOf(l.top, frameH)
+        val y = bottomOf(l.top, frameH) - floor(time * l.sink)       // the sun sets as you race
         val offset = layerOffset(l, camX)
         if (!l.tile) {
             batch.draw(tex, floor(l.x - offset), y)
