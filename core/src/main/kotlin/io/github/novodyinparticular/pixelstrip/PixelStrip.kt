@@ -98,6 +98,7 @@ class PixelStrip(val platform: Platform, val shots: ShotPlan? = null, private va
         "starter" -> StarterScreen(this)
         "upgrades" -> io.github.novodyinparticular.pixelstrip.ui.UpgradeScreen(this)
         "paint" -> io.github.novodyinparticular.pixelstrip.ui.PaintShopScreen(this)
+        "tune" -> io.github.novodyinparticular.pixelstrip.ui.TuneScreen(this)
         null -> if (shots != null) RaceScreen(this, "neon_city", save.selectedCar()!!) else TitleScreen(this)
         else -> TitleScreen(this)
     }
