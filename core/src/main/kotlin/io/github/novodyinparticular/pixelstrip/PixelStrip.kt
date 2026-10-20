@@ -166,6 +166,7 @@ class PixelStrip(val platform: Platform, val shots: ShotPlan? = null, private va
         "runs" -> io.github.novodyinparticular.pixelstrip.ui.RunLogScreen(this)
         "career" -> io.github.novodyinparticular.pixelstrip.ui.CareerScreen(this)
         "vs" -> io.github.novodyinparticular.pixelstrip.ui.VsScreen(this, career.rivals.first { it.id == "joe" })
+        "online" -> io.github.novodyinparticular.pixelstrip.ui.OnlineScreen(this)
         "boss" -> career.rivals.first { it.id == "joe" }.let { RaceScreen(this, it.track, save.selectedCar()!!, rival = it) }
         null -> if (shots != null) RaceScreen(this, System.getProperty("pixelstrip.track") ?: "neon_city", save.selectedCar()!!) else TitleScreen(this)
         else -> TitleScreen(this)

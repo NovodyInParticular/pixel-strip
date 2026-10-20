@@ -40,6 +40,8 @@ class RaceScreen(
     private val rival: Career.Rival? = null,
     /** Cars on the line: win theirs, lose yours (never offered with your last car). */
     private val pinkSlip: Boolean = false,
+    /** Another player in the far lane, streamed live; the server replays both runs to decide it. */
+    private val online: io.github.novodyinparticular.pixelstrip.net.OnlineRace? = null,
 ) : ScreenAdapter() {
     private enum class Phase { BURNOUT, STAGING, COUNTDOWN, RACING, PHOTO, FINISHED }
 
@@ -83,13 +85,19 @@ class RaceScreen(
         paintRow = owned.paint
         looks = CarLooks.of(owned, game.parts)
     }
-    private val rivalCar = rival?.asCar()
+    private val rivalCar = rival?.asCar() ?: online?.them?.let {
+        OwnedCar("online", it.car, it.paint, it.parts.toMutableMap(), it.cosmetics.toMutableMap())
+    }
     private val opponentDef = rivalCar?.let { game.effective(it) } ?: carDef
     private val ghostView = CarRenderer(opponentDef, art, paint, tint, ramps).apply {
         paintRow = rivalCar?.paint ?: 2
         rivalCar?.let { looks = CarLooks.of(it, game.parts) }
         if (rival?.driver == "joe") driver = 1
     }
+    /** A real car in the far lane (a career rival or another player), not the practice hologram. */
+    private val realOpponent = rival != null || online != null
+    /** Where the opponent's car is drawn, eased toward what their phone reports. */
+    private var remoteX = BURNOUT_X
     private var payout = 0L
     private var wonPrize = false
     private var settled = false
@@ -118,7 +126,7 @@ class RaceScreen(
     private val playerMotion = CarMotion()
     private val ghostMotion = CarMotion()
 
-    private var quarter = rival?.let { game.career.tierOf(it).quarter } ?: false
+    private var quarter = online?.quarter ?: rival?.let { game.career.tierOf(it).quarter } ?: false
     private val distanceM get() = if (quarter) Vehicle.SPLITS_M[4] else Vehicle.SPLITS_M[2]
     private val finishSplit get() = if (quarter) 4 else 2
 
@@ -161,6 +169,7 @@ class RaceScreen(
         wonPrize = false
         cheered = false
         autoPlayer = if (shots != null) AutoDriver(player, skill = 0.9f, trackGrip = player.trackGrip).apply { burnoutTime = 2.2f } else null
+        if (online != null) player.recorder = RunRecorder()
         player.x = BURNOUT_X
         ghost.x = BURNOUT_X
         player.startBurnout()
@@ -209,12 +218,12 @@ class RaceScreen(
             Phase.BURNOUT -> "STAGE"
             Phase.STAGING, Phase.COUNTDOWN -> "LAUNCH"
             Phase.RACING, Phase.PHOTO -> "SHIFT"
-            Phase.FINISHED -> if (rival == null) "AGAIN" else if (wonPrize) "CLAIM" else "MAP"
+            Phase.FINISHED -> if (online != null) "LOBBY" else if (rival == null) "AGAIN" else if (wonPrize) "CLAIM" else "MAP"
         }
         actionButton.visible = phase != Phase.STAGING && phase != Phase.PHOTO
         nosButton.visible = phase == Phase.RACING && player.def.nitrous.charges > 0 && player.hasLeft
         nosButton.label = "NOS x${player.nitrousCharges}"
-        distButton.visible = phase == Phase.BURNOUT && rival == null
+        distButton.visible = phase == Phase.BURNOUT && rival == null && online == null
         distButton.label = if (quarter) "1/4 MILE" else "1/8 MILE"
         gasButton.visible = phase != Phase.FINISHED && phase != Phase.PHOTO
         garageButton.apply { x = w - 78f; y = 10f; this.w = 68f; this.h = 22f; visible = phase == Phase.FINISHED || phase == Phase.BURNOUT && !gasButton.down }
@@ -261,7 +270,9 @@ class RaceScreen(
             Phase.PHOTO -> if (phaseTime > PHOTO_HOLD_S) setPhase(Phase.FINISHED)
             Phase.FINISHED -> if (phaseTime > 1.5f && actionButton.justPressed) {
                 val r = rival
-                if (r == null) newRace() else if (!game.transitioning) {
+                if (online != null) {
+                    if (!game.transitioning) game.go(0) { io.github.novodyinparticular.pixelstrip.ui.OnlineScreen(game) }
+                } else if (r == null) newRace() else if (!game.transitioning) {
                     if (wonPrize) game.go(2) { io.github.novodyinparticular.pixelstrip.ui.PrizeScreen(game, r) }
                     else game.go(0) { io.github.novodyinparticular.pixelstrip.ui.CareerScreen(game) }
                 }
@@ -271,7 +282,23 @@ class RaceScreen(
         if (player.hasLeft && player.x > distanceM + 0.5f) player.throttle = 0f
         if (player.mode == Vehicle.Mode.CREEP) player.throttle = 0f
 
-        // Ghost (sits out test-n-tune: its lane just reads as staged)
+        // Ghost (sits out test-n-tune: its lane just reads as staged); online, the other player's phone drives it
+        if (online != null) puppetOpponent(dt)
+        else updateGhost(dt)
+
+        // Physics (frozen during the photo-finish print)
+        if (phase != Phase.PHOTO) {
+            accumulator += dt
+            while (accumulator >= STEP) {
+                accumulator -= STEP
+                player.step(STEP)
+                if (!test && online == null) ghost.step(STEP)
+            }
+        }
+        afterPhysics(dt, realDt)
+    }
+
+    private fun updateGhost(dt: Float) {
         if (test) ghost.x = Tree.STAGE_M
         if (!test) ghost.throttle = ghostDriver.update(dt, tree.staged[0], tree.raceClock, tree.running)
         if (test && ghost.mode != Vehicle.Mode.HELD) ghost.hold()
@@ -280,16 +307,21 @@ class RaceScreen(
         if (ghostDriver.wantsShift) ghost.shift()
         if (ghostDriver.wantsNitrous) ghost.nitrous()
         if (ghost.hasLeft && ghost.x > distanceM + 0.5f) ghost.throttle = 0f
+    }
 
-        // Physics (frozen during the photo-finish print)
-        if (phase != Phase.PHOTO) {
-            accumulator += dt
-            while (accumulator >= STEP) {
-                accumulator -= STEP
-                player.step(STEP)
-                if (!test) ghost.step(STEP)
-            }
-        }
+    /** Online: show the other car where their phone says it is (dead-reckoned between reports). */
+    private fun puppetOpponent(dt: Float) {
+        val o = online!!
+        o.update(dt, player, screenTime)
+        val l = o.live ?: return
+        val target = l.x + l.v * min(o.silence, 0.3f)
+        remoteX += (target - remoteX) * min(1f, dt * 10f)
+        // easing never quite arrives: snap when stopped or close, so the stage beam sees them exactly where they are
+        if (abs(target - remoteX) > 30f || abs(target - remoteX) < 0.02f || l.v == 0f) remoteX = target
+        ghost.puppet(remoteX, l.v, l.rpm, l.gear, l.mode, l.leave, l.splits, l.nitrous)
+    }
+
+    private fun afterPhysics(dt: Float, realDt: Float) {
         for (car in listOf(player, ghost)) car.brake = if (car.hasLeft && car.x > distanceM + 6f) 1f else 0f
         tree.beams(1, player.x)
         tree.beams(0, ghost.x)
@@ -301,7 +333,7 @@ class RaceScreen(
             buzz(120)
         }
         if (tree.staged[0] && tree.staged[1] && player.mode == Vehicle.Mode.HELD && ghost.mode == Vehicle.Mode.HELD && !tree.running) {
-            tree.start()
+            tree.start(online?.treeDelay)
             setPhase(Phase.COUNTDOWN)
         }
         if (tree.green && !greenSeen) {
@@ -310,6 +342,7 @@ class RaceScreen(
         }
 
         if (phase == Phase.FINISHED && rival != null && !settled) settleCareer()
+        if (phase == Phase.FINISHED && online != null) player.recorder?.let { online.submit(it) }
         handleEvents(player, playerMotion, 0, true)
         handleEvents(ghost, ghostMotion, 1, false)
         updateFinish()
@@ -356,7 +389,7 @@ class RaceScreen(
     private fun updateFinish() {
         if (phase != Phase.RACING) return
         val playerDone = player.splits[finishSplit] >= 0f
-        val ghostDone = ghost.splits[finishSplit] >= 0f
+        val ghostDone = ghost.splits[finishSplit] >= 0f || (online != null && online.silence > io.github.novodyinparticular.pixelstrip.net.OnlineRace.GONE_S)
         val lead = max(player.x, ghost.x)
         if (!test && !slowMo && !playerFoul && player.hasLeft && ghost.hasLeft && distanceM - lead in 0f..7f && abs(player.x - ghost.x) < PHOTO_GAP_M) {
             slowMo = true
@@ -552,7 +585,7 @@ class RaceScreen(
         if (track.wet) drawReflections(playerX, ghostX, nearGround, farGround, t)
         particles.draw(batch, camPx, front = false)
         drawFlame(ghost, ghostView, ghostX, farGround, 1)
-        if (rival != null) {
+        if (realOpponent) {
             ghostView.draw(batch, ghostX, farGround, t, pitch = ghostMotion.pitch, ambient = track.ambient, lights = lights, shakeX = shakeX, shakeY = shakeY)
         } else if (!test) ghostView.draw(batch, ghostX, farGround, t, ghost = 0.62f, pitch = ghostMotion.pitch)
         tree.draw(batch, treeX, treeY)
@@ -579,7 +612,7 @@ class RaceScreen(
         batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE)
         trackView.drawGlow(batch, camPx, w)
         playerView.drawGlow(batch, playerX, nearGround, playerMotion.pitch, playerMotion.lift)
-        if (rival != null) ghostView.drawGlow(batch, ghostX, farGround, ghostMotion.pitch)
+        if (realOpponent) ghostView.drawGlow(batch, ghostX, farGround, ghostMotion.pitch)
         if (track.headlights) playerView.drawBeam(batch, playerX, nearGround, BEAM, 0.12f)
         tree.draw(batch, treeX, treeY, bulbsOnly = true)
         particles.drawGlow(batch, camPx)
@@ -648,7 +681,7 @@ class RaceScreen(
         batch.flush()
         // the hologram ghost (and the empty test lane) cast no reflection
         for ((view, x, ground, skip) in listOf(
-            Quad(ghostView, ghostX, farGround, rival == null || test), Quad(playerView, playerX, nearGround, false))) {
+            Quad(ghostView, ghostX, farGround, !realOpponent || test), Quad(playerView, playerX, nearGround, false))) {
             if (skip) continue
             val m = batch.transformMatrix.cpy()
             batch.transformMatrix = m.cpy().translate(0f, ground * 2f - 2f, 0f).scale(1f, -1f, 1f)
@@ -751,6 +784,7 @@ class RaceScreen(
 
     private fun drawSlip(w: Int, h: Int) {
         if (test) return drawTestSlip(w, h)
+        if (online != null) return drawOnlineSlip(w, h, online)
         val unit = if (game.settings.metric) "KMH" else "MPH"
         val lines = ArrayList<Hud.SlipLine>()
         lines.add(Hud.SlipLine("R/T", if (playerFoul) "%.3f".format(player.leaveTime) else fmt(player.leaveTime), fmt(ghost.leaveTime)))
@@ -779,6 +813,37 @@ class RaceScreen(
         if (lostCar) notes.add("LOST: ${carDef.name.uppercase()}")
         hud.drawTimeslip(batch, w, h, "${track.name.uppercase()} DRAGWAY", lines, notes, stamp, color, phaseTime / 1.2f,
             them = rival?.name?.take(6) ?: "GHOST")
+    }
+
+    /** Online slip: the server's replay of both runs decides it; until then it says so. */
+    private fun drawOnlineSlip(w: Int, h: Int, o: io.github.novodyinparticular.pixelstrip.net.OnlineRace) {
+        val unit = if (game.settings.metric) "KMH" else "MPH"
+        val r = o.result
+        fun et(run: io.github.novodyinparticular.pixelstrip.net.OnlineRace.Run?) = run?.et?.let { fmt(it) } ?: "-"
+        fun rt(run: io.github.novodyinparticular.pixelstrip.net.OnlineRace.Run?) = run?.rt?.let { "%.3f".format(it) } ?: "-"
+        fun mph(run: io.github.novodyinparticular.pixelstrip.net.OnlineRace.Run?) =
+            run?.takeIf { it.et != null }?.let { if (game.settings.metric) "%.1f".format(it.mph * 1.60934f) else "%.2f".format(it.mph) } ?: "-"
+        val lines = arrayListOf(
+            Hud.SlipLine("R/T", r?.let { rt(it.mine) } ?: fmt(player.leaveTime), r?.let { rt(it.theirs) } ?: fmt(ghost.leaveTime)),
+            Hud.SlipLine("60'", fmt(player.splits[0]), fmt(ghost.splits[0])),
+            Hud.SlipLine(if (quarter) "1/4 ET" else "1/8 ET", r?.let { et(it.mine) } ?: fmt(player.splits[finishSplit]), r?.let { et(it.theirs) } ?: fmt(ghost.splits[finishSplit])),
+            Hud.SlipLine(unit, r?.let { mph(it.mine) } ?: speedOf(player.splitSpeed[finishSplit]), r?.let { mph(it.theirs) } ?: "-"),
+        )
+        val notes = arrayListOf("VS ${o.them.name}")
+        player.ratings.firstOrNull()?.let { notes.add("LAUNCH  ${it.name}") }
+        when {
+            o.error != null -> notes.add("SERVER: ${o.error!!.uppercase().take(28)}")
+            r == null -> notes.add(if (o.silence > io.github.novodyinparticular.pixelstrip.net.OnlineRace.GONE_S) "OPPONENT GONE: WAITING TO SETTLE" else "SERVER CHECKING BOTH RUNS...")
+            r.forfeit -> notes.add(if (r.won) "THEY NEVER FINISHED: YOU WIN" else "YOU DIDN'T FINISH")
+            else -> notes.add("VERIFIED BY THE SERVER")
+        }
+        val (stamp, color) = when {
+            r == null -> "..." to Hud.INK_FAINT
+            r.mine?.red == true -> "RED LIGHT" to Hud.RED
+            r.won -> "WIN" to Color(0.2f, 0.55f, 0.3f, 1f)
+            else -> "LOSS" to Hud.RED
+        }
+        hud.drawTimeslip(batch, w, h, "${track.name.uppercase()} ONLINE", lines, notes, stamp, color, phaseTime / 1.2f, them = o.them.name.takeLast(4))
     }
 
     /** Test-n-tune slip: this run against the best earlier run on the same tune. */

@@ -55,7 +55,39 @@ class Cloud(private val game: PixelStrip, enabled: Boolean) {
 
     private val authBase = if (emulator != null) "http://$emulator:9099/identitytoolkit.googleapis.com" else "https://identitytoolkit.googleapis.com"
     private val tokenBase = if (emulator != null) "http://$emulator:9099/securetoken.googleapis.com" else "https://securetoken.googleapis.com"
-    private val fnUrl = if (emulator != null) "http://$emulator:5001/$projectId/$region/sync" else "https://$region-$projectId.cloudfunctions.net/sync"
+    private fun fnUrl(name: String) = if (emulator != null) "http://$emulator:5001/$projectId/$region/$name" else "https://$region-$projectId.cloudfunctions.net/$name"
+    private val fnUrl = fnUrl("sync")
+    /** Realtime Database root; the emulator names a demo project's default database after the project. */
+    private val dbUrl = if (emulator != null) "http://$emulator:9000" else cfg?.getString("databaseURL", "") ?: ""
+    private val dbQuery = if (emulator != null) "ns=$projectId&" else ""
+
+    /** The signed-in account's id (null until the first sign-in). */
+    val accountId get() = uid
+
+    /** Calls a callable function; [then] gets its result, or null and the error message. */
+    fun call(name: String, data: JsonValue, then: (JsonValue?, String?) -> Unit) {
+        if (!configured) return then(null, "OFFLINE")
+        withToken { token ->
+            val body = JsonValue(JsonValue.ValueType.`object`).also { it.addChild("data", data) }
+            post(fnUrl(name), body.toJson(JsonWriter.OutputType.json), token) { code, res ->
+                val result = res?.get("result")
+                if (code == 200 && result != null) then(result, null)
+                else then(null, res?.get("error")?.getString("message", null) ?: "NETWORK ($code)")
+            }
+        }
+    }
+
+    /** Reads a Realtime Database path (null if missing, denied or unreachable). */
+    fun dbGet(path: String, then: (JsonValue?) -> Unit) {
+        val token = idToken ?: return then(null)
+        request(Net.HttpMethods.GET, "$dbUrl/$path.json?${dbQuery}auth=$token", null) { code, res -> then(if (code == 200) res else null) }
+    }
+
+    /** Writes a Realtime Database path (fire and forget). */
+    fun dbPut(path: String, value: JsonValue) {
+        val token = idToken ?: return
+        request(Net.HttpMethods.PUT, "$dbUrl/$path.json?${dbQuery}auth=$token", value.toJson(JsonWriter.OutputType.json)) { _, _ -> }
+    }
 
     /** Push pending entries (and pull the server's state) soon. Safe to call often. */
     fun requestSync() {
@@ -171,10 +203,13 @@ class Cloud(private val game: PixelStrip, enabled: Boolean) {
 
     // --- http ---------------------------------------------------------------------------------------
 
-    private fun post(url: String, content: String, bearer: String?, form: Boolean = false, then: (Int, JsonValue?) -> Unit) {
-        val req = Net.HttpRequest(Net.HttpMethods.POST)
+    private fun post(url: String, content: String, bearer: String?, form: Boolean = false, then: (Int, JsonValue?) -> Unit) =
+        request(Net.HttpMethods.POST, url, content, bearer, form, then)
+
+    private fun request(method: String, url: String, content: String?, bearer: String? = null, form: Boolean = false, then: (Int, JsonValue?) -> Unit) {
+        val req = Net.HttpRequest(method)
         req.url = url
-        req.content = content
+        content?.let { req.content = it }
         req.timeOut = 15_000
         req.setHeader("Content-Type", if (form) "application/x-www-form-urlencoded" else "application/json")
         bearer?.let { req.setHeader("Authorization", "Bearer $it") }

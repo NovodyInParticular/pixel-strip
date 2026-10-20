@@ -53,11 +53,12 @@ class Tree(art: Art, private val pro: Boolean = false) {
         staged[lane] = frontX >= STAGE_M && !gone
     }
 
-    fun start() {
+    /** [delay]: the starter's wait (online races share theirs through the room); random otherwise. */
+    fun start(delay: Float? = null) {
         if (running) return
         running = true
         clock = 0f
-        startDelay = MathUtils.random(0.7f, 1.6f)        // the starter makes you wait
+        startDelay = delay ?: MathUtils.random(0.7f, 1.6f)        // the starter makes you wait
         greenAt = startDelay + if (pro) 0.4f else 1.5f
     }
 

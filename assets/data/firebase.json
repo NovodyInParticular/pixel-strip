@@ -1,5 +1,6 @@
 {
   "projectId": "",
   "apiKey": "",
-  "region": "us-central1"
+  "region": "us-central1",
+  "databaseURL": ""
 }

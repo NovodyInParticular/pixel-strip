@@ -191,6 +191,25 @@ class Vehicle(val def: CarDef, private val powerScale: Float = 1f) {
         return true
     }
 
+    /**
+     * Online opponent: their car is shown from what their phone streams, not simulated here.
+     * [raceLeave] is their reaction time (null until they leave); [raceSplits] their splits so far.
+     */
+    fun puppet(x: Float, v: Float, rpm: Float, gear: Int, mode: Mode, raceLeave: Float?, raceSplits: FloatArray?, nitrous: Boolean) {
+        this.x = x
+        this.v = v
+        this.rpm = rpm
+        this.gear = gear.coerceIn(0, def.gears.size - 1)
+        this.mode = mode
+        slipSpeed = 0f
+        if (raceLeave != null && !hasLeft) {
+            hasLeft = true
+            leaveTime = raceLeave
+        }
+        raceSplits?.forEachIndexed { i, s -> if (i < splits.size && s >= 0f && splits[i] < 0f) { splits[i] = s; splitSpeed[i] = v } }
+        nitrousTime = if (nitrous) 1f else 0f
+    }
+
     /** Test and AI hooks: set the staged RPM and tyre temperature directly. */
     fun prime(stagedRpm: Float, temp: Float) {
         rpm = stagedRpm.coerceIn(def.idleRpm, def.redline)

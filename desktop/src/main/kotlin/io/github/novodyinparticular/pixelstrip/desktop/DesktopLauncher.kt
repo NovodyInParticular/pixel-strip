@@ -28,7 +28,8 @@ fun main(args: Array<String>) {
     val platform = object : Platform {
         override val isMobile = false
         // Desktop saves go to ~/.local/share/pixel-strip, never into the assets folder the game runs from
-        override fun saveFile(name: String) = Gdx.files.external(".local/share/pixel-strip/$name")
+        // -Dpixelstrip.profile=NAME keeps a separate save and account (two players on one machine)
+        override fun saveFile(name: String) = Gdx.files.external(".local/share/pixel-strip/" + (System.getProperty("pixelstrip.profile")?.let { "$it/" } ?: "") + name)
     }
     val car = args.indexOf("--car").takeIf { it >= 0 }?.let { args[it + 1] }
     Lwjgl3Application(PixelStrip(platform, shots, car), config)

@@ -45,7 +45,10 @@ Done so far:
 - Cloud save (Firebase): anonymous accounts, and every cash or garage change checked by the
   server (see below)
 
-Next: real-time multiplayer with server-checked races.
+- Online races (Firebase): matchmaking by build, the opponent shown live, and both runs
+  replayed by the server to decide the winner (see below)
+
+Next: bet and pink-slip races online.
 
 ### How to race
 
@@ -118,19 +121,39 @@ With `assets/data/firebase.json` left empty the game plays offline and just queu
    90% and 100%). A budget only emails you; it doesn't stop spending.
 3. **Build > Authentication > Get started > Sign-in method**: enable **Anonymous**.
 4. **Build > Firestore Database > Create database**, in production mode.
-5. **Project settings > General**: copy the Project ID and the Web API Key into
+5. **Build > Realtime Database > Create database**, in locked mode. Copy its URL
+   (`https://<project>-default-rtdb.firebaseio.com`) into `databaseURL` in
+   `assets/data/firebase.json`.
+6. **Project settings > General**: copy the Project ID and the Web API Key into
    `assets/data/firebase.json`. The key identifies the project; it isn't a secret.
-6. Deploy the function and the rules:
+7. Deploy the functions and both sets of rules:
 
    ```sh
    cd server
    npm install && npm --prefix functions install
    npx firebase login
    npx firebase use --add <project-id>
-   npx firebase deploy --only functions,firestore:rules
+   npx firebase deploy --only functions,firestore:rules,database
    ```
 
 Anonymous accounts live on the device: clearing the app's data starts a new account.
+
+### Online races
+
+ONLINE in the garage: the server rates your build with a perfect pass of its own and pairs you
+with someone close (the window widens the longer you wait). Each phone streams its car to the
+race room in the Realtime Database ten times a second, so you see the other car live; the tree
+starts when both are staged, after a delay the room shares. Every input your car got (throttle,
+brake, stage, launch, shifts, nitrous, by physics step) is recorded (`RunRecorder`), and when you
+finish the server replays it with its TypeScript port of the physics (`server/functions/src/physics`)
+on the car and tune it holds for the race. The replay's reaction time and ET decide the race; the
+phone's own times are never used. Both sides run `shared/physics_cases.json` (written by
+`PhysicsCasesTest`): the port agrees with the game within a few milliseconds.
+
+What the replay can't prove: the race clock at the launch comes from the phone (it depends on
+when the other car staged), so a modified client could claim a perfect light, and a bot could
+press the buttons perfectly. If the other side never finishes, the race goes to whoever did after
+150 s.
 
 ### Testing against the emulators
 
@@ -141,6 +164,13 @@ npm run e2e                     # sign-in, sync, refused cheats, closed Firestor
 npx firebase emulators:start --project demo-pixel-strip    # then run the desktop build with
 # JAVA_OPTS=-Dpixelstrip.emulator=127.0.0.1 to use the emulators instead of the real project
 ```
+
+Two players on one machine: add `-Dpixelstrip.profile=p1` (and `p2` for the second copy) so each
+keeps its own save and account. With `--screen online --shots DIR 4,40` the autoplay driver
+races, which is how an online race was tested end to end. The emulator doesn't apply
+`database.rules.json` to a demo project's database by itself; `npm run e2e` loads them, or
+`curl -X PUT -H "Authorization: Bearer owner" --data-binary @database.rules.json
+"http://127.0.0.1:9000/.settings/rules.json?ns=demo-pixel-strip"`.
 
 ## Desktop screenshot mode
 
