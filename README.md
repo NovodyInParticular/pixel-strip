@@ -63,7 +63,10 @@ Done so far:
 - XP and levels: career, online and tournament races earn XP; every level pays cash, through the
   ledger on both sides (see below)
 
-Next: daily rewards.
+- Daily rewards: a claim a day in the garage, a seven-day streak with growing cash (and XP on day
+  seven); the server's clock decides (see below)
+
+Next: cash packs (Play Billing).
 
 ### How to race
 
@@ -222,6 +225,14 @@ all (level 2 at 250, 10 at 11,250, 50 at 306,250) and pays $1,000 x (L-1). The n
 `ledger.ts addXp`), so the game and the server agree to the dollar; the shared ledger cases cross
 levels. Online and tournament XP is granted by the server only. The garage shows the level and
 the bar to the next; the first menu after a level-up shows the banner.
+
+### Daily rewards
+
+The garage pops up the reward when today's (UTC) is waiting. Claiming on consecutive days walks
+a seven-day cycle ($1,000 / 1,500 / 2,000 / 3,000 / 4,000 / 6,000 / 10,000, plus $200 per level;
+day seven adds 250 XP); a missed day starts it over. LATER hides it until the next launch. Only
+the server's clock and its record (`players/{uid}.daily`) count, so changing the phone's date
+does nothing. `server/functions/src/daily.ts`.
 
 ### Testing against the emulators
 

@@ -45,6 +45,40 @@ class GarageScreen(game: PixelStrip) : MenuScreen(game) {
     private val settings = button("SETTINGS", BTN_PURPLE, keys = intArrayOf(Input.Keys.S)) { game.go(0) { SettingsScreen(game) } }
 
     private val sell = button("SELL", Color(0.35f, 0.3f, 0.2f, 1f)) { sellTapped() }
+
+    // --- daily reward pop-up -------------------------------------------------------------------
+    private var daily: io.github.novodyinparticular.pixelstrip.net.Daily.Status? = null
+    private var dailyBusy = false
+    private var claimed: io.github.novodyinparticular.pixelstrip.net.Daily.Reward? = null
+    private var claimedTime = 0f
+    private val dailyOpen get() = daily?.ready == true && !game.dailyDismissed || claimedTime > 0f
+    private val claim = button("CLAIM", Color(0.2f, 0.55f, 0.3f, 1f), big = true, keys = intArrayOf(Input.Keys.ENTER)) { claimDaily() }
+    private val later = button("LATER", BTN_GREY, keys = intArrayOf(Input.Keys.ESCAPE)) { game.dailyDismissed = true }
+
+    init {
+        if (game.cloud.configured && !game.dailyDismissed) game.daily.fetch(false) { s, _ ->
+            daily = s
+            // desktop shots: -Dpixelstrip.daily=claim takes it
+            if (game.shots != null && System.getProperty("pixelstrip.daily") == "claim") claimDaily()
+        }
+    }
+
+    private fun claimDaily() {
+        if (dailyBusy || daily?.ready != true) return
+        dailyBusy = true
+        game.daily.fetch(true) { s, err ->
+            dailyBusy = false
+            if (s == null) {
+                daily = null
+                return@fetch
+            }
+            daily = s
+            claimed = s.claimed
+            claimedTime = 2.2f
+            flash = 0.7f
+            flashColor.set(YELLOW)
+        }
+    }
     private var confirmSell = 0f
 
     /** First tap asks, a second tap within 3 s sells. Your last car stays. */
@@ -77,9 +111,12 @@ class GarageScreen(game: PixelStrip) : MenuScreen(game) {
         flashColor.set(CYAN)
     }
 
-    override fun onBack() = game.go(0) { TitleScreen(game) }
+    override fun onBack() {
+        if (dailyOpen) game.dailyDismissed = true else game.go(0) { TitleScreen(game) }
+    }
 
     override fun layout(w: Int, h: Int) {
+        for (b in controls.buttons) b.visible = true        // the daily pop-up hides them; each frame starts from shown
         race.apply { x = w - 104f; y = 8f; this.w = 96f; this.h = 40f }
         quick.apply { x = w - 104f; y = 52f; this.w = 96f; this.h = 18f }
         testRun.apply { x = w - 104f; y = 74f; this.w = 96f; this.h = 18f; label = "TEST N TUNE" }
@@ -103,6 +140,10 @@ class GarageScreen(game: PixelStrip) : MenuScreen(game) {
             label = if (confirmSell > 0f) "SURE?" else "SELL"
         }
         next.apply { x = w / 2f + 74f; y = 52f; this.w = 22f; this.h = 22f; visible = save.cars.size > 1 }
+        claim.apply { x = w / 2f - 60f; y = h / 2f - 58f; this.w = 120f; this.h = 30f; visible = dailyOpen && claimedTime <= 0f }
+        later.apply { x = w / 2f + 70f; y = h / 2f - 52f; this.w = 54f; this.h = 18f; visible = dailyOpen && claimedTime <= 0f }
+        // while the reward is up, it's the only thing to press
+        if (dailyOpen) for (b in controls.buttons) if (b !== claim && b !== later) b.visible = false
     }
 
     private fun bgX(w: Int) = floor((w - bg.width) / 2f)
@@ -110,6 +151,7 @@ class GarageScreen(game: PixelStrip) : MenuScreen(game) {
     private fun lampX(w: Int, i: Int) = bgX(w) + LAMPS[i]
 
     override fun update(dt: Float) {
+        claimedTime = (claimedTime - dt).coerceAtLeast(0f)
         if (showcase != null) {
             zoom = 3.2f
             focusX = post.width / 2f
@@ -160,6 +202,40 @@ class GarageScreen(game: PixelStrip) : MenuScreen(game) {
         stage.drawGlow(def, w / 2f, GROUND)
     }
 
+    /** The daily reward pop-up: drawn last under the buttons, so CLAIM and LATER sit on top. */
+    private fun drawDaily(w: Int, h: Int) {
+        if (!dailyOpen) return
+        val s = daily ?: return
+        // the rest of the screen dims behind the pop-up
+        batch.setColor(0f, 0f, 0.02f, 0.6f)
+        batch.draw(white, 0f, 0f, w.toFloat(), h.toFloat())
+        batch.color = Color.WHITE
+        val pw = 7 * 52f + 16f
+        val px = w / 2f - pw / 2f
+        val py = h / 2f - 68f
+        panel(px, py, pw, 140f, YELLOW, 0.96f)
+        font.drawCentered(batch, "DAILY REWARD", w / 2f, py + 120f, YELLOW, 2)
+        font.drawCentered(batch, if (s.streak > 1) "${s.streak} DAYS IN A ROW" else "COME BACK TOMORROW TO BUILD A STREAK", w / 2f, py + 106f, SOFT)
+        s.week.forEachIndexed { i, r ->
+            val day = i + 1
+            val x = px + 8f + i * 52f
+            val today = day == s.day
+            val past = day < s.day || (day == s.day && !s.ready)
+            batch.setColor(if (today) 0.35f else 0.1f, if (today) 0.3f else 0.09f, if (today) 0.08f else 0.18f, 0.95f)
+            batch.draw(white, x, py + 46f, 48f, 50f)
+            batch.color = if (today) YELLOW else if (past) GREEN else BTN_GREY
+            batch.draw(white, x, py + 95f, 48f, 1f)
+            batch.color = Color.WHITE
+            font.drawCentered(batch, "DAY $day", x + 24f, py + 84f, if (today) YELLOW else SOFT)
+            font.drawCentered(batch, "$" + if (r.cash >= 10_000) "${r.cash / 1000}K" else "%,d".format(r.cash), x + 24f, py + 66f, if (past) GREEN else Color.WHITE)
+            if (r.xp > 0) font.drawCentered(batch, "+${r.xp} XP", x + 24f, py + 54f, CYAN)
+            if (past) font.drawCentered(batch, "OK", x + 24f, py + 54f, GREEN)
+        }
+        claimed?.takeIf { claimedTime > 0f }?.let { c ->
+            font.drawCentered(batch, "+$" + "%,d".format(c.cash) + if (c.xp > 0) "  +${c.xp} XP" else "", w / 2f, py + 20f, GREEN, 2)
+        }
+    }
+
     override fun drawUi(w: Int, h: Int) {
         if (showcase != null) return
         font.draw(batch, def.brand.uppercase(), 8f, h - 14f, CYAN)
@@ -175,6 +251,7 @@ class GarageScreen(game: PixelStrip) : MenuScreen(game) {
             panel(w / 2f - font.width(text) / 2f - 6f, h / 2f + 40f, font.width(text) + 12f, 16f, YELLOW, 0.92f)
             font.drawCentered(batch, text, w / 2f, h / 2f + 45f, YELLOW, 1, null)
         }
+        drawDaily(w, h)
     }
 
     companion object {

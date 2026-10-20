@@ -9,6 +9,7 @@ export { cancelMatch, confirmWager, matchmake, raceResult, submitRun } from "./r
 export { createCrew, crewHome, editCrew, joinCrew, leaveCrew, manageMember, setName } from "./crews";
 export { enterTournament, tournamentRun, tournaments } from "./tournaments";
 export { leaderboard } from "./leaderboards";
+export { daily } from "./daily";
 
 initializeApp();
 const db = getFirestore();

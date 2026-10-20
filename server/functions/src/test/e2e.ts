@@ -89,6 +89,7 @@ async function main() {
   await crews();
   await tournaments();
   await leaderboards();
+  await dailyRewards();
   console.log("e2e: all checks passed");
 }
 
@@ -386,4 +387,34 @@ async function leaderboards() {
   // the crews test ends with its crew disbanded, so only the board's shape can be checked here
   assert.ok(Array.isArray(crews.rows) && crews.rows.every((c: any) => c.wins >= 1 && c.tag), "crews with a win this week");
   assert.equal((await call("leaderboard", { board: "et", cls: "ROCKET" }, token)).status, 400);
+}
+
+/** Daily rewards: once a day, a streak that grows on consecutive days and resets after a gap. */
+async function dailyRewards() {
+  const s = await json(`${auth}/identitytoolkit.googleapis.com/v1/accounts:signUp?key=emulator`, { returnSecureToken: true });
+  const token: string = s.body.idToken;
+  const uid: string = s.body.localId;
+  await call("sync", { base: 0, entries: [], legacy: { cash: 0, beaten: [], cars: [{ uid: "c1", car: "kite", paint: 0, parts: {}, cosmetics: {} }] } }, token);
+  const cash = async () => (await call("sync", { entries: [] }, token)).body.result.state.cash;
+  const look = (await call("daily", {}, token)).body.result;
+  assert.equal(look.ready, true);
+  assert.equal(look.day, 1);
+  assert.equal(look.week.length, 7);
+  assert.equal(await cash(), 0, "looking claims nothing");
+  const first = (await call("daily", { claim: true }, token)).body.result;
+  assert.equal(first.claimed.cash, look.week[0].cash);
+  assert.equal(await cash(), first.claimed.cash);
+  assert.equal((await call("daily", { claim: true }, token)).status, 409, "once a day");
+  // pretend the last claim was yesterday, then three days ago
+  const day = (offset: number) => new Date(Date.now() - offset * 86_400_000).toISOString().slice(0, 10);
+  const setDaily = (last: string, streak: number) => fetch(`${firestore}/v1/projects/${project}/databases/(default)/documents/players/${uid}?updateMask.fieldPaths=daily`, {
+    method: "PATCH", headers: { Authorization: "Bearer owner", "Content-Type": "application/json" },
+    body: JSON.stringify({ fields: { daily: { mapValue: { fields: { last: { stringValue: last }, streak: { integerValue: String(streak) } } } } } }),
+  });
+  await setDaily(day(1), 6);
+  const seventh = (await call("daily", { claim: true }, token)).body.result;
+  assert.equal(seventh.day, 7, "a streak continues from yesterday");
+  assert.equal(seventh.claimed.xp, 250, "day seven gives XP");
+  await setDaily(day(3), 9);
+  assert.equal((await call("daily", { claim: true }, token)).body.result.day, 1, "a missed day starts over");
 }

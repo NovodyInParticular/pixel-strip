@@ -51,6 +51,9 @@ class PixelStrip(val platform: Platform, val shots: ShotPlan? = null, private va
     lateinit var cloud: io.github.novodyinparticular.pixelstrip.net.Cloud
         private set
     val tournaments by lazy { io.github.novodyinparticular.pixelstrip.net.Tournaments(cloud) }
+    val daily by lazy { io.github.novodyinparticular.pixelstrip.net.Daily(cloud) }
+    /** The daily reward was waved off (LATER) this session: don't ask again until the game restarts. */
+    var dailyDismissed = false
 
     /**
      * Every change to cash or the garage goes through here: checked by the ledger rules, applied,
