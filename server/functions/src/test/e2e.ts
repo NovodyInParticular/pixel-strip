@@ -254,6 +254,9 @@ async function crews() {
   assert.equal((await call("createCrew", { name: "Copycats", tag: "NR", emblem }, b.token)).status, 409, "tags are unique");
   const crewId = (await home(a)).crew.id;
   assert.equal((await home(a)).crew.members[a.uid].role, "leader");
+  await call("sync", { entries: [] }, a.token);
+  assert.equal((await home(a)).crew?.id, crewId, "a garage sync keeps the crew");
+  assert.equal((await home(a)).name, "NIGHT OWL", "and the name");
   assert.ok((await home(b)).list.some((cr: any) => cr.id === crewId), "open crews are listed");
   for (const p of [b, c]) assert.equal((await call("joinCrew", { crewId }, p.token)).status, 200);
   assert.equal((await call("joinCrew", { crewId }, b.token)).status, 400, "one crew at a time");

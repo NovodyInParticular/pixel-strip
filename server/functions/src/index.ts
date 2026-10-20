@@ -70,7 +70,8 @@ export const sync = onCall({ maxInstances: 10, enforceAppCheck: false }, async (
       created: doc?.created ?? now,
       updated: now,
     };
-    tx.set(ref, next);
+    // only the ledger's own fields: the doc also holds the player's name and crew (crews.ts)
+    tx.set(ref, next, { mergeFields: ["state", "seq", "profile", "imported", "created", "updated"] });
     return { state, seq, rejected, profile: doc?.profile ?? null };
   });
 });
