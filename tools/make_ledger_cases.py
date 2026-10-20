@@ -13,6 +13,17 @@ CARS = R["cars"]
 RIV = {r["id"]: r for r in R["rivals"]}
 START = R["startingCash"]
 GAP = R["minRaceGapMs"]
+X = R["xp"]
+WIN, LOSS, BOSS = X["careerWin"], X["careerLoss"], X["bossBonus"]
+
+
+def level_cash(xp):
+    """Cash paid for every level crossed on the way to [xp]: level L needs step*(L-1)*L/2, pays cash*(L-1)."""
+    paid, level = 0, 1
+    while level < X["maxLevel"] and xp >= X["levelStep"] * level * (level + 1) // 2:
+        level += 1
+        paid += X["levelCash"] * (level - 1)
+    return paid
 
 
 def start(car="kite", t=1000):
@@ -62,11 +73,13 @@ case("rematch pays half",
 case("a loss pays nothing but still counts for spacing",
      [start(), race("dash", 10000, won=False), race("dash", 11000)], refused=[2], cash=START, beaten=[])
 boss = [start(), race("dash", 10000), race("kat", 20000), race("tiny", 30000), race("joe", 40000)]
-boss_cash = START + sum(RIV[r]["payout"] for r in ["dash", "kat", "tiny", "joe"])
+boss_xp = 4 * WIN + BOSS
+boss_cash = START + sum(RIV[r]["payout"] for r in ["dash", "kat", "tiny", "joe"]) + level_cash(boss_xp)
 joe = RIV["joe"]
 case("first boss win gives the boss car with its parts", boss, cash=boss_cash,
-     beaten=["dash", "kat", "tiny", "joe"], cars=[kite(), kite("c2", joe["parts"], joe["car"], joe["paint"])])
-case("boss car only the first time", boss + [race("joe", 50000)], cash=boss_cash + joe["payout"] // 2,
+     beaten=["dash", "kat", "tiny", "joe"], cars=[kite(), kite("c2", joe["parts"], joe["car"], joe["paint"])], xp=boss_xp)
+case("boss car only the first time", boss + [race("joe", 50000)],
+     cash=boss_cash + joe["payout"] // 2 + level_cash(boss_xp + WIN) - level_cash(boss_xp), xp=boss_xp + WIN,
      cars=[kite(), kite("c2", joe["parts"], joe["car"])])
 
 
@@ -117,6 +130,13 @@ case("Joe's AWD conversion only fits his EF", boss + [part("drive", 1), part("dr
 case("unknown things are refused",
      [start(), {"type": "gift", "t": 2000}, part("rocket", 1), {"type": "part", "t": 2000, "uid": "c9", "slot": "intake", "opt": 1},
       race("nobody", 10000)], refused=[1, 2, 3, 4], cash=START)
+
+rematches = [start()] + [race("dash", 10000 + i * GAP) for i in range(8)]
+case("XP: a win, a loss, and levels paying cash as each threshold is crossed",
+     rematches + [race("dash", 10000 + 8 * GAP, won=False)],
+     cash=START + dash["payout"] + 7 * (dash["payout"] // 2) + level_cash(8 * WIN + LOSS), xp=8 * WIN + LOSS)
+case("XP: a refused race earns nothing", [start(), race("kat", 10000)], refused=[1], cash=START, xp=0)
+assert level_cash(8 * WIN + LOSS) == 1000 + 2000, "825 XP is level 3: 1,000 for level 2 and 2,000 for level 3"
 
 (ROOT / "shared/ledger_cases.json").write_text(json.dumps(cases, indent=1) + "\n")
 print(len(cases), "cases")

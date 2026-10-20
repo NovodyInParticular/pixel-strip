@@ -166,6 +166,7 @@ class GarageScreen(game: PixelStrip) : MenuScreen(game) {
         font.draw(batch, def.name.uppercase(), 8f, h - 30f, Color.WHITE, 2)
         font.draw(batch, def.year.toString(), 8f, h - 42f, SOFT)
         classBadge(game.effective(owned), 40f, h - 42f)
+        levelBadge(8f, h - 56f)
         cash(w - 8f, h - 20f)
         font.draw(batch, "${index + 1}/${save.cars.size}", w - 8f - font.width("${index + 1}/${save.cars.size}"), h - 32f, SOFT)
         carStats(game.effective(owned), w - 144f, 98f)

@@ -2059,5 +2059,16 @@
 		"cosmetics": { "finish": 4, "rims": 1, "wing": 3 }
 	}
 ],
-"minRaceGapMs": 6000
+"minRaceGapMs": 6000,
+"xp": {
+	"careerWin": 100,
+	"careerLoss": 25,
+	"bossBonus": 250,
+	"onlineWin": 150,
+	"onlineLoss": 40,
+	"tournamentRun": 30,
+	"levelStep": 250,
+	"levelCash": 1000,
+	"maxLevel": 50
+}
 }

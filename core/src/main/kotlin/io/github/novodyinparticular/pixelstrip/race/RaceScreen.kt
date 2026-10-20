@@ -121,11 +121,17 @@ class RaceScreen(
         val won = playerWon()
         val cash = save.cash
         val cars = save.cars.size
+        val xpBefore = save.xp
+        val levelBefore = game.level
         if (!game.commit(Entry("race", game.now(), uid = owned.uid, rival = r.id, won = won, pink = pinkSlip))) return
-        payout = save.cash - cash
+        xpGained = save.xp - xpBefore
+        // the purse alone: any level-up cash is the banner's to announce
+        payout = save.cash - cash - (levelBefore + 1..game.level).sumOf { game.rules.xp.levelCash * (it - 1) }
         lostCar = save.cars.size < cars
         wonPrize = save.cars.size > cars
     }
+    /** XP this race earned (career: from the ledger; online and tournaments: the server's numbers). */
+    private var xpGained = 0L
     private val playerMotion = CarMotion()
     private val ghostMotion = CarMotion()
 
@@ -848,6 +854,7 @@ class RaceScreen(
         }
         if (slowMo && !playerFoul) notes.add("MARGIN %.4f S".format(abs(playerFinish - ghostFinish)))
         if (payout > 0) notes.add("PURSE  $" + "%,d".format(payout))
+        if (xpGained > 0) notes.add("+$xpGained XP")
         if (wonPrize) notes.add("PINK SLIP: ${game.car(rival!!.carId).name.uppercase()}")
         if (lostCar) notes.add("LOST: ${carDef.name.uppercase()}")
         hud.drawTimeslip(batch, w, h, "${track.name.uppercase()} DRAGWAY", lines, notes, stamp, color, phaseTime / 1.2f,
@@ -884,6 +891,7 @@ class RaceScreen(
             else -> "LOST  $" + "%,d".format(o.wager.amount)
         })
         if (r?.off == true && !o.wager.none) notes.add("STAKES RETURNED")
+        if (r != null && !r.off) notes.add("+${if (r.won) game.rules.xp.onlineWin else game.rules.xp.onlineLoss} XP")
         val (stamp, color) = when {
             r == null -> "..." to Hud.INK_FAINT
             r.off -> "OFF" to Hud.INK_FAINT
@@ -916,7 +924,7 @@ class RaceScreen(
             tError != null -> notes.add("SERVER: ${tError!!.uppercase().take(28)}")
             r == null -> notes.add("SERVER CHECKING YOUR PASS...")
             else -> {
-                notes.add("VERIFIED BY THE SERVER")
+                notes.add("VERIFIED BY THE SERVER" + if (r.et != null && r.rt != null && !r.red) "  +${game.rules.xp.tournamentRun} XP" else "")
                 notes.add(if (r.runsLeft > 0) "${r.runsLeft} RUN${if (r.runsLeft == 1) "" else "S"} LEFT TODAY" else "THAT WAS YOUR LAST RUN")
             }
         }

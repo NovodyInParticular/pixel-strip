@@ -185,7 +185,7 @@ class OnlineRace(private val cloud: Cloud, val raceId: String, room: JsonValue) 
         val prize = j.get("prize")
         result = Result(j.getString("winner") == me.uid, j.getBoolean("forfeit", false), run(runs?.get(me.uid)), run(runs?.get(them.uid)),
             prizeCash = prize?.getLong("cash", 0) ?: 0, prizeCar = prize?.getString("car", null))
-        if (!wager.none) cloud.requestSync()          // the server moved cash or a car: take its garage
+        cloud.requestSync()          // the server added XP (and moved any stakes): take its garage
     }
 
     companion object {

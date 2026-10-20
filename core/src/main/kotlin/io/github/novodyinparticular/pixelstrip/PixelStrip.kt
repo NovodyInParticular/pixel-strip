@@ -46,6 +46,8 @@ class PixelStrip(val platform: Platform, val shots: ShotPlan? = null, private va
         private set
     lateinit var rules: io.github.novodyinparticular.pixelstrip.save.Rules
         private set
+    /** The player's level, from their XP. */
+    val level get() = rules.xp.levelOf(save.xp)
     lateinit var cloud: io.github.novodyinparticular.pixelstrip.net.Cloud
         private set
     val tournaments by lazy { io.github.novodyinparticular.pixelstrip.net.Tournaments(cloud) }

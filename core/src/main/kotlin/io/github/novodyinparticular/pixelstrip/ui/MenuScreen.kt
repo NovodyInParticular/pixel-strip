@@ -119,6 +119,7 @@ abstract class MenuScreen(protected val game: PixelStrip) : ScreenAdapter() {
         drawUi(w, h)
         controls.draw(batch)
         drawUiOver(w, h)
+        drawLevelUp(w, h, dt)
         batch.setBlendFunctionSeparate(GL20.GL_SRC_ALPHA, GL20.GL_ONE, GL20.GL_ZERO, GL20.GL_ONE)
         controls.drawGlow(batch)
         batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
@@ -247,6 +248,59 @@ abstract class MenuScreen(protected val game: PixelStrip) : ScreenAdapter() {
             font.draw(batch, "1/4  %.2f @ %s".format(pass.quarter, trap), x + 6f, y + 14f, YELLOW, 1, null)
         }
         font.draw(batch, "${def.drivetrain}  ${def.gears.size}-SPD  ${peakHp(def).toInt()} HP", x + 6f, y + 4f, SOFT, 1, null)
+    }
+
+    private var bannerLevel = 0
+    private var bannerCash = 0L
+    private var bannerTime = 0f
+
+    /** LEVEL UP: shown on the first menu after XP (from anywhere: career, online, tournaments) crosses a level. */
+    private fun drawLevelUp(w: Int, h: Int, dt: Float) {
+        val save = game.save
+        val level = game.level
+        if (level > save.levelSeen && bannerTime <= 0f && !game.transitioning) {
+            bannerCash = (save.levelSeen + 1..level).sumOf { game.rules.xp.levelCash * (it - 1) }
+            bannerLevel = level
+            bannerTime = 3.2f
+            save.levelSeen = level
+            save.write()
+            flash = 0.8f
+            flashColor.set(YELLOW)
+            game.audio.play(io.github.novodyinparticular.pixelstrip.audio.Sfx.Kind.CHIME)
+        }
+        if (bannerTime <= 0f) return
+        bannerTime -= dt
+        val pop = ((3.2f - bannerTime) * 6f).coerceAtMost(1f)
+        val bw = 220f * pop
+        panel(w / 2f - bw / 2f, h / 2f - 26f, bw, 52f, YELLOW, 0.95f)
+        if (pop < 1f) return
+        font.drawCentered(batch, "LEVEL UP!", w / 2f, h / 2f + 6f, YELLOW, 2)
+        font.drawCentered(batch, "LV $bannerLevel   +$" + "%,d".format(bannerCash), w / 2f, h / 2f - 14f, Color.WHITE)
+    }
+
+    /** Level badge and the bar to the next level. */
+    protected fun levelBadge(x: Float, y: Float) {
+        val xr = game.rules.xp
+        val level = game.level
+        val text = "LV $level"
+        val tw = font.width(text) + 8f
+        batch.setColor(0.35f, 0.3f, 0.08f, 0.95f)
+        batch.draw(white, x, y - 2f, tw, 11f)
+        batch.color = YELLOW
+        batch.draw(white, x, y + 8f, tw, 1f)
+        batch.color = Color.WHITE
+        font.draw(batch, text, x + 4f, y, YELLOW, 1, null)
+        if (level >= xr.maxLevel) return
+        val from = xr.threshold(level)
+        val to = xr.threshold(level + 1)
+        val t = ((game.save.xp - from).toFloat() / (to - from)).coerceIn(0f, 1f)
+        val bx = x + tw + 4f
+        batch.setColor(0.15f, 0.13f, 0.05f, 0.9f)
+        batch.draw(white, bx, y + 1f, 60f, 5f)
+        batch.color = YELLOW
+        batch.draw(white, bx, y + 1f, floor(60f * t), 5f)
+        batch.color = Color.WHITE
+        font.draw(batch, "${game.save.xp - from}/${to - from} XP", bx + 64f, y, SOFT, 1, null)
     }
 
     private var shownCash = -1L

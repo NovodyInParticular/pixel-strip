@@ -62,6 +62,7 @@ class Tournaments(private val cloud: Cloud) {
         data.addChild("events", recorder.toJson())
         cloud.call("tournamentRun", data) { r, err ->
             if (r == null) return@call then(null, err ?: "FAILED")
+            cloud.requestSync()        // a clean pass earns XP on the server
             val run = r.get("run")
             then(RunResult(num(run?.get("et")), run?.getFloat("mph", 0f) ?: 0f, num(run?.get("rt")), run?.getBoolean("red", false) ?: false,
                 best(r.get("best")), r.getInt("runsLeft", 0), r.getBoolean("newBest", false)), null)

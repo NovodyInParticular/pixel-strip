@@ -91,6 +91,13 @@ object Ledger {
         return i == 0 || (i > 0 && r.rivals[i - 1].id in s.beaten)
     }
 
+    /** Adds XP; each level crossed pays its cash. */
+    fun addXp(r: Rules, s: SaveGame, n: Long) {
+        val before = r.xp.levelOf(s.xp)
+        s.xp += n
+        for (l in before + 1..r.xp.levelOf(s.xp)) s.cash += r.xp.levelCash * (l - 1)
+    }
+
     /** Applies [e] to [s] if the rules allow it. Returns false, and changes nothing, if they don't. */
     fun apply(r: Rules, s: SaveGame, e: Entry): Boolean {
         val car = e.uid?.let { u -> s.cars.firstOrNull { it.uid == u } }
@@ -162,9 +169,11 @@ object Ledger {
                 s.lastRaceT = e.t
                 if (!e.won) {
                     if (e.pink && s.cars.size > 1) s.removeCar(car.uid)
+                    addXp(r, s, r.xp.careerLoss)
                     return true
                 }
                 val first = rival.id !in s.beaten
+                addXp(r, s, r.xp.careerWin + if (rival.boss && first) r.xp.bossBonus else 0)
                 s.cash += if (e.pink) 0L else if (first) rival.payout else rival.payout / 2
                 s.beaten.add(rival.id)
                 if (rival.boss && first || e.pink) {

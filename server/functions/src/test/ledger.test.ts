@@ -22,6 +22,7 @@ test("shared ledger cases (same file as core LedgerTest)", () => {
     const want = c.expect;
     assert.deepEqual(refused, want.refused, `${c.name}: refused`);
     if (want.cash !== undefined) assert.equal(s.cash, want.cash, `${c.name}: cash`);
+    if (want.xp !== undefined) assert.equal(s.xp ?? 0, want.xp, `${c.name}: xp`);
     if (want.beaten !== undefined) assert.deepEqual(s.beaten, want.beaten, `${c.name}: beaten`);
     if (want.cars !== undefined) {
       assert.equal(s.cars.length, want.cars.length, `${c.name}: car count`);

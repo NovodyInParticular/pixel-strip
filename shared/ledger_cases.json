@@ -347,7 +347,7 @@
    }
   ],
   "expect": {
-   "cash": 29000,
+   "cash": 30000,
    "beaten": [
     "dash",
     "kat",
@@ -380,6 +380,7 @@
      "paint": 12
     }
    ],
+   "xp": 650,
    "refused": []
   }
  },
@@ -433,7 +434,8 @@
    }
   ],
   "expect": {
-   "cash": 35000,
+   "cash": 38000,
+   "xp": 750,
    "cars": [
     {
      "uid": "c1",
@@ -509,7 +511,7 @@
    }
   ],
   "expect": {
-   "cash": 46940,
+   "cash": 47940,
    "cars": [
     {
      "uid": "c1",
@@ -1055,7 +1057,7 @@
    }
   ],
   "expect": {
-   "cash": 14000,
+   "cash": 15000,
    "refused": [
     5
    ]
@@ -1103,6 +1105,118 @@
     2,
     3,
     4
+   ]
+  }
+ },
+ {
+  "name": "XP: a win, a loss, and levels paying cash as each threshold is crossed",
+  "entries": [
+   {
+    "type": "start",
+    "t": 1000,
+    "car": "kite"
+   },
+   {
+    "type": "race",
+    "t": 10000,
+    "uid": "c1",
+    "rival": "dash",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "race",
+    "t": 16000,
+    "uid": "c1",
+    "rival": "dash",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "race",
+    "t": 22000,
+    "uid": "c1",
+    "rival": "dash",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "race",
+    "t": 28000,
+    "uid": "c1",
+    "rival": "dash",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "race",
+    "t": 34000,
+    "uid": "c1",
+    "rival": "dash",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "race",
+    "t": 40000,
+    "uid": "c1",
+    "rival": "dash",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "race",
+    "t": 46000,
+    "uid": "c1",
+    "rival": "dash",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "race",
+    "t": 52000,
+    "uid": "c1",
+    "rival": "dash",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "race",
+    "t": 58000,
+    "uid": "c1",
+    "rival": "dash",
+    "won": false,
+    "pink": false
+   }
+  ],
+  "expect": {
+   "cash": 21500,
+   "xp": 825,
+   "refused": []
+  }
+ },
+ {
+  "name": "XP: a refused race earns nothing",
+  "entries": [
+   {
+    "type": "start",
+    "t": 1000,
+    "car": "kite"
+   },
+   {
+    "type": "race",
+    "t": 10000,
+    "uid": "c1",
+    "rival": "kat",
+    "won": true,
+    "pink": false
+   }
+  ],
+  "expect": {
+   "cash": 5000,
+   "xp": 0,
+   "refused": [
+    1
    ]
   }
  }

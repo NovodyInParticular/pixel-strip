@@ -60,7 +60,10 @@ Done so far:
 - Leaderboards: the quickest server-checked ETs per class and distance, the most online wins and
   the top crews, this week or all time (see below)
 
-Next: XP and levels.
+- XP and levels: career, online and tournament races earn XP; every level pays cash, through the
+  ledger on both sides (see below)
+
+Next: daily rewards.
 
 ### How to race
 
@@ -209,6 +212,16 @@ only runs the server replayed count (online races, tournament passes), each appe
 are looked up when a board is read, so a rename shows straight away. Production needs the
 composite index in `server/firestore.indexes.json` (deployed with the rules).
 `server/functions/src/leaderboards.ts`.
+
+### XP and levels
+
+Career wins give 100 XP (a boss's first defeat 250 more), losses 25; online races 150 for a win
+and 40 for a loss; tournament passes 30 each when clean. Level L takes 250 x (L-1) x L / 2 XP in
+all (level 2 at 250, 10 at 11,250, 50 at 306,250) and pays $1,000 x (L-1). The numbers live in
+`rules.json` (`xp`), and the level-up cash is paid by the ledger itself (`Ledger.addXp` /
+`ledger.ts addXp`), so the game and the server agree to the dollar; the shared ledger cases cross
+levels. Online and tournament XP is granted by the server only. The garage shows the level and
+the bar to the next; the first menu after a level-up shows the banner.
 
 ### Testing against the emulators
 

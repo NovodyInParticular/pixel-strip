@@ -32,12 +32,34 @@ export interface Rules {
   decalColorPrice: number;
   rivals: RivalRule[];
   minRaceGapMs: number;
+  xp: XpRule;
+}
+
+/** XP for races and the levels it buys (Rules.XpRule in the game): level L takes levelStep*(L-1)*L/2 in all, pays levelCash*(L-1). */
+export interface XpRule {
+  careerWin: number; careerLoss: number; bossBonus: number; onlineWin: number; onlineLoss: number;
+  tournamentRun: number; levelStep: number; levelCash: number; maxLevel: number;
+}
+
+export const threshold = (x: XpRule, level: number) => (x.levelStep * (level - 1) * level) / 2;
+
+export function levelOf(x: XpRule, xp: number): number {
+  let l = 1;
+  while (l < x.maxLevel && xp >= threshold(x, l + 1)) l++;
+  return l;
+}
+
+/** Adds XP; each level crossed pays its cash. */
+export function addXp(r: Rules, s: State, n: number) {
+  const before = levelOf(r.xp, s.xp ?? 0);
+  s.xp = (s.xp ?? 0) + n;
+  for (let l = before + 1; l <= levelOf(r.xp, s.xp); l++) s.cash += r.xp.levelCash * (l - 1);
 }
 
 /** parts: slot -> fitted option; owned: slot -> bitmask of options bought for this car. */
 export interface Car { uid: string; car: string; paint: number; parts: Record<string, number>; cosmetics: Record<string, number>; owned: Record<string, number> }
 /** staked: cars on the line in an online pink-slip race (server only: they can't be sold or lost elsewhere). */
-export interface State { cash: number; nextUid: number; lastRaceT: number; beaten: string[]; cars: Car[]; staked?: string[] }
+export interface State { cash: number; xp?: number; nextUid: number; lastRaceT: number; beaten: string[]; cars: Car[]; staked?: string[] }
 
 const isStaked = (s: State, uid: string) => (s.staked ?? []).includes(uid);
 
@@ -56,7 +78,7 @@ export interface Entry {
 }
 
 export function emptyState(): State {
-  return { cash: 0, nextUid: 1, lastRaceT: 0, beaten: [], cars: [] };
+  return { cash: 0, xp: 0, nextUid: 1, lastRaceT: 0, beaten: [], cars: [] };
 }
 
 const has = (o: object, k: string | undefined): k is string => k !== undefined && Object.prototype.hasOwnProperty.call(o, k);
@@ -201,9 +223,11 @@ export function apply(r: Rules, s: State, e: Entry): boolean {
       s.lastRaceT = e.t;
       if (!e.won) {
         if (e.pink && s.cars.length > 1) removeCar(s, car.uid);
+        addXp(r, s, r.xp.careerLoss);
         return true;
       }
       const first = !s.beaten.includes(rival.id);
+      addXp(r, s, r.xp.careerWin + (rival.boss && first ? r.xp.bossBonus : 0));
       s.cash += e.pink ? 0 : first ? rival.payout : Math.floor(rival.payout / 2);
       if (first) s.beaten.push(rival.id);
       if ((rival.boss && first) || e.pink) {

@@ -11,8 +11,8 @@ import { FieldValue, getFirestore } from "firebase-admin/firestore";
 import { HttpsError, onCall } from "firebase-functions/v2/https";
 import { SPLITS_M } from "./physics/consts";
 import { perfectPass, replay } from "./physics/vehicle";
-import { Car, State } from "./ledger";
-import { effective, sanitizeEvents, START_X, TRACKS } from "./race";
+import { addXp, Car, State } from "./ledger";
+import { effective, rules, sanitizeEvents, START_X, TRACKS } from "./race";
 import { handleOf } from "./crews";
 import { classFor } from "./classes";
 import { recordRun } from "./leaderboards";
@@ -190,6 +190,7 @@ export const tournamentRun = onCall({ maxInstances: 10 }, async (req) => {
   const entryRef = tRef(ev.id).collection("entries").doc(uid);
   return db().runTransaction(async (tx) => {
     const entry = await tx.get(entryRef);
+    const player = await tx.get(playerRef(uid));
     if (!entry.exists) throw new HttpsError("failed-precondition", "enter first");
     const e = entry.data()!;
     if (e.runs >= MAX_RUNS) throw new HttpsError("resource-exhausted", "no runs left");
@@ -201,6 +202,11 @@ export const tournamentRun = onCall({ maxInstances: 10 }, async (req) => {
     const better = run.et !== null && run.rt !== null && (!best || run.et < best.et);
     const next = better ? { et: run.et!, mph: run.mph, rt: run.rt!, at: now } : best;
     tx.update(entryRef, { runs: e.runs + 1, best: next, last: { ...run, at: now } });
+    if (run.et !== null && run.rt !== null && player.exists) {
+      const state = player.data()!.state as State;
+      addXp(rules, state, rules.xp.tournamentRun);
+      tx.update(player.ref, { state });
+    }
     if (run.et !== null && run.rt !== null) {
       recordRun(tx, { uid, et: run.et, mph: run.mph, car: e.car, paint: e.paint ?? 0, at: now, cls: p.cls, dist: "quarter", track: ev.track, src: "tournament" });
     }

@@ -54,6 +54,7 @@ class LedgerTest {
             val name = c.getString("name")
             assertEquals(want.get("refused").asIntArray().toList(), refused, "$name: refused entries")
             want.get("cash")?.let { assertEquals(it.asLong(), save.cash, "$name: cash") }
+            want.get("xp")?.let { assertEquals(it.asLong(), save.xp, "$name: xp") }
             want.get("beaten")?.let { assertEquals(it.asStringArray().toList(), save.beaten.toList(), "$name: beaten") }
             want.get("cars")?.let { cars ->
                 assertEquals(cars.size, save.cars.size, "$name: car count")

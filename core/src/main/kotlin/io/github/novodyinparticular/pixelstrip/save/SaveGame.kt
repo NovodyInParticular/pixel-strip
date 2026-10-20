@@ -51,6 +51,8 @@ data class RunRecord(val tune: String, val quarter: Boolean, val et: Float, val 
  */
 class SaveGame(private val file: FileHandle) {
     var cash = 0L
+    /** Experience: career, online and tournament races add it; levels pay cash (Rules.XpRule). */
+    var xp = 0L
     val cars = ArrayList<OwnedCar>()
     var selected: String? = null
     /** Career rivals beaten at least once (ids from career.json). */
@@ -60,6 +62,8 @@ class SaveGame(private val file: FileHandle) {
     var lastRaceT = 0L
     /** Ledger entries applied here but not yet confirmed by the server. */
     val pending = ArrayList<Entry>()
+    /** The highest level the player has been shown the LEVEL UP banner for (local only). */
+    var levelSeen = 1
     /** How many entries the server has accepted for this account (0 = never synced). */
     var serverSeq = 0L
     /** A save from before the ledger existed: its first sync imports it as a snapshot. */
@@ -88,7 +92,9 @@ class SaveGame(private val file: FileHandle) {
         root.addChild("serverSeq", JsonValue(serverSeq))
         root.addChild("legacy", JsonValue(legacy))
         root.addChild("pending", JsonValue(JsonValue.ValueType.array).also { a -> pending.forEach { a.addChild(it.toJson()) } })
+        root.addChild("levelSeen", JsonValue(levelSeen.toLong()))
         root.addChild("cash", JsonValue(cash))
+        root.addChild("xp", JsonValue(xp))
         root.addChild("nextUid", JsonValue(nextUid.toLong()))
         selected?.let { root.addChild("selected", JsonValue(it)) }
         val list = JsonValue(JsonValue.ValueType.array)
@@ -145,6 +151,7 @@ class SaveGame(private val file: FileHandle) {
     fun economicState(): JsonValue {
         val o = JsonValue(JsonValue.ValueType.`object`)
         o.addChild("cash", JsonValue(cash))
+        o.addChild("xp", JsonValue(xp))
         o.addChild("nextUid", JsonValue(nextUid.toLong()))
         o.addChild("lastRaceT", JsonValue(lastRaceT))
         o.addChild("beaten", JsonValue(JsonValue.ValueType.array).also { a -> beaten.forEach { a.addChild(JsonValue(it)) } })
@@ -170,6 +177,7 @@ class SaveGame(private val file: FileHandle) {
         val old = cars.associateBy { it.uid }
         val fromProfile = profile?.let { load(file, it).cars.associateBy { c -> c.uid } } ?: emptyMap()
         cash = state.getLong("cash")
+        xp = state.getLong("xp", 0)
         nextUid = state.getInt("nextUid")
         lastRaceT = state.getLong("lastRaceT", 0)
         beaten.clear()
@@ -253,6 +261,8 @@ class SaveGame(private val file: FileHandle) {
         fun load(file: FileHandle, root: JsonValue): SaveGame {
             val save = SaveGame(file)
             save.cash = root.getLong("cash", 0)
+            save.xp = root.getLong("xp", 0)
+            save.levelSeen = root.getInt("levelSeen", 1)
             save.lastRaceT = root.getLong("lastRaceT", 0)
             save.serverSeq = root.getLong("serverSeq", 0)
             root.get("pending")?.forEach { save.pending.add(Entry.from(it)) }

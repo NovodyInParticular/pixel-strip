@@ -31,7 +31,26 @@ class Rules(
     val rivals: List<RivalRule>,
     /** Two career races can't finish closer together than this (staging + the run itself). */
     val minRaceGapMs: Long,
+    val xp: XpRule,
 ) {
+    /**
+     * XP for races, and the levels it buys: reaching level L takes levelStep * (L-1) * L / 2 XP in
+     * all and pays levelCash * (L-1). Online and tournament XP is granted by the server alone.
+     */
+    class XpRule(
+        val careerWin: Long, val careerLoss: Long, val bossBonus: Long, val onlineWin: Long, val onlineLoss: Long,
+        val tournamentRun: Long, val levelStep: Long, val levelCash: Long, val maxLevel: Int,
+    ) {
+        /** Total XP to reach [level]. */
+        fun threshold(level: Int): Long = levelStep * (level - 1) * level / 2
+
+        fun levelOf(xp: Long): Int {
+            var l = 1
+            while (l < maxLevel && xp >= threshold(l + 1)) l++
+            return l
+        }
+    }
+
     /** [parts]: slot -> price of options 1..n on this car. */
     class CarRule(val price: Long, val sell: Long, val dealer: Boolean, val paint: Int, val drivetrain: String, val parts: Map<String, List<Long>>)
     /** [options] counts the factory part; [requires]: option -> any one of (slot, min option). */
@@ -98,6 +117,17 @@ class Rules(
             }
         }))
         root.addChild("minRaceGapMs", JsonValue(minRaceGapMs))
+        root.addChild("xp", obj().also { o ->
+            o.addChild("careerWin", JsonValue(xp.careerWin))
+            o.addChild("careerLoss", JsonValue(xp.careerLoss))
+            o.addChild("bossBonus", JsonValue(xp.bossBonus))
+            o.addChild("onlineWin", JsonValue(xp.onlineWin))
+            o.addChild("onlineLoss", JsonValue(xp.onlineLoss))
+            o.addChild("tournamentRun", JsonValue(xp.tournamentRun))
+            o.addChild("levelStep", JsonValue(xp.levelStep))
+            o.addChild("levelCash", JsonValue(xp.levelCash))
+            o.addChild("maxLevel", JsonValue(xp.maxLevel.toLong()))
+        })
         return root.prettyPrint(JsonWriter.OutputType.json, 120) + "\n"
     }
 
@@ -136,6 +166,8 @@ class Rules(
             decalColorPrice = DECAL_COLOR_PRICE,
             rivals = career.rivals.map { r -> RivalRule(r.id, r.payout, r.boss, r.carId, r.paint, r.parts, r.cosmetics) },
             minRaceGapMs = 6000L,
+            xp = XpRule(careerWin = 100, careerLoss = 25, bossBonus = 250, onlineWin = 150, onlineLoss = 40, tournamentRun = 30,
+                levelStep = 250, levelCash = 1000, maxLevel = 50),
         )
 
         const val DECAL_COLOR_PRICE = 500L
@@ -170,6 +202,10 @@ class Rules(
                         ints(r.get("parts")), ints(r.get("cosmetics")))
                 },
                 minRaceGapMs = j.getLong("minRaceGapMs"),
+                xp = j.get("xp").let { x ->
+                    XpRule(x.getLong("careerWin"), x.getLong("careerLoss"), x.getLong("bossBonus"), x.getLong("onlineWin"), x.getLong("onlineLoss"),
+                        x.getLong("tournamentRun"), x.getLong("levelStep"), x.getLong("levelCash"), x.getInt("maxLevel"))
+                },
             )
         }
     }

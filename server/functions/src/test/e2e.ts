@@ -143,7 +143,9 @@ async function onlineRace() {
   const def = apply(parseCar(JSON.parse(readFileSync(join(root, "assets/data/cars/vandal.json"), "utf8"))),
     parseCatalog(JSON.parse(readFileSync(join(root, "assets/data/parts.json"), "utf8"))), {}, {}, null);
   const local = replay(def, clean.events, { trackGrip: grip, startX: clean.startX, finishM: clean.finishM }).splits[4];
-  assert.ok(Math.abs(runA.body.result.run.et - local) < 1e-9, `the server's replay is the physics port's: ${runA.body.result.run.et} vs ${local}`);
+  // a pass that didn't finish (a slippery random track) is null from the server, -1 from replay()
+  const serverEt = runA.body.result.run.et ?? -1;
+  assert.ok(Math.abs(serverEt - local) < 1e-9, `the server's replay is the physics port's: ${serverEt} vs ${local}`);
   if (grip === clean.trackGrip) assert.ok(Math.abs(runA.body.result.run.et - clean.expect.splits[4]) < 0.01, "and the game's, on the same surface");
   assert.equal(runA.body.result.result, null, "not settled until both are in");
   assert.equal((await call("submitRun", { raceId, events: clean.events }, a.token)).status, 409, "one run each");
@@ -334,6 +336,9 @@ async function tournaments() {
   assert.equal(run2.best.et, run1.best.et);
   for (let i = 0; i < 3; i++) await call("tournamentRun", { id, events: clean }, a.token);
   assert.equal((await call("tournamentRun", { id, events: clean }, a.token)).status, 429, "five runs, then done");
+  const garage = (await call("sync", { entries: [] }, a.token)).body.result.state;
+  assert.equal(garage.xp, 4 * 30, "XP for each clean pass, none for the red light");
+  assert.equal(garage.cash, 100_000 - 4_000, "not a level yet: no level-up cash");
 
   const list = (await call("tournaments", {}, a.token)).body.result;
   const sport = list.today.find((t: any) => t.id === id);
