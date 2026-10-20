@@ -2,10 +2,12 @@
   "name": "pixel-strip-functions",
   "private": true,
   "main": "lib/index.js",
-  "engines": { "node": "22" },
+  "engines": {
+    "node": "22"
+  },
   "scripts": {
-    "build": "tsc && cp ../../assets/data/rules.json lib/rules.json",
-    "test": "npm run build && node --test lib/test/ledger.test.js"
+    "build": "tsc && cp ../../assets/data/rules.json lib/rules.json && rm -rf lib/data && mkdir -p lib/data/tracks && cp -r ../../assets/data/cars lib/data/cars && cp ../../assets/data/parts.json lib/data/ && cp ../../assets/data/tracks/*.json lib/data/tracks/",
+    "test": "npm run build && node --test lib/test/ledger.test.js lib/test/physics.test.js"
   },
   "dependencies": {
     "firebase-admin": "14.5.0",

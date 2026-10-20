@@ -83,6 +83,12 @@ class Vehicle(val def: CarDef, private val powerScale: Float = 1f) {
     private var surface = DEFAULT_PREP
     private var clock = 0f
 
+    /** Set before the first step to record everything this car is told (online races). */
+    var recorder: RunRecorder? = null
+    /** Physics steps taken so far. */
+    var steps = 0
+        private set
+
     /** Turbo boost 0..1: spools up with RPM and time. */
     var boost = 0f
         private set
@@ -105,12 +111,14 @@ class Vehicle(val def: CarDef, private val powerScale: Float = 1f) {
 
     /** Wet burnout box: front brakes on, driven wheels free to spin. */
     fun startBurnout() {
+        recorder?.command(steps, "burnout")
         mode = Mode.BURNOUT
         surface = BURNOUT_SURFACE
         gear = 0
     }
 
     fun creepTo(targetX: Float) {
+        recorder?.command(steps, "stage")
         mode = Mode.CREEP
         surface = trackGrip
         creepTarget = targetX
@@ -124,6 +132,7 @@ class Vehicle(val def: CarDef, private val powerScale: Float = 1f) {
     /** Dump the clutch from the current (staged) RPM. [rate] = false skips the rating (simulations). */
     fun launch(raceClock: Float, rate: Boolean = true) {
         if (mode != Mode.HELD) return
+        recorder?.command(steps, "launch", raceClock)
         clock = raceClock
         mode = Mode.LAUNCH
         clutch = 0f
@@ -152,6 +161,7 @@ class Vehicle(val def: CarDef, private val powerScale: Float = 1f) {
 
     fun shift() {
         if (gear >= def.gears.size - 1 || (mode != Mode.DRIVE && mode != Mode.LAUNCH)) return
+        recorder?.command(steps, "shift")
         val opt = shiftPoints[gear]
         val d = (rpm - opt) / opt
         val r = when {
@@ -174,6 +184,7 @@ class Vehicle(val def: CarDef, private val powerScale: Float = 1f) {
     fun nitrous(): Boolean {
         if (nitrousCharges <= 0 || nitrousActive || def.nitrous.hp <= 0f) return false
         if (mode != Mode.DRIVE && mode != Mode.SHIFT && mode != Mode.LAUNCH) return false
+        if (!autoSpray) recorder?.command(steps, "nos")
         nitrousCharges--
         nitrousTime = def.nitrous.seconds
         events.add(Event.NitrousOn)
@@ -265,11 +276,19 @@ class Vehicle(val def: CarDef, private val powerScale: Float = 1f) {
         boost += (target - boost) * minOf(1f, rate * 3f)
     }
 
+    private var autoSpray = false
+
     fun step(dt: Float) {
+        recorder?.observe(steps, throttle, brake)
+        steps++
         clock += dt
         transferAccel += (accel - transferAccel) * min(1f, dt * def.transferRate / TRANSFER_TAU)
         spool(dt)
-        if (def.nitrousAutoGear > 0 && hasLeft && mode == Mode.DRIVE && gear + 1 >= def.nitrousAutoGear) nitrous()
+        if (def.nitrousAutoGear > 0 && hasLeft && mode == Mode.DRIVE && gear + 1 >= def.nitrousAutoGear) {
+            autoSpray = true            // the tune does this; the replay will too
+            nitrous()
+            autoSpray = false
+        }
         if (nitrousActive) {
             nitrousTime -= dt
             if (nitrousTime <= 0f) events.add(Event.NitrousOff)

@@ -1,0 +1,22 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "matches": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid"
+      }
+    },
+    "races": {
+      "$race": {
+        ".read": "auth != null && data.child('players').child(auth.uid).exists()",
+        "live": {
+          "$uid": {
+            ".write": "auth != null && auth.uid === $uid && root.child('races').child($race).child('players').child(auth.uid).exists()",
+            ".validate": "newData.hasChildren(['x', 'v', 't']) && newData.child('x').isNumber() && newData.child('v').isNumber() && newData.child('t').isNumber()"
+          }
+        }
+      }
+    }
+  }
+}
