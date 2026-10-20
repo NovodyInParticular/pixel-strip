@@ -7,6 +7,7 @@ import { apply, emptyState, Entry, importLegacy, Rules, sanitize, State } from "
 
 export { cancelMatch, confirmWager, matchmake, raceResult, submitRun } from "./race";
 export { createCrew, crewHome, editCrew, joinCrew, leaveCrew, manageMember, setName } from "./crews";
+export { enterTournament, tournamentRun, tournaments } from "./tournaments";
 
 initializeApp();
 const db = getFirestore();

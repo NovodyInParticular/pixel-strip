@@ -48,6 +48,7 @@ class PixelStrip(val platform: Platform, val shots: ShotPlan? = null, private va
         private set
     lateinit var cloud: io.github.novodyinparticular.pixelstrip.net.Cloud
         private set
+    val tournaments by lazy { io.github.novodyinparticular.pixelstrip.net.Tournaments(cloud) }
 
     /**
      * Every change to cash or the garage goes through here: checked by the ledger rules, applied,
@@ -171,6 +172,7 @@ class PixelStrip(val platform: Platform, val shots: ShotPlan? = null, private va
         "vs" -> io.github.novodyinparticular.pixelstrip.ui.VsScreen(this, career.rivals.first { it.id == "joe" })
         "online" -> io.github.novodyinparticular.pixelstrip.ui.OnlineScreen(this)
         "crew" -> io.github.novodyinparticular.pixelstrip.ui.CrewScreen(this)
+        "tournament" -> io.github.novodyinparticular.pixelstrip.ui.TournamentScreen(this)
         "boss" -> career.rivals.first { it.id == "joe" }.let { RaceScreen(this, it.track, save.selectedCar()!!, rival = it) }
         null -> if (shots != null) RaceScreen(this, System.getProperty("pixelstrip.track") ?: "neon_city", save.selectedCar()!!) else TitleScreen(this)
         else -> TitleScreen(this)

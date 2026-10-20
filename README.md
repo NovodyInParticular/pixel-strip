@@ -51,7 +51,13 @@ Done so far:
 - Bets and pink slips online: cash stakes of any size you can cover, or the car you race;
   both players accept, the server holds the stakes and pays the winner (see below)
 
-Next: crews.
+- Crews: up to 20 racers under a name, a 2-4 character tag and a pixel emblem (worn on the door
+  with the CREW decal); leaders, officers and members; online wins fight a weekly war for the
+  six districts (see below)
+- Tournaments: a daily time trial per class with an entry fee, five server-checked passes, a
+  live leaderboard, and the top ten splitting the pool (see below)
+
+Next: leaderboards.
 
 ### How to race
 
@@ -170,6 +176,26 @@ after 150 s. A negative balance (say, after a refunded purchase) blocks betting.
 logged in Firestore under `wagers/{raceId}`. The money logic is plain functions in
 `server/functions/src/wager.ts` with their own tests; the e2e test plays a cash race, a declined
 and a won pink slip, and the refusals.
+
+### Crews
+
+CREW in the garage. Without a crew: open crews (this week's strongest first), or find one by
+tag, or found your own (name, tag, emblem: shape, three colours, icon). In one: the roster with
+roles and each member's best online run; leaders edit the emblem and open or close the door,
+leaders and officers manage members. Every online win scores for the winner's crew in the
+district (track) it was raced on; whoever has the most wins there this ISO week holds it on the
+war map. `server/functions/src/crews.ts`, with unit tests and an e2e pass.
+
+### Tournaments
+
+TOURNEY in the garage. Each UTC day every class (Street, Sport, Pro, Outlaw) has a quarter-mile
+time trial on a track picked by the date. Enter with a car the server rates in that class; the
+fee ($1k / $4k / $15k / $50k) goes into a pool the house seeds with ten fees. You get five passes,
+each replayed by the server with the car as entered, and your best clean ET counts (ties: the
+earlier run). After midnight UTC the first call settles it once: 40/20/12/8/6/5/3/2/2/2 percent
+of the pool to the top ten (fewer finishers split it all), credited to their garages.
+`server/functions/src/tournaments.ts`; the e2e test enters, races, hits the run limit and checks
+a payout.
 
 ### Testing against the emulators
 

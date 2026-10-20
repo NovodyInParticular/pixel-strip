@@ -87,6 +87,7 @@ async function main() {
   await onlineRace();
   await wagers();
   await crews();
+  await tournaments();
   console.log("e2e: all checks passed");
 }
 
@@ -273,13 +274,15 @@ async function crews() {
   const m = (await call("matchmake", { car: "c1" }, x.token)).body.result;
   assert.equal(m.room.players[a.uid].crew.tag, "NR", "the crew tag rides along to the race");
   assert.equal(m.room.players[a.uid].name, "NIGHT OWL");
-  await call("submitRun", { raceId: m.raceId, events: clean }, a.token);
+  const won = (await call("submitRun", { raceId: m.raceId, events: clean }, a.token)).body.result.run;
   await call("submitRun", { raceId: m.raceId, events: red }, x.token);
   const after = await home(a);
   assert.equal(after.crew.score, 1, "a point for the week");
   assert.equal(after.crew.districts[m.room.track], 1, "in the district raced in");
   assert.equal(after.map[m.room.track].tag, "NR", "they hold it on the war map");
-  assert.ok(after.crew.members[a.uid].best?.et > 0, "and the winner's car goes up in the HQ");
+  // the track is random: on a slippery one the recorded pass may not finish (no ET, nothing to show)
+  if (won.et) assert.ok(after.crew.members[a.uid].best?.et > 0, "and the winner's car goes up in the HQ");
+  else assert.equal(after.crew.members[a.uid].best ?? null, null, "no finished run, no showcase");
 
   // the leader leaves: the officer leads; the last one out frees the tag
   await call("leaveCrew", {}, a.token);
@@ -292,3 +295,68 @@ main().catch((e) => {
   console.error(e);
   process.exit(1);
 });
+
+/** Tournaments: the class check, the fee, replayed runs keeping the best, the board, and a payout. */
+async function tournaments() {
+  const { readFileSync } = await import("node:fs");
+  const { join } = await import("node:path");
+  const cases = JSON.parse(readFileSync(join(__dirname, "../../../../shared/physics_cases.json"), "utf8"));
+  const clean = cases.find((c: any) => c.name === "vandal stock").events;
+  const red = cases.find((c: any) => c.name === "red light").events;
+  const player = async (cash: number) => {
+    const s = await json(`${auth}/identitytoolkit.googleapis.com/v1/accounts:signUp?key=emulator`, { returnSecureToken: true });
+    const token: string = s.body.idToken;
+    await call("sync", { base: 0, entries: [], legacy: { cash, beaten: [], cars: [{ uid: "c1", car: "vandal", paint: 0, parts: {}, cosmetics: {} }] } }, token);
+    return { token, uid: s.body.localId as string };
+  };
+  const cashOf = async (p: { token: string }) => (await call("sync", { entries: [] }, p.token)).body.result.state.cash;
+  const day = new Date().toISOString().slice(0, 10);
+  const a = await player(100_000);
+
+  const wrong = await call("enterTournament", { id: `${day}-STREET`, car: "c1" }, a.token);
+  assert.equal(wrong.status, 400);
+  assert.match(wrong.body.error.message, /rates SPORT/, "a stock Vandal is a SPORT car");
+  assert.equal((await call("enterTournament", { id: "2001-01-01-SPORT", car: "c1" }, a.token)).status, 400, "only today's");
+  const id = `${day}-SPORT`;
+  const entered = await call("enterTournament", { id, car: "c1" }, a.token);
+  assert.equal(entered.status, 200, JSON.stringify(entered.body));
+  assert.equal(await cashOf(a), 100_000 - 4_000, "the fee comes out of the garage");
+  assert.equal((await call("enterTournament", { id, car: "c1" }, a.token)).status, 409, "one entry each");
+
+  const run1 = (await call("tournamentRun", { id, events: clean }, a.token)).body.result;
+  assert.ok(run1.run.et > 12 && run1.run.et < 15, `replayed ET ${run1.run.et}`);
+  assert.equal(run1.newBest, true);
+  assert.equal(run1.runsLeft, 4);
+  const run2 = (await call("tournamentRun", { id, events: red }, a.token)).body.result;
+  assert.equal(run2.run.red, true);
+  assert.equal(run2.newBest, false, "a red light never counts");
+  assert.equal(run2.best.et, run1.best.et);
+  for (let i = 0; i < 3; i++) await call("tournamentRun", { id, events: clean }, a.token);
+  assert.equal((await call("tournamentRun", { id, events: clean }, a.token)).status, 429, "five runs, then done");
+
+  const list = (await call("tournaments", {}, a.token)).body.result;
+  const sport = list.today.find((t: any) => t.id === id);
+  assert.equal(sport.mine.rank, 1);
+  assert.equal(sport.pool, 4_000 * 10 + 4_000, "the house seed plus the fee");
+  assert.equal(sport.board[0].uid, a.uid);
+
+  // yesterday's STREET tournament, finished: the first call after midnight pays it out
+  const b = await player(0);
+  const c = await player(0);
+  const y = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+  const doc = (path: string, fields: Record<string, unknown>) => fetch(`${firestore}/v1/projects/${project}/databases/(default)/documents/${path}`, {
+    method: "PATCH", headers: { Authorization: "Bearer owner", "Content-Type": "application/json" }, body: JSON.stringify({ fields }),
+  });
+  const best = (et: number) => ({ mapValue: { fields: { et: { doubleValue: et }, mph: { doubleValue: 110 }, rt: { doubleValue: 0.1 }, at: { integerValue: "1" } } } });
+  await doc(`tournaments/${y}-STREET`, { pool: { integerValue: "90000" }, entrants: { integerValue: "2" }, settled: { nullValue: null } });
+  await doc(`tournaments/${y}-STREET/entries/${b.uid}`, { name: { stringValue: "B" }, car: { stringValue: "vandal" }, best: best(14.2) });
+  await doc(`tournaments/${y}-STREET/entries/${c.uid}`, { name: { stringValue: "C" }, car: { stringValue: "vandal" }, best: best(14.1) });
+  const after = (await call("tournaments", {}, b.token)).body.result;
+  const street = after.yesterday.find((t: any) => t.cls === "STREET");
+  assert.ok(street.settled, "settled");
+  assert.deepEqual(street.results.map((r: any) => [r.name, r.prize]), [["C", 60_000], ["B", 30_000]]);
+  assert.equal(await cashOf(c), 60_000);
+  assert.equal(await cashOf(b), 30_000);
+  await call("tournaments", {}, c.token);
+  assert.equal(await cashOf(c), 60_000, "paid once");
+}

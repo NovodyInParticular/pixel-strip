@@ -43,6 +43,8 @@ class RaceScreen(
     private val pinkSlip: Boolean = false,
     /** Another player in the far lane, streamed live; the server replays both runs to decide it. */
     private val online: io.github.novodyinparticular.pixelstrip.net.OnlineRace? = null,
+    /** A timed tournament pass: solo over the quarter mile, replayed and scored by the server. */
+    private val tournament: io.github.novodyinparticular.pixelstrip.net.Tournaments.Event? = null,
 ) : ScreenAdapter() {
     private enum class Phase { BURNOUT, STAGING, COUNTDOWN, RACING, PHOTO, FINISHED }
 
@@ -127,7 +129,9 @@ class RaceScreen(
     private val playerMotion = CarMotion()
     private val ghostMotion = CarMotion()
 
-    private var quarter = online?.quarter ?: rival?.let { game.career.tierOf(it).quarter } ?: false
+    /** Nobody in the far lane: test-n-tune and tournament passes. */
+    private val solo = test || tournament != null
+    private var quarter = online?.quarter ?: rival?.let { game.career.tierOf(it).quarter } ?: (tournament != null)
     private val distanceM get() = if (quarter) Vehicle.SPLITS_M[4] else Vehicle.SPLITS_M[2]
     private val finishSplit get() = if (quarter) 4 else 2
 
@@ -170,7 +174,7 @@ class RaceScreen(
         wonPrize = false
         cheered = false
         autoPlayer = if (shots != null) AutoDriver(player, skill = 0.9f, trackGrip = player.trackGrip).apply { burnoutTime = 2.2f } else null
-        if (online != null) player.recorder = RunRecorder()
+        if (online != null || tournament != null) player.recorder = RunRecorder()
         player.x = BURNOUT_X
         ghost.x = BURNOUT_X
         player.startBurnout()
@@ -219,12 +223,12 @@ class RaceScreen(
             Phase.BURNOUT -> "STAGE"
             Phase.STAGING, Phase.COUNTDOWN -> "LAUNCH"
             Phase.RACING, Phase.PHOTO -> "SHIFT"
-            Phase.FINISHED -> if (online != null) "LOBBY" else if (rival == null) "AGAIN" else if (wonPrize) "CLAIM" else "MAP"
+            Phase.FINISHED -> if (online != null) "LOBBY" else if (tournament != null) "BOARD" else if (rival == null) "AGAIN" else if (wonPrize) "CLAIM" else "MAP"
         }
         actionButton.visible = phase != Phase.STAGING && phase != Phase.PHOTO
         nosButton.visible = phase == Phase.RACING && player.def.nitrous.charges > 0 && player.hasLeft
         nosButton.label = "NOS x${player.nitrousCharges}"
-        distButton.visible = phase == Phase.BURNOUT && rival == null && online == null
+        distButton.visible = phase == Phase.BURNOUT && rival == null && online == null && tournament == null
         distButton.label = if (quarter) "1/4 MILE" else "1/8 MILE"
         gasButton.visible = phase != Phase.FINISHED && phase != Phase.PHOTO
         garageButton.apply { x = w - 78f; y = 10f; this.w = 68f; this.h = 22f; visible = phase == Phase.FINISHED || phase == Phase.BURNOUT && !gasButton.down }
@@ -244,7 +248,9 @@ class RaceScreen(
         val dt = realDt * timeScale
         tree.update(dt)
         if (garageButton.justPressed && !game.transitioning && shots == null) {
-            if (rival != null) game.go(0) { io.github.novodyinparticular.pixelstrip.ui.CareerScreen(game) } else game.go(2) { GarageScreen(game) }
+            if (rival != null) game.go(0) { io.github.novodyinparticular.pixelstrip.ui.CareerScreen(game) }
+            else if (tournament != null) game.go(0) { io.github.novodyinparticular.pixelstrip.ui.TournamentScreen(game, tournament.id) }
+            else game.go(2) { GarageScreen(game) }
             return
         }
         if (distButton.justPressed) {
@@ -273,6 +279,8 @@ class RaceScreen(
                 val r = rival
                 if (online != null) {
                     if (!game.transitioning) game.go(0) { io.github.novodyinparticular.pixelstrip.ui.OnlineScreen(game) }
+                } else if (tournament != null) {
+                    if (!game.transitioning) game.go(0) { io.github.novodyinparticular.pixelstrip.ui.TournamentScreen(game, tournament.id) }
                 } else if (r == null) newRace() else if (!game.transitioning) {
                     if (wonPrize) game.go(2) { io.github.novodyinparticular.pixelstrip.ui.PrizeScreen(game, r) }
                     else game.go(0) { io.github.novodyinparticular.pixelstrip.ui.CareerScreen(game) }
@@ -293,17 +301,17 @@ class RaceScreen(
             while (accumulator >= STEP) {
                 accumulator -= STEP
                 player.step(STEP)
-                if (!test && online == null) ghost.step(STEP)
+                if (!solo && online == null) ghost.step(STEP)
             }
         }
         afterPhysics(dt, realDt)
     }
 
     private fun updateGhost(dt: Float) {
-        if (test) ghost.x = Tree.STAGE_M
-        if (!test) ghost.throttle = ghostDriver.update(dt, tree.staged[0], tree.raceClock, tree.running)
-        if (test && ghost.mode != Vehicle.Mode.HELD) ghost.hold()
-        if (!test && ghostDriver.wantsStage && ghost.mode == Vehicle.Mode.BURNOUT) ghost.creepTo(Tree.STAGE_M)
+        if (solo) ghost.x = Tree.STAGE_M
+        if (!solo) ghost.throttle = ghostDriver.update(dt, tree.staged[0], tree.raceClock, tree.running)
+        if (solo && ghost.mode != Vehicle.Mode.HELD) ghost.hold()
+        if (!solo && ghostDriver.wantsStage && ghost.mode == Vehicle.Mode.BURNOUT) ghost.creepTo(Tree.STAGE_M)
         if (ghostDriver.wantsLaunch && ghost.mode == Vehicle.Mode.HELD && tree.green) ghost.launch(tree.raceClock)
         if (ghostDriver.wantsShift) ghost.shift()
         if (ghostDriver.wantsNitrous) ghost.nitrous()
@@ -344,6 +352,13 @@ class RaceScreen(
 
         if (phase == Phase.FINISHED && rival != null && !settled) settleCareer()
         if (phase == Phase.FINISHED && online != null) player.recorder?.let { online.submit(it) }
+        if (phase == Phase.FINISHED && tournament != null && !tSent) player.recorder?.let { rec ->
+            tSent = true
+            game.tournaments.submit(tournament.id, rec) { r, err ->
+                tResult = r
+                tError = err
+            }
+        }
         handleEvents(player, playerMotion, 0, true)
         handleEvents(ghost, ghostMotion, 1, false)
         updateFinish()
@@ -351,7 +366,7 @@ class RaceScreen(
         // Sound: both engines from the live physics, the crowd with the action, music under it all
         val audio = game.audio
         audio.engine(0, player, owned.parts["exhaust"] ?: 0, 0.9f)
-        if (!test) audio.engine(1, ghost, rivalCar?.parts?.get("exhaust") ?: 0, 0.5f) else audio.synth.engines[1].active = false
+        if (!solo) audio.engine(1, ghost, rivalCar?.parts?.get("exhaust") ?: 0, 0.5f) else audio.synth.engines[1].active = false
         audio.synth.crowd = if (phase == Phase.RACING) 0.25f + 0.6f * min(1f, player.v / 40f) else 0.15f
         audio.music(if (rival?.boss == true) "boss" else track.song, if (phase == Phase.RACING) 0.12f else 0.3f)
         audio.synth.rain = if (track.weather == "rain") 0.5f else 0f
@@ -392,7 +407,7 @@ class RaceScreen(
         val playerDone = player.splits[finishSplit] >= 0f
         val ghostDone = ghost.splits[finishSplit] >= 0f || (online != null && online.silence > io.github.novodyinparticular.pixelstrip.net.OnlineRace.GONE_S)
         val lead = max(player.x, ghost.x)
-        if (!test && !slowMo && !playerFoul && player.hasLeft && ghost.hasLeft && distanceM - lead in 0f..7f && abs(player.x - ghost.x) < PHOTO_GAP_M) {
+        if (!solo && !slowMo && !playerFoul && player.hasLeft && ghost.hasLeft && distanceM - lead in 0f..7f && abs(player.x - ghost.x) < PHOTO_GAP_M) {
             slowMo = true
         }
         timeScale += ((if (slowMo) 0.22f else 1f) - timeScale) * 0.25f
@@ -409,7 +424,7 @@ class RaceScreen(
             timeScale = 1f
             popFlash(Color.WHITE, 0.9f)                      // the camera fires
             buzz(30)
-        } else if (playerDone && (ghostDone || test || player.x > distanceM + 40f)) {
+        } else if (playerDone && (ghostDone || solo || player.x > distanceM + 40f)) {
             timeScale = 1f
             setPhase(Phase.FINISHED)
             if (test && !playerFoul) {
@@ -593,7 +608,7 @@ class RaceScreen(
         drawFlame(ghost, ghostView, ghostX, farGround, 1)
         if (realOpponent) {
             ghostView.draw(batch, ghostX, farGround, t, pitch = ghostMotion.pitch, ambient = track.ambient, lights = lights, shakeX = shakeX, shakeY = shakeY)
-        } else if (!test) ghostView.draw(batch, ghostX, farGround, t, ghost = 0.62f, pitch = ghostMotion.pitch)
+        } else if (!solo) ghostView.draw(batch, ghostX, farGround, t, ghost = 0.62f, pitch = ghostMotion.pitch)
         tree.draw(batch, treeX, treeY)
         drawFlame(player, playerView, playerX, nearGround, 0)
         playerView.draw(batch, playerX, nearGround, t, pitch = playerMotion.pitch, lift = playerMotion.lift,
@@ -687,7 +702,7 @@ class RaceScreen(
         batch.flush()
         // the hologram ghost (and the empty test lane) cast no reflection
         for ((view, x, ground, skip) in listOf(
-            Quad(ghostView, ghostX, farGround, !realOpponent || test), Quad(playerView, playerX, nearGround, false))) {
+            Quad(ghostView, ghostX, farGround, !realOpponent || solo), Quad(playerView, playerX, nearGround, false))) {
             if (skip) continue
             val m = batch.transformMatrix.cpy()
             batch.transformMatrix = m.cpy().translate(0f, ground * 2f - 2f, 0f).scale(1f, -1f, 1f)
@@ -807,6 +822,7 @@ class RaceScreen(
 
     private fun drawSlip(w: Int, h: Int) {
         if (test) return drawTestSlip(w, h)
+        if (tournament != null) return drawTournamentSlip(w, h, tournament)
         if (online != null) return drawOnlineSlip(w, h, online)
         val unit = if (game.settings.metric) "KMH" else "MPH"
         val lines = ArrayList<Hud.SlipLine>()
@@ -876,6 +892,42 @@ class RaceScreen(
             else -> "LOSS" to Hud.RED
         }
         hud.drawTimeslip(batch, w, h, "${track.name.uppercase()} ONLINE", lines, notes, stamp, color, phaseTime / 1.2f, them = o.them.name.takeLast(4))
+    }
+
+    private var tSent = false
+    private var tResult: io.github.novodyinparticular.pixelstrip.net.Tournaments.RunResult? = null
+    private var tError: String? = null
+
+    /** Tournament slip: the server's replay of this pass, against your best so far. */
+    private fun drawTournamentSlip(w: Int, h: Int, t: io.github.novodyinparticular.pixelstrip.net.Tournaments.Event) {
+        val unit = if (game.settings.metric) "KMH" else "MPH"
+        val r = tResult
+        val before = t.mine?.entry?.best
+        fun mph(v: Float) = if (game.settings.metric) "%.1f".format(v * 1.60934f) else "%.2f".format(v)
+        val lines = arrayListOf(
+            Hud.SlipLine("R/T", r?.rt?.let { "%.3f".format(it) } ?: fmt(player.leaveTime), before?.let { "%.3f".format(it.rt) } ?: "-"),
+            Hud.SlipLine("60'", fmt(player.splits[0]), "-"),
+            Hud.SlipLine("1/4 ET", r?.let { it.et?.let { e -> fmt(e) } ?: "-" } ?: fmt(player.splits[4]), before?.let { fmt(it.et) } ?: "-"),
+            Hud.SlipLine(unit, r?.let { if (it.et != null) mph(it.mph) else "-" } ?: speedOf(player.splitSpeed[4]), before?.let { mph(it.mph) } ?: "-"),
+        )
+        val notes = arrayListOf("${t.cls} TOURNAMENT")
+        player.ratings.firstOrNull()?.let { notes.add("LAUNCH  ${it.name}") }
+        when {
+            tError != null -> notes.add("SERVER: ${tError!!.uppercase().take(28)}")
+            r == null -> notes.add("SERVER CHECKING YOUR PASS...")
+            else -> {
+                notes.add("VERIFIED BY THE SERVER")
+                notes.add(if (r.runsLeft > 0) "${r.runsLeft} RUN${if (r.runsLeft == 1) "" else "S"} LEFT TODAY" else "THAT WAS YOUR LAST RUN")
+            }
+        }
+        val (stamp, color) = when {
+            r == null && tError == null -> "..." to Hud.INK_FAINT
+            r?.red == true || (r == null && playerFoul) -> "RED LIGHT" to Hud.RED
+            r?.newBest == true -> "NEW BEST" to Color(0.2f, 0.55f, 0.3f, 1f)
+            r != null && r.et == null -> "NO TIME" to Hud.RED
+            else -> "TIMED" to Hud.INK_FAINT
+        }
+        hud.drawTimeslip(batch, w, h, "${track.name.uppercase()} TOURNAMENT", lines, notes, stamp, color, phaseTime / 1.2f, them = "BEST")
     }
 
     /** Test-n-tune slip: this run against the best earlier run on the same tune. */

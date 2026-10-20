@@ -35,6 +35,7 @@ class GarageScreen(game: PixelStrip) : MenuScreen(game) {
         val car = save.cars[index]
         game.go(1) { RaceScreen(game, "neon_city", car, test = true) }
     }
+    private val tourney = button("TOURNEY", Color(0.55f, 0.45f, 0.1f, 1f), keys = intArrayOf(Input.Keys.Y)) { game.go(0) { TournamentScreen(game) } }
     private val crew = button("CREW", Color(0.6f, 0.3f, 0.1f, 1f), keys = intArrayOf(Input.Keys.C)) { game.go(0) { CrewScreen(game) } }
     private val dealer = button("DEALER", BTN_TEAL, keys = intArrayOf(Input.Keys.D)) { game.go(0) { DealerScreen(game) } }
     private val upgrades = button("PARTS", BTN_TEAL, keys = intArrayOf(Input.Keys.U)) { game.go(0) { UpgradeScreen(game) } }
@@ -82,6 +83,7 @@ class GarageScreen(game: PixelStrip) : MenuScreen(game) {
         quick.apply { x = w - 104f; y = 52f; this.w = 96f; this.h = 18f }
         testRun.apply { x = w - 104f; y = 74f; this.w = 96f; this.h = 18f; label = "TEST N TUNE" }
         onlineRace.apply { x = w - 190f; y = 8f; this.w = 82f; this.h = 40f }
+        tourney.apply { x = w - 190f; y = 74f; this.w = 82f; this.h = 18f }
         crew.apply {
             x = w - 190f; y = 52f; this.w = 82f; this.h = 18f
             label = game.cloud.badge?.let { "CREW [${it.tag}]" } ?: "CREW"

@@ -29,7 +29,7 @@ const cars = new Map<string, CarDef>(
   }),
 );
 /** Tracks anyone can race on (Joe's San Antonio is his alone), with their surface grip. */
-const TRACKS = ["neon_city", "desert", "port", "coast", "airfield", "speedway"].map((id) => {
+export const TRACKS = ["neon_city", "desert", "port", "coast", "airfield", "speedway"].map((id) => {
   const t = JSON.parse(readFileSync(join(data, "tracks", `${id}.json`), "utf8"));
   return { id, grip: typeof t.trackGrip === "number" ? t.trackGrip : 1.25 };
 });
@@ -47,7 +47,7 @@ export const CONFIRM_MS = 25_000;
 /** A race nobody finished is called off (and stakes refunded) after this long. */
 export const ABANDON_MS = 300_000;
 /** Where every run starts: the burnout box (RaceScreen.BURNOUT_X). */
-const START_X = -9;
+export const START_X = -9;
 const MAX_EVENTS = 6000;
 
 interface Entry {
@@ -234,7 +234,7 @@ export const confirmWager = onCall({ maxInstances: 10 }, async (req) => {
   });
 });
 
-function sanitizeEvents(raw: unknown): RunEvent[] {
+export function sanitizeEvents(raw: unknown): RunEvent[] {
   if (!Array.isArray(raw) || raw.length > MAX_EVENTS) throw new HttpsError("invalid-argument", "events");
   const out: RunEvent[] = [];
   for (const e of raw) {
