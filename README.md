@@ -18,7 +18,14 @@ Done so far:
 - Title screen, first-launch starter pick, garage, dealership, settings, local save, pixel
   transitions (dissolve, wipe, garage door)
 
-Next: parts and upgrades, paint shop and decals, deep gear tuning, test-n-tune, dyno.
+- Parts and upgrades (14 slots, Stage 1-3 + Race), visible on the cars (wings, kits, scoops,
+  blowers, intercoolers, side pipes, rims, underglow)
+- Paint shop: 12 colours, gloss/metallic/pearl/matte/candy finishes, decals
+- Deep tuning: every gear, final drive, launch control, nitrous timing, tyre pressure; neon gear
+  chart; 4 presets per car; share codes via the clipboard
+- Test-n-tune runs with a run log, and a dyno with before/after pulls
+
+Next: career mode (rival ladder, bosses, pink slips), then the remaining tracks, weather and audio.
 
 ### How to race
 
@@ -84,6 +91,7 @@ cd assets && ../desktop/build/install/desktop/bin/desktop --size 1280x720 --shot
 | `assets/data/tracks/*.json` | Track layers, parallax, props, lights, grade |
 | `assets/shaders/` | Paint (ramp lookup, normal-mapped point lights, hologram), tint (lit trim), blur, composite (zoom, heat haze, upscale, bloom, LUT, CA, photo print, UI layer, CRT) |
 | `assets/data/economy.json` | Starting cash, sell rate, starter cars, performance classes |
+| `assets/data/parts.json` | Part slots, tiers and effects, prices, cosmetics, paint finishes, decals |
 | `core/` | The game: `gfx/` (post-processing, font), `world/` (track renderer), `race/` (race flow, `Vehicle` physics, `DragMath`, tree, HUD, particles, AI driver) |
 | `core/src/test/` | Physics tests: launch/bog/spin/shift/nitrous/burnout/red-light behaviour (`./gradlew core:test`) |
 | `android/`, `desktop/` | Launchers |

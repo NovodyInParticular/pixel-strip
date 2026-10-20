@@ -11,6 +11,7 @@ import com.badlogic.gdx.graphics.PixmapIO
 import com.badlogic.gdx.math.MathUtils
 import io.github.novodyinparticular.pixelstrip.PixelStrip
 import io.github.novodyinparticular.pixelstrip.save.OwnedCar
+import io.github.novodyinparticular.pixelstrip.save.RunRecord
 import io.github.novodyinparticular.pixelstrip.ui.GarageScreen
 import io.github.novodyinparticular.pixelstrip.data.TrackDef
 import io.github.novodyinparticular.pixelstrip.gfx.Lights
@@ -27,7 +28,7 @@ import kotlin.math.min
  * burnout box -> creep into the beams -> tree countdown (rev to set launch RPM) -> launch on
  * green -> shift and spray -> finish (photo finish when it's close) -> timeslip.
  */
-class RaceScreen(private val game: PixelStrip, trackId: String, private val owned: OwnedCar) : ScreenAdapter() {
+class RaceScreen(private val game: PixelStrip, trackId: String, private val owned: OwnedCar, private val test: Boolean = false) : ScreenAdapter() {
     private enum class Phase { BURNOUT, STAGING, COUNTDOWN, RACING, PHOTO, FINISHED }
 
     private val art = game.art
@@ -89,6 +90,7 @@ class RaceScreen(private val game: PixelStrip, trackId: String, private val owne
     private var screenTime = 0f
     private var playerFoul = false
     private var greenSeen = false
+    private var bestBefore: RunRecord? = null
     private var smokeTimer = 0f
     private var timeScale = 1f
     private var slowMo = false
@@ -215,9 +217,11 @@ class RaceScreen(private val game: PixelStrip, trackId: String, private val owne
         if (player.hasLeft && player.x > distanceM + 0.5f) player.throttle = 0f
         if (player.mode == Vehicle.Mode.CREEP) player.throttle = 0f
 
-        // Ghost
-        ghost.throttle = ghostDriver.update(dt, tree.staged[0], tree.raceClock, tree.running)
-        if (ghostDriver.wantsStage && ghost.mode == Vehicle.Mode.BURNOUT) ghost.creepTo(Tree.STAGE_M)
+        // Ghost (sits out test-n-tune: its lane just reads as staged)
+        if (test) ghost.x = Tree.STAGE_M
+        if (!test) ghost.throttle = ghostDriver.update(dt, tree.staged[0], tree.raceClock, tree.running)
+        if (test && ghost.mode != Vehicle.Mode.HELD) ghost.hold()
+        if (!test && ghostDriver.wantsStage && ghost.mode == Vehicle.Mode.BURNOUT) ghost.creepTo(Tree.STAGE_M)
         if (ghostDriver.wantsLaunch && ghost.mode == Vehicle.Mode.HELD && tree.green) ghost.launch(tree.raceClock)
         if (ghostDriver.wantsShift) ghost.shift()
         if (ghostDriver.wantsNitrous) ghost.nitrous()
@@ -229,7 +233,7 @@ class RaceScreen(private val game: PixelStrip, trackId: String, private val owne
             while (accumulator >= STEP) {
                 accumulator -= STEP
                 player.step(STEP)
-                ghost.step(STEP)
+                if (!test) ghost.step(STEP)
             }
         }
         for (car in listOf(player, ghost)) car.brake = if (car.hasLeft && car.x > distanceM + 6f) 1f else 0f
@@ -283,7 +287,7 @@ class RaceScreen(private val game: PixelStrip, trackId: String, private val owne
         val playerDone = player.splits[finishSplit] >= 0f
         val ghostDone = ghost.splits[finishSplit] >= 0f
         val lead = max(player.x, ghost.x)
-        if (!slowMo && !playerFoul && player.hasLeft && ghost.hasLeft && distanceM - lead in 0f..7f && abs(player.x - ghost.x) < PHOTO_GAP_M) {
+        if (!test && !slowMo && !playerFoul && player.hasLeft && ghost.hasLeft && distanceM - lead in 0f..7f && abs(player.x - ghost.x) < PHOTO_GAP_M) {
             slowMo = true
         }
         timeScale += ((if (slowMo) 0.22f else 1f) - timeScale) * 0.25f
@@ -292,9 +296,14 @@ class RaceScreen(private val game: PixelStrip, trackId: String, private val owne
             timeScale = 1f
             popFlash(Color.WHITE, 0.9f)                      // the camera fires
             buzz(30)
-        } else if (playerDone && (ghostDone || player.x > distanceM + 40f)) {
+        } else if (playerDone && (ghostDone || test || player.x > distanceM + 40f)) {
             timeScale = 1f
             setPhase(Phase.FINISHED)
+            if (test && !playerFoul) {
+                bestBefore = owned.bestRun(owned.tuneName, quarter)
+                owned.logRun(RunRecord(owned.tuneName, quarter, player.splits[finishSplit], player.splits[0], player.splitSpeed[finishSplit] * 2.23694f, player.leaveTime))
+                game.save.write()
+            }
         }
     }
 
@@ -461,7 +470,7 @@ class RaceScreen(private val game: PixelStrip, trackId: String, private val owne
         trackView.drawLights(batch, camPx, w)
         particles.draw(batch, camPx, front = false)
         drawFlame(ghost, ghostView, ghostX, farGround, 1)
-        ghostView.draw(batch, ghostX, farGround, t, ghost = 0.62f, pitch = ghostMotion.pitch)
+        if (!test) ghostView.draw(batch, ghostX, farGround, t, ghost = 0.62f, pitch = ghostMotion.pitch)
         tree.draw(batch, treeX, treeY)
         drawFlame(player, playerView, playerX, nearGround, 0)
         playerView.draw(batch, playerX, nearGround, t, pitch = playerMotion.pitch, lift = playerMotion.lift,
@@ -636,6 +645,7 @@ class RaceScreen(private val game: PixelStrip, trackId: String, private val owne
     private fun speedOf(v: Float) = if (game.settings.metric) "%.1f".format(v * 3.6f) else "%.2f".format(v * 2.23694f)
 
     private fun drawSlip(w: Int, h: Int) {
+        if (test) return drawTestSlip(w, h)
         val unit = if (game.settings.metric) "KMH" else "MPH"
         val lines = ArrayList<Hud.SlipLine>()
         lines.add(Hud.SlipLine("R/T", if (playerFoul) "%.3f".format(player.leaveTime) else fmt(player.leaveTime), fmt(ghost.leaveTime)))
@@ -660,6 +670,29 @@ class RaceScreen(private val game: PixelStrip, trackId: String, private val owne
         }
         if (slowMo && !playerFoul) notes.add("MARGIN %.4f S".format(abs(playerFinish - ghostFinish)))
         hud.drawTimeslip(batch, w, h, "${track.name.uppercase()} DRAGWAY", lines, notes, stamp, color, phaseTime / 1.2f)
+    }
+
+    /** Test-n-tune slip: this run against the best earlier run on the same tune. */
+    private fun drawTestSlip(w: Int, h: Int) {
+        val unit = if (game.settings.metric) "KMH" else "MPH"
+        val best = bestBefore
+        fun bestOr(v: Float?) = v?.let { fmt(it) } ?: "-"
+        val lines = arrayListOf(
+            Hud.SlipLine("R/T", if (playerFoul) "%.3f".format(player.leaveTime) else fmt(player.leaveTime), bestOr(best?.rt)),
+            Hud.SlipLine("60'", fmt(player.splits[0]), bestOr(best?.sixty)),
+            Hud.SlipLine(if (quarter) "1/4 ET" else "1/8 ET", fmt(player.splits[finishSplit]), bestOr(best?.et)),
+            Hud.SlipLine(unit, speedOf(player.splitSpeed[finishSplit]), best?.let { if (game.settings.metric) "%.1f".format(it.trapMph * 1.60934f) else "%.2f".format(it.trapMph) } ?: "-"),
+        )
+        val notes = arrayListOf("TUNE  ${owned.tuneName}")
+        player.ratings.firstOrNull()?.let { notes.add("LAUNCH  ${it.name}") }
+        player.ratings.drop(1).forEachIndexed { i, r -> notes.add("SHIFT ${i + 1}-${i + 2} ${r.name}") }
+        val newBest = !playerFoul && (best == null || player.splits[finishSplit] < best.et)
+        val (stamp, color) = when {
+            playerFoul -> "RED LIGHT" to Hud.RED
+            newBest -> "NEW BEST" to Color(0.2f, 0.55f, 0.3f, 1f)
+            else -> "TEST" to Hud.INK_FAINT
+        }
+        hud.drawTimeslip(batch, w, h, "TEST N TUNE", lines, notes, stamp, color, phaseTime / 1.2f, them = "BEST")
     }
 
     // --- Desktop screenshots ---------------------------------------------------------------

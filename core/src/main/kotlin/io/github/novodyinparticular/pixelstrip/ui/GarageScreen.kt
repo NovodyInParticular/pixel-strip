@@ -27,6 +27,10 @@ class GarageScreen(game: PixelStrip) : MenuScreen(game) {
         val car = save.cars[index]
         game.go(1) { RaceScreen(game, "neon_city", car) }
     }
+    private val testRun = button("TEST", Color(0.6f, 0.3f, 0.1f, 1f), keys = intArrayOf(Input.Keys.X)) {
+        val car = save.cars[index]
+        game.go(1) { RaceScreen(game, "neon_city", car, test = true) }
+    }
     private val dealer = button("DEALER", BTN_TEAL, keys = intArrayOf(Input.Keys.D)) { game.go(0) { DealerScreen(game) } }
     private val upgrades = button("PARTS", BTN_TEAL, keys = intArrayOf(Input.Keys.U)) { game.go(0) { UpgradeScreen(game) } }
     private val tune = button("TUNE", BTN_TEAL, keys = intArrayOf(Input.Keys.T)) { game.go(0) { TuneScreen(game) } }
@@ -49,6 +53,7 @@ class GarageScreen(game: PixelStrip) : MenuScreen(game) {
 
     override fun layout(w: Int, h: Int) {
         race.apply { x = w - 104f; y = 8f; this.w = 96f; this.h = 40f }
+        testRun.apply { x = w - 104f; y = 52f; this.w = 96f; this.h = 18f; label = "TEST N TUNE" }
         val row = listOf(dealer to 58f, upgrades to 52f, paintShop to 52f, tune to 46f, settings to 52f)
         var bx = 8f
         for ((b, bw) in row) {
@@ -111,7 +116,7 @@ class GarageScreen(game: PixelStrip) : MenuScreen(game) {
         classBadge(game.effective(owned), 40f, h - 42f)
         cash(w - 8f, h - 20f)
         font.draw(batch, "${index + 1}/${save.cars.size}", w - 8f - font.width("${index + 1}/${save.cars.size}"), h - 32f, SOFT)
-        carStats(game.effective(owned), w - 144f, 56f)
+        carStats(game.effective(owned), w - 144f, 76f)
     }
 
     companion object {

@@ -10,6 +10,17 @@ object DragMath {
     /** Torque (Nm) at an RPM: rises to the peak, holds toward peak power, falls past it. */
     fun torqueAt(def: CarDef, r: Float): Float = rawTorque(def, r) * def.ratingFactor
 
+    /** Full-throttle crank torque as the dyno sees it: supercharger, and the turbo at steady-state boost. */
+    fun crankTorque(def: CarDef, r: Float): Float {
+        var t = torqueAt(def, r)
+        if (def.blowerGain > 0f) t *= 1f + def.blowerGain * (0.75f + 0.25f * r / def.redline)
+        if (def.boostGain > 0f) t *= 1f + def.boostGain * ((r - def.boostSpoolRpm) / Vehicle.BOOST_RANGE_RPM).coerceIn(0f, 1f)
+        return t
+    }
+
+    /** Wheel horsepower at an RPM. */
+    fun wheelHp(def: CarDef, r: Float) = crankTorque(def, r) * r / 7127f * Vehicle.DRIVELINE_EFF
+
     /** Pre-1972 cars were rated in SAE gross horsepower (no accessories, open headers): ~18% optimistic. */
     const val GROSS_TO_NET = 0.82f
 

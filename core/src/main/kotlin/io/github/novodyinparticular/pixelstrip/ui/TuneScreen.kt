@@ -55,6 +55,8 @@ class TuneScreen(game: PixelStrip) : MenuScreen(game) {
     private val share = button("SHARE", BTN_TEAL) { shareCode() }
     private val paste = button("PASTE", BTN_TEAL) { pasteCode() }
     private val back = button("BACK", BTN_GREY, keys = intArrayOf(Input.Keys.B)) { onBack() }
+    private val runsBtn = button("RUNS", BTN_PURPLE, keys = intArrayOf(Input.Keys.R)) { game.go(0) { RunLogScreen(game) } }
+    private val dynoBtn = button("DYNO", BTN_PURPLE, keys = intArrayOf(Input.Keys.Y)) { game.go(0) { DynoScreen(game) } }
 
     private fun ordinal(n: Int) = when (n) { 1 -> "1ST"; 2 -> "2ND"; 3 -> "3RD"; else -> "${n}TH" }
 
@@ -159,6 +161,8 @@ class TuneScreen(game: PixelStrip) : MenuScreen(game) {
         share.apply { x = 62f; y = 10f; this.w = 54f; this.h = 20f }
         paste.apply { x = 120f; y = 10f; this.w = 54f; this.h = 20f }
         back.apply { x = w - 64f; y = 10f; this.w = 56f; this.h = 20f }
+        dynoBtn.apply { x = w - 116f; y = 10f; this.w = 48f; this.h = 20f }
+        runsBtn.apply { x = w - 168f; y = 10f; this.w = 48f; this.h = 20f }
     }
 
     override fun update(dt: Float) {

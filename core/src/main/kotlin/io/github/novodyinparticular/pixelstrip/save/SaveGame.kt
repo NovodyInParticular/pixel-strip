@@ -18,9 +18,28 @@ class OwnedCar(
     val cosmetics: MutableMap<String, Int> = mutableMapOf(),
     val tunes: MutableList<Tune> = mutableListOf(),
     var activeTune: Int = -1,
+    val runs: MutableList<RunRecord> = mutableListOf(),
+    /** Last dyno pull: wheel horsepower sampled every [DYNO_STEP_RPM] from idle, for before/after. */
+    var dyno: FloatArray? = null,
 ) {
     val tune: Tune? get() = tunes.getOrNull(activeTune)
+    val tuneName: String get() = tune?.name ?: "STOCK"
+
+    fun bestRun(tune: String, quarter: Boolean) = runs.filter { it.tune == tune && it.quarter == quarter }.minByOrNull { it.et }
+
+    fun logRun(r: RunRecord) {
+        runs.add(r)
+        while (runs.size > MAX_RUNS) runs.removeAt(0)
+    }
+
+    companion object {
+        const val MAX_RUNS = 40
+        const val DYNO_STEP_RPM = 100f
+    }
 }
+
+/** One test-n-tune pass. */
+data class RunRecord(val tune: String, val quarter: Boolean, val et: Float, val sixty: Float, val trapMph: Float, val rt: Float)
 
 /**
  * The local save: cash and the garage. Written atomically (temp file, then move) so a crash
@@ -70,6 +89,23 @@ class SaveGame(private val file: FileHandle) {
             for (t in c.tunes) tunes.addChild(tuneJson(t))
             o.addChild("tunes", tunes)
             o.addChild("activeTune", JsonValue(c.activeTune.toLong()))
+            val runs = JsonValue(JsonValue.ValueType.array)
+            for (r in c.runs) {
+                val ro = JsonValue(JsonValue.ValueType.`object`)
+                ro.addChild("tune", JsonValue(r.tune))
+                ro.addChild("q", JsonValue(r.quarter))
+                ro.addChild("et", JsonValue(r.et.toDouble()))
+                ro.addChild("s60", JsonValue(r.sixty.toDouble()))
+                ro.addChild("mph", JsonValue(r.trapMph.toDouble()))
+                ro.addChild("rt", JsonValue(r.rt.toDouble()))
+                runs.addChild(ro)
+            }
+            o.addChild("runs", runs)
+            c.dyno?.let { d ->
+                val a = JsonValue(JsonValue.ValueType.array)
+                d.forEach { a.addChild(JsonValue(it.toDouble())) }
+                o.addChild("dyno", a)
+            }
             list.addChild(o)
         }
         root.addChild("cars", list)
@@ -116,7 +152,11 @@ class SaveGame(private val file: FileHandle) {
                 val cos = mutableMapOf<String, Int>()
                 o.get("cosmetics")?.forEach { cos[it.name] = it.asInt() }
                 val tunes = o.get("tunes")?.map { tuneFrom(it) }?.toMutableList() ?: mutableListOf()
-                save.cars.add(OwnedCar(o.getString("uid"), o.getString("car"), o.getInt("paint", 0), parts, cos, tunes, o.getInt("activeTune", -1)))
+                val runs = o.get("runs")?.map {
+                    RunRecord(it.getString("tune"), it.getBoolean("q"), it.getFloat("et"), it.getFloat("s60"), it.getFloat("mph"), it.getFloat("rt", 0f))
+                }?.toMutableList() ?: mutableListOf()
+                save.cars.add(OwnedCar(o.getString("uid"), o.getString("car"), o.getInt("paint", 0), parts, cos, tunes,
+                    o.getInt("activeTune", -1), runs, o.get("dyno")?.asFloatArray()))
             }
             return save
         }

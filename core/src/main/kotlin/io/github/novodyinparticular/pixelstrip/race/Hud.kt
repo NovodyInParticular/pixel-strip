@@ -104,7 +104,7 @@ class Hud(private val font: PixelFont, private val white: Texture) {
     class SlipLine(val label: String, val you: String, val them: String)
 
     /** Vintage paper timeslip printed in from the top. [progress] 0..1 animates it. */
-    fun drawTimeslip(batch: SpriteBatch, w: Int, h: Int, title: String, lines: List<SlipLine>, notes: List<String>, stamp: String, stampColor: Color, progress: Float) {
+    fun drawTimeslip(batch: SpriteBatch, w: Int, h: Int, title: String, lines: List<SlipLine>, notes: List<String>, stamp: String, stampColor: Color, progress: Float, them: String = "GHOST") {
         val pw = 180f
         val ph = 30f + lines.size * 10f + notes.size * 9f + 34f
         val x = floor(w / 2f - pw / 2f)
@@ -136,7 +136,7 @@ class Hud(private val font: PixelFont, private val white: Texture) {
         batch.color = Color.WHITE
         ly -= 9f
         font.draw(batch, "YOU", x + 86f, ly, INK, 1, null)
-        font.draw(batch, "GHOST", x + 130f, ly, INK, 1, null)
+        font.draw(batch, them, x + 130f, ly, INK, 1, null)
         for (l in lines) {
             ly -= 10f
             if (ly < y + 2f) break
