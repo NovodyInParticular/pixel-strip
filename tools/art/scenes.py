@@ -255,6 +255,62 @@ def showroom():
     return out, glow
 
 
+# district outlines on the career map (x, y from the top); the game draws the race nodes on top
+DISTRICTS = {        # inside x 84..556 so a 480-wide screen sees all of it
+    "street": [(92, 152), (300, 148), (304, 258), (88, 262)],
+    "sport": [(92, 22), (296, 18), (300, 124), (88, 128)],
+    "pro": [(340, 18), (548, 22), (552, 128), (336, 124)],
+    "outlaw": [(336, 148), (552, 152), (548, 262), (340, 258)],
+}
+DISTRICT_RAMPS = {"street": "yellow", "sport": "cyan", "pro": "magenta", "outlaw": "red"}
+
+
+def career_map():
+    from common import poly_mask
+    out = canvas(W, H)
+    glow = canvas(W, H)
+    for y in range(H):
+        for x in range(W):
+            out[y, x] = P("night", 0) if (x // 8 + y // 8) % 2 else P("night", 1)
+            if x % 16 == 0 or y % 16 == 0:
+                out[y, x] = P("night", 1)
+    # the river, winding between the two rows of districts
+    for x in range(W):
+        cy = 138 + 4 * math.sin(x / 40.0)
+        for y in range(int(cy - 5), int(cy + 6)):
+            out[y, x] = P("blue", 0) if abs(y - cy) < 4 else P("night", 2)
+            if (x + y) % 9 == 0:
+                out[y, x] = P("blue", 1)
+    # districts: dim fill, city blocks, a glowing border in the tier colour
+    for name, pts in DISTRICTS.items():
+        ramp = DISTRICT_RAMPS[name]
+        m = poly_mask(W, H, pts) >= 0.5
+        for y, x in zip(*np.nonzero(m)):
+            block = (x % 12 < 9) and (y % 10 < 7)
+            if block:
+                out[y, x] = P("night", 2) if (x * 7 + y * 3) % 5 else P("night", 3)
+                if (x * 13 + y * 7) % 41 == 0:
+                    out[y, x] = P(ramp, 0)                 # lit windows seen from above
+        pad = np.pad(m, 1)
+        edge = m & ~(pad[:-2, 1:-1] & pad[2:, 1:-1] & pad[1:-1, :-2] & pad[1:-1, 2:])
+        for y, x in zip(*np.nonzero(edge)):
+            out[y, x] = P(ramp, 1)
+            glow[y, x] = P(ramp, 1)
+    # one neon road joining the districts in race order: street, sport, pro, outlaw
+    roads = [[(196, 150), (196, 126)], [(298, 70), (338, 70)], [(444, 126), (444, 150)]]
+    for road in roads:
+        for (ax, ay), (bx, by) in zip(road, road[1:]):
+            n = int(max(abs(bx - ax), abs(by - ay)))
+            for i in range(n + 1):
+                x = int(ax + (bx - ax) * i / n)
+                y = int(ay + (by - ay) * i / n)
+                for d in (0, 1):
+                    xx, yy = (x + d, y) if ax == bx else (x, y + d)
+                    put(out, xx, yy, P("magenta", 2))
+                    put(glow, xx, yy, P("magenta", 1))
+    return out, glow
+
+
 def build():
     g, gg = garage()
     save(g, "scenes/garage.png")
@@ -262,3 +318,6 @@ def build():
     s, sg = showroom()
     save(s, "scenes/showroom.png")
     save(sg, "scenes/showroom_glow.png")
+    m, mg = career_map()
+    save(m, "scenes/career_map.png")
+    save(mg, "scenes/career_map_glow.png")

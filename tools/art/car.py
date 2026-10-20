@@ -474,6 +474,10 @@ def _trim_extra(out, cw, idx, e, p):
     elif k == "skirt":
         x0, y0, x1, y1 = e["rect"]
         _rect(out, x0, y0, x1, y1, lambda x, y: P("night", 1) if idx[y, x] >= 0 else None)
+    elif k == "glass_text":
+        # a sticker on the glass: a broken white line of tiny letters
+        x0, y0, x1, y1 = e["rect"]
+        _rect(out, x0, y0, x1, y1, lambda x, y: P("steel", 6) if x % 3 != 2 else None)
     elif k == "stripe":
         x0, y0, x1, y1 = e["rect"]
         c = P(*e.get("color", ("steel", 6)))
@@ -762,17 +766,20 @@ def looks_build(p):
     return side_exhaust
 
 
-RIM_STYLES = ["magnum", "rally", "fivestar", "mesh", "turbine", "phone", "three", "sixspoke"]
-RIM_DEFAULTS = {"magnum": (5, "chrome"), "rally": (6, "silver"), "fivestar": (5, "silver"), "mesh": (10, "silver"),
-                "turbine": (10, "silver"), "phone": (6, "silver"), "three": (3, "silver"), "sixspoke": (6, "silver")}
+RIM_STYLES = ["magnum", "rally", "fivestar", "mesh", "turbine", "phone", "three", "sixspoke", "mesh_black", "steelie_black"]
+# name -> (generator style, spokes, colour)
+RIM_DEFAULTS = {"magnum": ("magnum", 5, "chrome"), "rally": ("rally", 6, "silver"), "fivestar": ("fivestar", 5, "silver"),
+                "mesh": ("mesh", 10, "silver"), "turbine": ("turbine", 10, "silver"), "phone": ("phone", 6, "silver"),
+                "three": ("three", 3, "silver"), "sixspoke": ("sixspoke", 6, "silver"),
+                "mesh_black": ("mesh", 10, "black"), "steelie_black": ("rally", 6, "black")}
 
 
 def rim_sheets(radii):
     """Shared wheel sheets: one per (tyre radius, rim style), used by any car with that tyre size."""
     for r in sorted(radii):
         for style in RIM_STYLES:
-            spokes, color = RIM_DEFAULTS[style]
-            prof = {"wheel_r": r, "rim": {"style": style, "spokes": spokes, "color": color, "letters": style in ("magnum", "rally")}}
+            gen, spokes, color = RIM_DEFAULTS[style]
+            prof = {"wheel_r": r, "rim": {"style": gen, "spokes": spokes, "color": color, "letters": style in ("magnum", "rally")}}
             save(wheel_frames(prof), f"wheels/r{int(round(r * 10))}_{style}.png")
 
 
@@ -822,6 +829,18 @@ def decal_layers(p, idx):
 
 # --- Output ----------------------------------------------------------------------------------
 
+def _driver_anchor(p):
+    """Top-left of the 8x9 driver bust: on the biggest side window, toward its back, sitting low."""
+    if not p["glass"]:
+        xs = [x for x, _ in p["greenhouse"]]
+        return [min(xs) + 3 + PAD_X, p["beltline"][0][1] - 9 + PAD_Y]     # roadster: just behind the screen
+    main = max(p["glass"], key=lambda g: max(x for x, _ in g) - min(x for x, _ in g))
+    x0 = min(x for x, _ in main)
+    x1 = max(x for x, _ in main)
+    bottom = max(y for _, y in main)
+    return [x0 + (x1 - x0) * 0.38 + PAD_X, bottom - 8.5 + PAD_Y]
+
+
 def sprite_json(p, side_exhaust=None):
     hx0, hy0, hx1, hy1 = p["head_lamp"]
     tx0, ty0, tx1, ty1 = p["tail_lamp"]
@@ -842,6 +861,7 @@ def sprite_json(p, side_exhaust=None):
         "groundY": GROUND + PAD_Y,
         "frontX": p["length"] + PAD_X,
         "popup": bool(p.get("popup")),
+        "driver": _driver_anchor(p),
         "wheelRadius10": int(round(p["wheel_r"] * 10)),
         "sideExhaust": [side_exhaust[0] + PAD_X, side_exhaust[1] + PAD_Y] if side_exhaust else None,
     }

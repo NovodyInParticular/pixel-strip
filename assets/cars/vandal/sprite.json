@@ -29,6 +29,10 @@
   "groundY": 35.5,
   "frontX": 100,
   "popup": false,
+  "driver": [
+    43.147999999999996,
+    7.199999999999999
+  ],
   "wheelRadius10": 73,
   "sideExhaust": [
     33.7,

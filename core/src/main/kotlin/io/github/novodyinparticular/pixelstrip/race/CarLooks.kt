@@ -27,7 +27,8 @@ data class CarLooks(
         )
 
         /** Spoke counts of the shared rim sheets (tools/art/car.py RIM_DEFAULTS). */
-        val RIM_SPOKES = mapOf("magnum" to 5, "rally" to 6, "fivestar" to 5, "mesh" to 10, "turbine" to 10, "phone" to 6, "three" to 3, "sixspoke" to 6)
+        val RIM_SPOKES = mapOf("magnum" to 5, "rally" to 6, "fivestar" to 5, "mesh" to 10, "turbine" to 10, "phone" to 6, "three" to 3,
+            "sixspoke" to 6, "mesh_black" to 10, "steelie_black" to 6)
 
         fun of(car: OwnedCar, catalog: PartCatalog): CarLooks {
             val visuals = HashSet<String>()

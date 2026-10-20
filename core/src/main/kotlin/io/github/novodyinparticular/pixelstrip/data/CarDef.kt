@@ -15,6 +15,8 @@ data class CarDef(
     val year: Int,
     val era: String,
     val price: Int,
+    /** False for cars you can only win (boss cars). */
+    val dealer: Boolean,
     val hp: Float,
     val peakHpRpm: Float,
     val torqueNm: Float,
@@ -78,6 +80,7 @@ data class CarDef(
         val popup: Boolean,
         val wheelRadius10: Int,
         val sideExhaust: Pair<Float, Float>?,
+        val driver: Pair<Float, Float>?,
     )
 
     companion object {
@@ -103,6 +106,7 @@ data class CarDef(
                 year = j.getInt("year"),
                 era = j.getString("era"),
                 price = j.getInt("price", 0),
+                dealer = j.getBoolean("dealer", true),
                 hp = j.getFloat("hp"),
                 peakHpRpm = j.getFloat("peakHpRpm"),
                 torqueNm = j.getFloat("torqueNm"),
@@ -146,6 +150,7 @@ data class CarDef(
                     popup = s.getBoolean("popup", false),
                     wheelRadius10 = s.getInt("wheelRadius10", 70),
                     sideExhaust = s.get("sideExhaust")?.takeIf { it.isArray }?.let { it.getFloat(0) to it.getFloat(1) },
+                    driver = s.get("driver")?.takeIf { it.isArray }?.let { it.getFloat(0) to it.getFloat(1) },
                 ),
             )
         }

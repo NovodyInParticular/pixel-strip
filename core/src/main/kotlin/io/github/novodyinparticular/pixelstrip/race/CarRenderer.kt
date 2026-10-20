@@ -36,6 +36,9 @@ class CarRenderer(val def: CarDef, private val art: Art, private val paint: Shad
     }
 
     var paintRow = def.defaultPaint
+    /** Index into fx/drivers.png: 0 generic silhouette, 1 Joe. -1 = empty car. */
+    var driver = 0
+    private val driverTex = art.tex("fx/drivers.png")
     var looks: CarLooks = CarLooks.STOCK
         set(value) {
             field = value
@@ -147,6 +150,12 @@ class CarRenderer(val def: CarDef, private val art: Art, private val paint: Shad
         tint.setUniformf("u_lit", if (litTrim) 0.55f else 0f)
         if (litTrim) lights!!.apply(tint, shakeX, shakeY)
         batch.draw(trim, bx, by + lift, ox, oy, s.width.toFloat(), s.height.toFloat(), 1f, 1f, pitch)
+        // the driver, seen through the tinted glass
+        if (driver >= 0 && ghost <= 0f) s.driver?.let { (dx, dy) ->
+            batch.setColor(1f, 1f, 1f, 0.8f)
+            batch.draw(driverTex, floor(bx + dx), floor(by + lift + s.height - dy - 9f), driver * 8, 0, 8, 9)
+            batch.color = Color.WHITE
+        }
         if (ghost <= 0f) {
             if (looks.blower) batch.draw(layer("blower"), bx, by + lift, ox, oy, s.width.toFloat(), s.height.toFloat(), 1f, 1f, pitch)
             if (looks.intercooler) batch.draw(layer("intercooler"), bx, by + lift, ox, oy, s.width.toFloat(), s.height.toFloat(), 1f, 1f, pitch)

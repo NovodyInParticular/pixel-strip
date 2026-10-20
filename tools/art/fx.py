@@ -103,9 +103,36 @@ def haze():
     return out
 
 
+def drivers():
+    """Driver busts seen through the side glass, 8x9 each: a generic silhouette, and Joe."""
+    from common import put
+    w, h = 8, 9
+    gen = canvas(w, h)
+    joe = canvas(w, h)
+    for y in range(h):
+        for x in range(w):
+            head = ((x + 0.5 - 3.5) / 2.3) ** 2 + ((y + 0.5 - 3.2) / 2.7) ** 2 < 1
+            body = y >= 6 and abs(x + 0.5 - 3.5) < 3.6
+            if head or body:
+                gen[y, x] = P("night", 0) if x > 1 else P("night", 2)       # rim light on the back edge
+                if head:
+                    lit = x < 3
+                    joe[y, x] = P("skin", 3) if lit else P("skin", 2)       # bald, catching the dash light
+                    if y >= 4:
+                        joe[y, x] = P("night", 1)                         # beard
+                else:
+                    joe[y, x] = P("blue", 0)                              # work shirt
+    for x in range(2, 7):
+        put(joe, x, 3, P("night", 0))                                     # shades
+    put(joe, 5, 3, P("cyan", 3))
+    put(joe, 2, 1, P("yellow", 2))                                        # scalp shine
+    return np.concatenate([gen, joe], axis=1)
+
+
 def build():
     strip = np.concatenate([puff(s, i * 17) for i, s in enumerate(PUFF_SIZES)], axis=1)
     save(strip, "fx/smoke.png")
     save(np.concatenate([flame(i) for i in range(3)], axis=1), "fx/flame.png")
     save(nitrous_jet(), "fx/purge.png")
     save(haze(), "fx/haze.png")
+    save(drivers(), "fx/drivers.png")

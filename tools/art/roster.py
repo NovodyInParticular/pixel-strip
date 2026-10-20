@@ -516,6 +516,24 @@ ASP = make(  # '92 Viper RT/10 roadster: no roof, long curvy hood, side pipes, h
 # The windshield on the roadster is the only glass: let the frame's inner edge be the screen
 ASP["windshield"] = [(38.0, Y(19.8)), (39.0, Y(19.8)), (46.0, Y(15.0)), (45.0, Y(15.0))]
 
+KITE_EF = make(  # '90 EF hatch (boss car "Ground Control"): lowered, flat hood, long roof, roof spoiler, black lower
+    # bumpers and side molding, black mesh wheels, the sticker on the quarter glass
+    "kite_ef", 72, 5.8, 12, 57,
+    belt=[(0, 13.8), (5, 14.2), (42, 14.0), (54, 13.6), (64, 12.8), (72, 11.6)],
+    nose=[(72.4, 10.6), (72.4, 6.2), (71.6, 4.4)],
+    tail=[(0.2, 4.6), (-0.2, 8.2), (0, 13.4)],
+    rocker=3.6,
+    greenhouse=[(1.2, 13.8), (5.5, 20.8), (8.5, 22.6), (30, 22.8), (33.5, 22.0), (43, 13.8)],
+    glass=[[(17.5, 14.4), (17.5, 22.0), (29.5, 22.0), (32.5, 21.2), (40, 14.2)], [(8, 14.4), (9.6, 21.2), (11, 22.0), (15.5, 22.0), (15.5, 14.4)]],
+    head=(69, 9.0, 72.2, 10.6), tail_lamp=(-0.3, 9.0, 0.7, 12.8),
+    rim={"style": "mesh", "spokes": 10, "color": "black"},
+    bumpers="black", front_bumper=(67.5, 72.8, 3.8, 7.6), rear_bumper=(-0.4, 3.5, 4.2, 7.8),
+    extras=[{"kind": "roof_spoiler", "polys": [[(4.5, 22.2), (10, 22.6), (10, 23.2), (5, 23.5)]]},
+            {"kind": "stripe", "rect": (13.5, 8.2, 58, 10.2), "color": ("night", 1)},
+            {"kind": "glass_text", "rect": (9.5, 15.4, 15, 15.9)}],
+    rear_strip=True, seams=[16.3, 41.5], arch=6.5,
+)
+
 ROSTER = [VANDAL, RANGER, CORSAIR, MAMMOTH, PIRANHA, WARRIOR,
           PHANTOM, RANGER50, CORSAIR_IROC, KESTREL, SPIRAL_TURBO, KESSLER, ZEPHYR,
-          TSUNAMI, KAMINARI_MK1, KAMINARI_MK3, SPIRAL_R, KIRIN, TYPHOON, SQUALL, KITE, ARROW, VORTEX, ASP]
+          TSUNAMI, KAMINARI_MK1, KAMINARI_MK3, SPIRAL_R, KIRIN, TYPHOON, SQUALL, KITE, ARROW, VORTEX, ASP, KITE_EF]

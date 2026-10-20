@@ -10,6 +10,7 @@ import com.badlogic.gdx.graphics.Pixmap
 import com.badlogic.gdx.graphics.PixmapIO
 import com.badlogic.gdx.math.MathUtils
 import io.github.novodyinparticular.pixelstrip.PixelStrip
+import io.github.novodyinparticular.pixelstrip.data.Career
 import io.github.novodyinparticular.pixelstrip.save.OwnedCar
 import io.github.novodyinparticular.pixelstrip.save.RunRecord
 import io.github.novodyinparticular.pixelstrip.ui.GarageScreen
@@ -28,7 +29,14 @@ import kotlin.math.min
  * burnout box -> creep into the beams -> tree countdown (rev to set launch RPM) -> launch on
  * green -> shift and spray -> finish (photo finish when it's close) -> timeslip.
  */
-class RaceScreen(private val game: PixelStrip, trackId: String, private val owned: OwnedCar, private val test: Boolean = false) : ScreenAdapter() {
+class RaceScreen(
+    private val game: PixelStrip,
+    trackId: String,
+    private val owned: OwnedCar,
+    private val test: Boolean = false,
+    /** A career rival in the far lane (a real car), instead of the hologram ghost. */
+    private val rival: Career.Rival? = null,
+) : ScreenAdapter() {
     private enum class Phase { BURNOUT, STAGING, COUNTDOWN, RACING, PHOTO, FINISHED }
 
     private val art = game.art
@@ -69,11 +77,50 @@ class RaceScreen(private val game: PixelStrip, trackId: String, private val owne
         paintRow = owned.paint
         looks = CarLooks.of(owned, game.parts)
     }
-    private val ghostView = CarRenderer(carDef, art, paint, tint, ramps).apply { paintRow = 2 }
+    private val rivalCar = rival?.asCar()
+    private val opponentDef = rivalCar?.let { game.effective(it) } ?: carDef
+    private val ghostView = CarRenderer(opponentDef, art, paint, tint, ramps).apply {
+        paintRow = rivalCar?.paint ?: 2
+        rivalCar?.let { looks = CarLooks.of(it, game.parts) }
+        if (rival?.driver == "joe") driver = 1
+    }
+    private var payout = 0L
+    private var wonPrize = false
+    private var settled = false
+
+    private fun playerWon(): Boolean {
+        if (playerFoul || player.splits[finishSplit] < 0f) return false
+        val mine = player.leaveTime + player.splits[finishSplit]
+        val theirs = if (ghost.splits[finishSplit] >= 0f) ghost.leaveTime + ghost.splits[finishSplit] else Float.MAX_VALUE
+        return mine <= theirs
+    }
+
+    /** Career result: cash for a win (half for a rematch), and the boss's car the first time. */
+    private fun settleCareer() {
+        val r = rival ?: return
+        settled = true
+        val save = game.save
+        if (!playerWon()) {
+            save.write()
+            return
+        }
+        val firstWin = r.id !in save.beaten
+        payout = if (firstWin) r.payout else r.payout / 2
+        save.cash += payout
+        save.beaten.add(r.id)
+        if (r.boss && firstWin) {
+            val prize = r.asCar()
+            val car = save.addCar(prize.carId, prize.paint)
+            car.parts.putAll(prize.parts)
+            car.cosmetics.putAll(prize.cosmetics)
+            wonPrize = true
+        }
+        save.write()
+    }
     private val playerMotion = CarMotion()
     private val ghostMotion = CarMotion()
 
-    private var quarter = false
+    private var quarter = rival?.let { game.career.tierOf(it).quarter } ?: false
     private val distanceM get() = if (quarter) Vehicle.SPLITS_M[4] else Vehicle.SPLITS_M[2]
     private val finishSplit get() = if (quarter) 4 else 2
 
@@ -108,8 +155,10 @@ class RaceScreen(private val game: PixelStrip, trackId: String, private val owne
     private fun newRace() {
         player = Vehicle(carDef).apply { trackGrip = Vehicle.DEFAULT_PREP }
         val close = shots?.close == true
-        ghost = Vehicle(carDef, powerScale = if (close) 1f else 0.98f).apply { trackGrip = Vehicle.DEFAULT_PREP }
-        ghostDriver = AutoDriver(ghost, skill = if (close) 0.9f else 0.6f, trackGrip = ghost.trackGrip)
+        ghost = Vehicle(opponentDef, powerScale = if (close || rival != null) 1f else 0.98f).apply { trackGrip = Vehicle.DEFAULT_PREP }
+        ghostDriver = AutoDriver(ghost, skill = rival?.skill ?: if (close) 0.9f else 0.6f, trackGrip = ghost.trackGrip)
+        payout = 0L
+        wonPrize = false
         autoPlayer = if (shots != null) AutoDriver(player, skill = 0.9f, trackGrip = player.trackGrip).apply { burnoutTime = 2.2f } else null
         player.x = BURNOUT_X
         ghost.x = BURNOUT_X
@@ -159,12 +208,12 @@ class RaceScreen(private val game: PixelStrip, trackId: String, private val owne
             Phase.BURNOUT -> "STAGE"
             Phase.STAGING, Phase.COUNTDOWN -> "LAUNCH"
             Phase.RACING, Phase.PHOTO -> "SHIFT"
-            Phase.FINISHED -> "AGAIN"
+            Phase.FINISHED -> if (rival == null) "AGAIN" else if (wonPrize) "CLAIM" else "MAP"
         }
         actionButton.visible = phase != Phase.STAGING && phase != Phase.PHOTO
         nosButton.visible = phase == Phase.RACING && player.def.nitrous.charges > 0 && player.hasLeft
         nosButton.label = "NOS x${player.nitrousCharges}"
-        distButton.visible = phase == Phase.BURNOUT
+        distButton.visible = phase == Phase.BURNOUT && rival == null
         distButton.label = if (quarter) "1/4 MILE" else "1/8 MILE"
         gasButton.visible = phase != Phase.FINISHED && phase != Phase.PHOTO
         garageButton.apply { x = w - 78f; y = 10f; this.w = 68f; this.h = 22f; visible = phase == Phase.FINISHED || phase == Phase.BURNOUT && !gasButton.down }
@@ -184,7 +233,7 @@ class RaceScreen(private val game: PixelStrip, trackId: String, private val owne
         val dt = realDt * timeScale
         tree.update(dt)
         if (garageButton.justPressed && !game.transitioning && shots == null) {
-            game.go(2) { GarageScreen(game) }
+            if (rival != null) game.go(0) { io.github.novodyinparticular.pixelstrip.ui.CareerScreen(game) } else game.go(2) { GarageScreen(game) }
             return
         }
         if (distButton.justPressed) {
@@ -210,7 +259,11 @@ class RaceScreen(private val game: PixelStrip, trackId: String, private val owne
             }
             Phase.PHOTO -> if (phaseTime > PHOTO_HOLD_S) setPhase(Phase.FINISHED)
             Phase.FINISHED -> if (phaseTime > 1.5f && actionButton.justPressed) {
-                newRace()
+                val r = rival
+                if (r == null) newRace() else if (!game.transitioning) {
+                    if (wonPrize) game.go(2) { io.github.novodyinparticular.pixelstrip.ui.PrizeScreen(game, r) }
+                    else game.go(0) { io.github.novodyinparticular.pixelstrip.ui.CareerScreen(game) }
+                }
                 return
             }
         }
@@ -255,6 +308,7 @@ class RaceScreen(private val game: PixelStrip, trackId: String, private val owne
             buzz(25)
         }
 
+        if (phase == Phase.FINISHED && rival != null && !settled) settleCareer()
         handleEvents(player, playerMotion, 0, true)
         handleEvents(ghost, ghostMotion, 1, false)
         updateFinish()
@@ -470,7 +524,9 @@ class RaceScreen(private val game: PixelStrip, trackId: String, private val owne
         trackView.drawLights(batch, camPx, w)
         particles.draw(batch, camPx, front = false)
         drawFlame(ghost, ghostView, ghostX, farGround, 1)
-        if (!test) ghostView.draw(batch, ghostX, farGround, t, ghost = 0.62f, pitch = ghostMotion.pitch)
+        if (rival != null) {
+            ghostView.draw(batch, ghostX, farGround, t, pitch = ghostMotion.pitch, ambient = track.ambient, lights = lights, shakeX = shakeX, shakeY = shakeY)
+        } else if (!test) ghostView.draw(batch, ghostX, farGround, t, ghost = 0.62f, pitch = ghostMotion.pitch)
         tree.draw(batch, treeX, treeY)
         drawFlame(player, playerView, playerX, nearGround, 0)
         playerView.draw(batch, playerX, nearGround, t, pitch = playerMotion.pitch, lift = playerMotion.lift,
@@ -494,6 +550,7 @@ class RaceScreen(private val game: PixelStrip, trackId: String, private val owne
         batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE)
         trackView.drawGlow(batch, camPx, w)
         playerView.drawGlow(batch, playerX, nearGround, playerMotion.pitch, playerMotion.lift)
+        if (rival != null) ghostView.drawGlow(batch, ghostX, farGround, ghostMotion.pitch)
         if (track.headlights) playerView.drawBeam(batch, playerX, nearGround, BEAM, 0.12f)
         tree.draw(batch, treeX, treeY, bulbsOnly = true)
         particles.drawGlow(batch, camPx)
@@ -669,7 +726,10 @@ class RaceScreen(private val game: PixelStrip, trackId: String, private val owne
             else -> "LOSS" to Hud.RED
         }
         if (slowMo && !playerFoul) notes.add("MARGIN %.4f S".format(abs(playerFinish - ghostFinish)))
-        hud.drawTimeslip(batch, w, h, "${track.name.uppercase()} DRAGWAY", lines, notes, stamp, color, phaseTime / 1.2f)
+        if (payout > 0) notes.add("PURSE  $" + "%,d".format(payout))
+        if (wonPrize) notes.add("PINK SLIP: ${game.car(rival!!.carId).name.uppercase()}")
+        hud.drawTimeslip(batch, w, h, "${track.name.uppercase()} DRAGWAY", lines, notes, stamp, color, phaseTime / 1.2f,
+            them = rival?.name?.take(6) ?: "GHOST")
     }
 
     /** Test-n-tune slip: this run against the best earlier run on the same tune. */

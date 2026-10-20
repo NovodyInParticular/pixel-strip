@@ -49,6 +49,8 @@ class SaveGame(private val file: FileHandle) {
     var cash = 0L
     val cars = ArrayList<OwnedCar>()
     var selected: String? = null
+    /** Career rivals beaten at least once (ids from career.json). */
+    val beaten = LinkedHashSet<String>()
     private var nextUid = 1
 
     val isNew get() = cars.isEmpty()
@@ -109,6 +111,9 @@ class SaveGame(private val file: FileHandle) {
             list.addChild(o)
         }
         root.addChild("cars", list)
+        val b = JsonValue(JsonValue.ValueType.array)
+        beaten.forEach { b.addChild(JsonValue(it)) }
+        root.addChild("beaten", b)
         val tmp = file.sibling(file.name() + ".tmp")
         tmp.writeString(root.toJson(JsonWriter.OutputType.json), false)
         tmp.moveTo(file)
@@ -146,6 +151,7 @@ class SaveGame(private val file: FileHandle) {
             save.cash = root.getLong("cash", 0)
             save.nextUid = root.getInt("nextUid", 1)
             save.selected = root.getString("selected", null)
+            root.get("beaten")?.asStringArray()?.let { save.beaten.addAll(it) }
             root.get("cars")?.forEach { o ->
                 val parts = mutableMapOf<String, Int>()
                 o.get("parts")?.forEach { parts[it.name] = it.asInt() }

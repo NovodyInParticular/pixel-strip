@@ -1,0 +1,398 @@
+{
+ "tiers": [
+  {
+   "id": "street",
+   "name": "STREET",
+   "distance": "eighth",
+   "rivals": [
+    {
+     "id": "dash",
+     "name": "DASH",
+     "car": "kite",
+     "paint": 2,
+     "finish": 0,
+     "parts": {
+      "intake": 1
+     },
+     "cosmetics": {},
+     "skill": 0.35,
+     "payout": 1500,
+     "x": 120,
+     "y": 212
+    },
+    {
+     "id": "kat",
+     "name": "KAT",
+     "car": "kestrel",
+     "paint": 6,
+     "finish": 0,
+     "parts": {
+      "intake": 1,
+      "exhaust": 1,
+      "tires": 1
+     },
+     "cosmetics": {},
+     "skill": 0.42,
+     "payout": 2000,
+     "x": 170,
+     "y": 184
+    },
+    {
+     "id": "tiny",
+     "name": "TINY",
+     "car": "zephyr",
+     "paint": 11,
+     "finish": 0,
+     "parts": {
+      "intake": 1,
+      "exhaust": 1
+     },
+     "cosmetics": {},
+     "skill": 0.5,
+     "payout": 2500,
+     "x": 230,
+     "y": 208
+    },
+    {
+     "id": "joe",
+     "name": "JOE",
+     "car": "kite_ef",
+     "paint": 12,
+     "finish": 1,
+     "parts": {
+      "swap": 3,
+      "intake": 2,
+      "exhaust": 2,
+      "ecu": 2,
+      "cams": 1,
+      "tires": 2,
+      "lsd": 2,
+      "clutch": 1,
+      "weight": 1,
+      "gearbox": 1
+     },
+     "cosmetics": {
+      "rims": 9
+     },
+     "skill": 0.72,
+     "payout": 6000,
+     "x": 276,
+     "y": 170,
+     "handle": "GROUND CONTROL",
+     "boss": true,
+     "prize": "car",
+     "intro": [
+      "SO YOU WANNA RUN WITH GROUND CONTROL?",
+      "I BUILT THIS EF IN MY OWN GARAGE.",
+      "EVERY BOLT, EVERY WIRE. BY HAND.",
+      "BEAT ME AND THE KEYS ARE YOURS.",
+      "LOSE AND YOU'RE WALKING HOME."
+     ],
+     "driver": "joe"
+    }
+   ]
+  },
+  {
+   "id": "sport",
+   "name": "SPORT",
+   "distance": "eighth",
+   "rivals": [
+    {
+     "id": "vega",
+     "name": "VEGA",
+     "car": "squall",
+     "paint": 8,
+     "finish": 0,
+     "parts": {
+      "intake": 2,
+      "exhaust": 2,
+      "ecu": 1,
+      "tires": 1
+     },
+     "cosmetics": {},
+     "skill": 0.52,
+     "payout": 6000,
+     "x": 130,
+     "y": 100
+    },
+    {
+     "id": "hollis",
+     "name": "HOLLIS",
+     "car": "corsair",
+     "paint": 0,
+     "finish": 0,
+     "parts": {
+      "intake": 2,
+      "exhaust": 2,
+      "cams": 1,
+      "tires": 2
+     },
+     "cosmetics": {},
+     "skill": 0.56,
+     "payout": 8000,
+     "x": 170,
+     "y": 50
+    },
+    {
+     "id": "mika",
+     "name": "MIKA",
+     "car": "spiral_r",
+     "paint": 5,
+     "finish": 0,
+     "parts": {
+      "intake": 1,
+      "tires": 1
+     },
+     "cosmetics": {},
+     "skill": 0.6,
+     "payout": 10000,
+     "x": 236,
+     "y": 90
+    },
+    {
+     "id": "rotor",
+     "name": "ROTOR",
+     "car": "spiral_turbo",
+     "paint": 13,
+     "finish": 0,
+     "parts": {
+      "ecu": 3,
+      "intake": 3,
+      "exhaust": 3,
+      "tires": 2,
+      "clutch": 2,
+      "lsd": 2,
+      "weight": 2,
+      "gearbox": 1,
+      "swap": 1,
+      "cams": 2
+     },
+     "cosmetics": {
+      "rims": 10,
+      "wing": 1
+     },
+     "skill": 0.78,
+     "payout": 30000,
+     "x": 272,
+     "y": 40,
+     "handle": "MIDNIGHT ROTARY",
+     "boss": true,
+     "prize": "car",
+     "intro": [
+      "HEAR THAT? THAT'S A ROTARY SPINNING.",
+      "NO PISTONS. NO MERCY.",
+      "BLACK PAINT, BLACK WHEELS, BLACK MAGIC.",
+      "TAKE MY FC IF YOU CAN CATCH IT."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "pro",
+   "name": "PRO",
+   "distance": "quarter",
+   "rivals": [
+    {
+     "id": "bruno",
+     "name": "BRUNO",
+     "car": "phantom",
+     "paint": 5,
+     "finish": 0,
+     "parts": {
+      "intake": 3,
+      "exhaust": 2,
+      "ecu": 3,
+      "tires": 3,
+      "weight": 1
+     },
+     "cosmetics": {},
+     "skill": 0.7,
+     "payout": 20000,
+     "x": 380,
+     "y": 100
+    },
+    {
+     "id": "ace",
+     "name": "ACE",
+     "car": "tsunami",
+     "paint": 3,
+     "finish": 0,
+     "parts": {
+      "intake": 2,
+      "exhaust": 2,
+      "ecu": 2,
+      "turbo": 2,
+      "tires": 2
+     },
+     "cosmetics": {},
+     "skill": 0.66,
+     "payout": 15000,
+     "x": 440,
+     "y": 60
+    },
+    {
+     "id": "lin",
+     "name": "LIN",
+     "car": "kaminari_mk1",
+     "paint": 7,
+     "finish": 0,
+     "parts": {
+      "intake": 3,
+      "exhaust": 3,
+      "ecu": 3,
+      "turbo": 2,
+      "tires": 3,
+      "clutch": 2
+     },
+     "cosmetics": {},
+     "skill": 0.74,
+     "payout": 25000,
+     "x": 500,
+     "y": 100
+    },
+    {
+     "id": "volt",
+     "name": "VOLT",
+     "car": "kirin",
+     "paint": 0,
+     "finish": 4,
+     "parts": {
+      "intake": 3,
+      "exhaust": 3,
+      "ecu": 3,
+      "cams": 3,
+      "supercharger": 3,
+      "tires": 3,
+      "clutch": 3,
+      "lsd": 3,
+      "weight": 3,
+      "gearbox": 2
+     },
+     "cosmetics": {
+      "rims": 3,
+      "wing": 2
+     },
+     "skill": 0.86,
+     "payout": 75000,
+     "x": 520,
+     "y": 40,
+     "handle": "THE SURGEON",
+     "boss": true,
+     "prize": "car",
+     "intro": [
+      "PRECISION IS EVERYTHING.",
+      "I SHIFT AT THE EXACT RPM. EVERY TIME.",
+      "YOU? YOU'RE GUESSING."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "outlaw",
+   "name": "OUTLAW",
+   "distance": "quarter",
+   "rivals": [
+    {
+     "id": "reaper",
+     "name": "REAPER",
+     "car": "asp",
+     "paint": 0,
+     "finish": 0,
+     "parts": {
+      "intake": 3,
+      "exhaust": 4,
+      "ecu": 3,
+      "cams": 3,
+      "tires": 3,
+      "clutch": 3
+     },
+     "cosmetics": {},
+     "skill": 0.8,
+     "payout": 40000,
+     "x": 370,
+     "y": 212
+    },
+    {
+     "id": "saint",
+     "name": "SAINT",
+     "car": "kaminari_mk3",
+     "paint": 9,
+     "finish": 0,
+     "parts": {
+      "intake": 4,
+      "exhaust": 4,
+      "ecu": 4,
+      "turbo": 4,
+      "tires": 4,
+      "clutch": 3,
+      "lsd": 3
+     },
+     "cosmetics": {},
+     "skill": 0.84,
+     "payout": 60000,
+     "x": 430,
+     "y": 182
+    },
+    {
+     "id": "max",
+     "name": "MAX",
+     "car": "mammoth",
+     "paint": 0,
+     "finish": 0,
+     "parts": {
+      "swap": 3,
+      "intake": 4,
+      "exhaust": 4,
+      "cams": 3,
+      "supercharger": 3,
+      "tires": 4,
+      "weight": 2
+     },
+     "cosmetics": {},
+     "skill": 0.88,
+     "payout": 80000,
+     "x": 490,
+     "y": 210
+    },
+    {
+     "id": "preacher",
+     "name": "THE PREACHER",
+     "car": "piranha",
+     "paint": 1,
+     "finish": 4,
+     "parts": {
+      "swap": 4,
+      "intake": 4,
+      "exhaust": 4,
+      "ecu": 4,
+      "cams": 4,
+      "supercharger": 4,
+      "nitrous": 4,
+      "clutch": 4,
+      "gearbox": 4,
+      "lsd": 4,
+      "tires": 4,
+      "weight": 4
+     },
+     "cosmetics": {
+      "rims": 1,
+      "wing": 3,
+      "kit": 2
+     },
+     "skill": 0.95,
+     "payout": 240000,
+     "x": 530,
+     "y": 168,
+     "handle": "LAST RITES",
+     "boss": true,
+     "prize": "car",
+     "intro": [
+      "EVERY CAR IN THIS CITY COMES TO ME EVENTUALLY.",
+      "SOME DRIVE AWAY. MOST GET TOWED.",
+      "LET'S SEE WHICH ONE YOU ARE."
+     ]
+    }
+   ]
+  }
+ ]
+}

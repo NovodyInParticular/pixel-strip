@@ -17,6 +17,8 @@ PAINTS = [
     ("Petty Blue", paint_ramp(0.57, sat=0.8)),
     ("Highland Green", paint_ramp(0.38, sat=0.55, light_hi=0.82, hi_hue=0.2)),
     ("Quicksilver", paint_ramp(0.6, sat=0.12, light_lo=0.1, light_hi=0.96)),
+    ("Pacific Blue", paint_ramp(0.62, sat=0.38, light_lo=0.14, light_hi=0.93, shift=0.12)),
+    ("Jet Black", paint_ramp(0.68, sat=0.18, light_lo=0.03, light_hi=0.62, hi_hue=0.6, shift=0.05)),
 ]
 
 

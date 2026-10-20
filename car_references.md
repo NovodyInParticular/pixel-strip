@@ -30,6 +30,7 @@ Never use the real names, brands or logos in the game itself.
 | Hikari Arrow RS-X | `arrow` | 1997 Acura Integra Type R (DC2) | 195 hp @ 8,000 · 130 lb-ft @ 7,500 · ~2,640 lb · FWD · 5-speed close-ratio, 4.40 final |
 | Crestline Vortex ZX-1 | `vortex` | 1990 Chevrolet Corvette ZR-1 (C4) | 375 hp @ 5,800 · 370 lb-ft @ 4,800 · ~3,465 lb · RWD · 6-speed ZF, 3.45 rear |
 | Dominion Asp V10 | `asp` | 1992 Dodge Viper RT/10 | 400 hp @ 4,600 · 465 lb-ft @ 3,600 · ~3,280 lb · RWD · 6-speed T56, 3.07 rear |
+| Hikari Kite EF Hatch | `kite_ef` | 1990 Honda Civic Si hatchback (EF); boss car of Joe "Ground Control", built to the user's friend's real car | 108 hp @ 6,000 · 100 lb-ft @ 5,000 · ~2,250 lb · FWD · 5-speed, 4.25 final |
 
 Fictional brands: Dominion (Mopar), Harlan (Ford), Crestline (Chevrolet), Apache (Pontiac), Regent (Buick),
 Hayate (Toyota), Kitsune (Mazda), Kessler (Porsche), Raijin (Nissan), Hikari (Honda/Acura), Tsubasa (Mitsubishi).

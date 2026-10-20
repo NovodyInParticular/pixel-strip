@@ -1,0 +1,41 @@
+{
+  "dir": "cars/kite_ef",
+  "width": 80,
+  "height": 40,
+  "rearWheel": [
+    16,
+    29.7
+  ],
+  "frontWheel": [
+    61,
+    29.7
+  ],
+  "wheelSize": 16,
+  "wheelFrames": 4,
+  "blurFrames": 3,
+  "spokes": 10,
+  "headlight": [
+    76.2,
+    25.7
+  ],
+  "taillight": [
+    3.7,
+    24.6
+  ],
+  "exhaust": [
+    6.0,
+    31.0
+  ],
+  "groundY": 35.5,
+  "frontX": 76,
+  "popup": false,
+  "driver": [
+    30.05,
+    12.8
+  ],
+  "wheelRadius10": 58,
+  "sideExhaust": [
+    23.5,
+    33.4
+  ]
+}

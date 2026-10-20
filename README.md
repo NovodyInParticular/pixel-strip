@@ -25,7 +25,11 @@ Done so far:
   chart; 4 presets per car; share codes via the clipboard
 - Test-n-tune runs with a run log, and a dyno with before/after pulls
 
-Next: career mode (rival ladder, bosses, pink slips), then the remaining tracks, weather and audio.
+- Career: a city map with four tiers (Street, Sport, Pro, Outlaw) of three rivals and a boss each;
+  VS cards, boss intro scenes, purses, and the boss's car as a pink-slip prize. Street boss is Joe
+  "Ground Control" in his EF Civic hatch, Sport boss is Rotor in a black FC RX-7.
+
+Next: the remaining tracks, weather and audio.
 
 ### How to race
 
@@ -91,6 +95,8 @@ cd assets && ../desktop/build/install/desktop/bin/desktop --size 1280x720 --shot
 | `assets/data/tracks/*.json` | Track layers, parallax, props, lights, grade |
 | `assets/shaders/` | Paint (ramp lookup, normal-mapped point lights, hologram), tint (lit trim), blur, composite (zoom, heat haze, upscale, bloom, LUT, CA, photo print, UI layer, CRT) |
 | `assets/data/economy.json` | Starting cash, sell rate, starter cars, performance classes |
+| `assets/data/career.json` | Career tiers, rivals (car, build, paint, AI skill, purse, map spot), boss intros |
+| `tools/art/portraits.py` | Rival portraits, generated from a few parameters |
 | `assets/data/parts.json` | Part slots, tiers and effects, prices, cosmetics, paint finishes, decals |
 | `core/` | The game: `gfx/` (post-processing, font), `world/` (track renderer), `race/` (race flow, `Vehicle` physics, `DragMath`, tree, HUD, particles, AI driver) |
 | `core/src/test/` | Physics tests: launch/bog/spin/shift/nitrous/burnout/red-light behaviour (`./gradlew core:test`) |

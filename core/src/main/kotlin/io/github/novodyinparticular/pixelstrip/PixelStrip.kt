@@ -40,6 +40,8 @@ class PixelStrip(val platform: Platform, val shots: ShotPlan? = null, private va
 
     lateinit var parts: PartCatalog
         private set
+    lateinit var career: io.github.novodyinparticular.pixelstrip.data.Career
+        private set
 
     private val carCache = HashMap<String, CarDef>()
 
@@ -75,6 +77,7 @@ class PixelStrip(val platform: Platform, val shots: ShotPlan? = null, private va
         font = PixelFont(art.tex("ui/font.png"))
         economy = Economy.load()
         parts = PartCatalog.load()
+        career = io.github.novodyinparticular.pixelstrip.data.Career.load()
         // Screenshot runs never touch the real save
         save = SaveGame.load(platform.saveFile(if (shots != null) "save-shots.json" else "save.json"))
         if (shots != null) {
@@ -101,6 +104,9 @@ class PixelStrip(val platform: Platform, val shots: ShotPlan? = null, private va
         "tune" -> io.github.novodyinparticular.pixelstrip.ui.TuneScreen(this)
         "dyno" -> io.github.novodyinparticular.pixelstrip.ui.DynoScreen(this)
         "runs" -> io.github.novodyinparticular.pixelstrip.ui.RunLogScreen(this)
+        "career" -> io.github.novodyinparticular.pixelstrip.ui.CareerScreen(this)
+        "vs" -> io.github.novodyinparticular.pixelstrip.ui.VsScreen(this, career.rivals.first { it.id == "joe" })
+        "boss" -> RaceScreen(this, "neon_city", save.selectedCar()!!, rival = career.rivals.first { it.id == "joe" })
         null -> if (shots != null) RaceScreen(this, "neon_city", save.selectedCar()!!) else TitleScreen(this)
         else -> TitleScreen(this)
     }

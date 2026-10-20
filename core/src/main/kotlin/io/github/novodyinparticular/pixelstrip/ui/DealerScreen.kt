@@ -20,7 +20,7 @@ open class DealerScreen(game: PixelStrip, private val starterMode: Boolean = fal
     private val cone = TextureRegion(art.tex("fx/light_cone.png"))
     private val stage = CarStage()
     private val stock: List<CarDef> =
-        if (starterMode) game.economy.starterCars.map { game.car(it) } else game.carIds.map { game.car(it) }.sortedBy { it.price }
+        if (starterMode) game.economy.starterCars.map { game.car(it) } else game.carIds.map { game.car(it) }.filter { it.dealer }.sortedBy { it.price }
     private var index = 0
     private var soldTimer = 0f
 

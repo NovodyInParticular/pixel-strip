@@ -23,7 +23,8 @@ class GarageScreen(game: PixelStrip) : MenuScreen(game) {
 
     private val prev = button("<", BTN_GREY, keys = intArrayOf(Input.Keys.LEFT)) { cycle(-1) }
     private val next = button(">", BTN_GREY, keys = intArrayOf(Input.Keys.RIGHT)) { cycle(1) }
-    private val race = button("RACE", BTN_RED, big = true, keys = intArrayOf(Input.Keys.ENTER)) {
+    private val race = button("CAREER", BTN_RED, big = true, keys = intArrayOf(Input.Keys.ENTER)) { game.go(0) { CareerScreen(game) } }
+    private val quick = button("QUICK RACE", Color(0.5f, 0.15f, 0.3f, 1f), keys = intArrayOf(Input.Keys.Q)) {
         val car = save.cars[index]
         game.go(1) { RaceScreen(game, "neon_city", car) }
     }
@@ -53,7 +54,8 @@ class GarageScreen(game: PixelStrip) : MenuScreen(game) {
 
     override fun layout(w: Int, h: Int) {
         race.apply { x = w - 104f; y = 8f; this.w = 96f; this.h = 40f }
-        testRun.apply { x = w - 104f; y = 52f; this.w = 96f; this.h = 18f; label = "TEST N TUNE" }
+        quick.apply { x = w - 104f; y = 52f; this.w = 96f; this.h = 18f }
+        testRun.apply { x = w - 104f; y = 74f; this.w = 96f; this.h = 18f; label = "TEST N TUNE" }
         val row = listOf(dealer to 58f, upgrades to 52f, paintShop to 52f, tune to 46f, settings to 52f)
         var bx = 8f
         for ((b, bw) in row) {
@@ -116,7 +118,7 @@ class GarageScreen(game: PixelStrip) : MenuScreen(game) {
         classBadge(game.effective(owned), 40f, h - 42f)
         cash(w - 8f, h - 20f)
         font.draw(batch, "${index + 1}/${save.cars.size}", w - 8f - font.width("${index + 1}/${save.cars.size}"), h - 32f, SOFT)
-        carStats(game.effective(owned), w - 144f, 76f)
+        carStats(game.effective(owned), w - 144f, 98f)
     }
 
     companion object {

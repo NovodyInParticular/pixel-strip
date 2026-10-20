@@ -1,0 +1,43 @@
+{
+  "id": "kite_ef",
+  "name": "Kite EF Hatch",
+  "brand": "Hikari",
+  "year": 1990,
+  "era": "80s",
+  "price": 11000,
+  "dealer": false,
+  "hp": 108,
+  "powerRating": "net",
+  "peakHpRpm": 6000,
+  "torqueNm": 136,
+  "peakTorqueRpm": 5000,
+  "idleRpm": 750,
+  "redline": 7000,
+  "weightKg": 1020,
+  "drivetrain": "FWD",
+  "rearWeight": 0.38,
+  "wheelbaseM": 2.5,
+  "cgHeightM": 0.48,
+  "gears": [
+    3.25,
+    1.894,
+    1.259,
+    0.937,
+    0.771
+  ],
+  "finalDrive": 4.25,
+  "shiftTime": 0.25,
+  "clutchTime": 0.32,
+  "clutchTorque": 1.5,
+  "tireRadiusM": 0.29,
+  "grip": 0.88,
+  "engineInertia": 0.1,
+  "wheelInertia": 1.8,
+  "dragArea": 0.6,
+  "nitrous": {
+    "hp": 0,
+    "charges": 0,
+    "seconds": 0
+  },
+  "defaultPaint": 12
+}

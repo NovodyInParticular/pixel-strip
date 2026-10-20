@@ -27,7 +27,9 @@ class PixelFont(texture: Texture) {
         draw(batch, text, (cx - width(text, scale) / 2f).toInt().toFloat(), y, color, scale, shadow)
 
     private fun drawRaw(batch: SpriteBatch, text: String, x: Float, y: Float, scale: Int) {
-        var cx = x
+        // whole pixels only: a half-pixel offset smears glyphs through the sharp upscale
+        var cx = kotlin.math.floor(x)
+        val y = kotlin.math.floor(y)
         for (ch in text.uppercase()) {
             val g = glyphs[ch] ?: glyphs['?']!!
             if (ch != ' ') batch.draw(g, cx, y, 5f * scale, 7f * scale)
