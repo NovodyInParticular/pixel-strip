@@ -27,7 +27,7 @@ class GarageScreen(game: PixelStrip) : MenuScreen(game) {
         game.go(1) { RaceScreen(game, "neon_city", car) }
     }
     private val dealer = button("DEALER", BTN_TEAL, keys = intArrayOf(Input.Keys.D)) { game.go(0) { DealerScreen(game) } }
-    private val upgrades = button("UPGRADES", BTN_GREY) {}
+    private val upgrades = button("UPGRADES", BTN_TEAL, keys = intArrayOf(Input.Keys.U)) { game.go(0) { UpgradeScreen(game) } }
     private val settings = button("SETTINGS", BTN_PURPLE, keys = intArrayOf(Input.Keys.S)) { game.go(0) { SettingsScreen(game) } }
 
     private val owned get() = save.cars[index]
@@ -73,7 +73,7 @@ class GarageScreen(game: PixelStrip) : MenuScreen(game) {
     override fun drawScene(w: Int, h: Int) {
         val bx = bgX(w)
         batch.draw(bg, bx, 0f)
-        stage.draw(def, owned.paint, w / 2f, GROUND, AMBIENT)
+        stage.draw(game.effective(owned), owned.paint, w / 2f, GROUND, AMBIENT)
         // lamp beams and the dust floating in them
         batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE)
         for (i in LAMPS.indices) {
@@ -101,11 +101,10 @@ class GarageScreen(game: PixelStrip) : MenuScreen(game) {
         font.draw(batch, def.brand.uppercase(), 8f, h - 14f, CYAN)
         font.draw(batch, def.name.uppercase(), 8f, h - 30f, Color.WHITE, 2)
         font.draw(batch, def.year.toString(), 8f, h - 42f, SOFT)
-        classBadge(def, 40f, h - 42f)
+        classBadge(game.effective(owned), 40f, h - 42f)
         cash(w - 8f, h - 20f)
         font.draw(batch, "${index + 1}/${save.cars.size}", w - 8f - font.width("${index + 1}/${save.cars.size}"), h - 32f, SOFT)
-        carStats(def, w - 144f, 56f)
-        if (upgrades.down) font.drawCentered(batch, "COMING NEXT", upgrades.x + upgrades.w / 2f, upgrades.y + 26f, YELLOW)
+        carStats(game.effective(owned), w - 144f, 56f)
     }
 
     companion object {

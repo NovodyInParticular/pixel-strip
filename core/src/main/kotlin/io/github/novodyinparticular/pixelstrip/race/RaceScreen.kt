@@ -38,7 +38,7 @@ class RaceScreen(private val game: PixelStrip, trackId: String, private val owne
 
     private val track = TrackDef.load(trackId)
     private val trackView = TrackRenderer(track, art)
-    private val carDef = game.car(owned.carId)
+    private val carDef = game.effective(owned)
     private val ramps = art.tex("paint/ramps.png")
     private val paint = art.shader("batch.vert", "paint.frag")
     private val tint = art.shader("batch.vert", "tint.frag")

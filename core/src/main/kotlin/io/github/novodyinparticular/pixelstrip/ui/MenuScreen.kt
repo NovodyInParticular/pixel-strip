@@ -53,6 +53,8 @@ abstract class MenuScreen(protected val game: PixelStrip) : ScreenAdapter() {
     protected abstract fun drawScene(w: Int, h: Int)
     protected open fun drawGlow(w: Int, h: Int) {}
     protected abstract fun drawUi(w: Int, h: Int)
+    /** Drawn after the buttons: labels and markers that sit on top of them. */
+    protected open fun drawUiOver(w: Int, h: Int) {}
     protected open fun onBack() {}
 
     override fun render(delta: Float) {
@@ -99,6 +101,7 @@ abstract class MenuScreen(protected val game: PixelStrip) : ScreenAdapter() {
         batch.setBlendFunctionSeparate(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA, GL20.GL_ONE, GL20.GL_ONE_MINUS_SRC_ALPHA)
         drawUi(w, h)
         controls.draw(batch)
+        drawUiOver(w, h)
         batch.setBlendFunctionSeparate(GL20.GL_SRC_ALPHA, GL20.GL_ONE, GL20.GL_ZERO, GL20.GL_ONE)
         controls.drawGlow(batch)
         batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
@@ -138,13 +141,20 @@ abstract class MenuScreen(protected val game: PixelStrip) : ScreenAdapter() {
         batch.color = Color.WHITE
     }
 
-    /** Labelled bar, value 0..1, in segmented LED blocks. */
-    protected fun statBar(label: String, x: Float, y: Float, value: Float, color: Color, width: Int = 70) {
+    /** Labelled bar, value 0..1, in segmented LED blocks; [preview] adds blinking segments up to that value. */
+    protected fun statBar(label: String, x: Float, y: Float, value: Float, color: Color, width: Int = 70, preview: Float = -1f) {
         font.draw(batch, label, x, y, SOFT, 1, null)
         val segs = width / 4
         val lit = (value.coerceIn(0f, 1f) * segs).toInt()
+        val next = if (preview < 0f) lit else (preview.coerceIn(0f, 1f) * segs).toInt()
+        val blink = (time * 4f).toInt() % 2 == 0
         for (i in 0 until segs) {
-            if (i < lit) batch.color = color else batch.setColor(color.r * 0.2f, color.g * 0.2f, color.b * 0.3f, 1f)
+            when {
+                i < minOf(lit, next) -> batch.color = color
+                i < lit -> batch.color = if (blink) RED else color                       // this part would lose it
+                i < next -> batch.color = if (blink) GREEN else Color(0.3f, 0.5f, 0.25f, 1f)   // this part would add it
+                else -> batch.setColor(color.r * 0.2f, color.g * 0.2f, color.b * 0.3f, 1f)
+            }
             batch.draw(white, x + 46f + i * 4f, y, 3f, 6f)
         }
         batch.color = Color.WHITE
@@ -171,18 +181,34 @@ abstract class MenuScreen(protected val game: PixelStrip) : ScreenAdapter() {
         font.draw(batch, text, x + 4f, y, c, 1, null)
     }
 
-    /** Car stat block shared by the garage and the dealer. */
-    protected fun carStats(def: CarDef, x: Float, y: Float) {
+    /** Peak power as raced: rated power (net) with the supercharger and full turbo boost. */
+    protected fun peakHp(def: CarDef) = def.hp * def.ratingFactor * (1f + def.blowerGain) * (1f + def.boostGain)
+
+    private fun statValues(def: CarDef): FloatArray = floatArrayOf(
+        peakHp(def) / 900f,
+        def.torqueNm * def.ratingFactor * (1f + def.blowerGain) * (1f + def.boostGain) / 1300f,
+        1f - (def.weightKg - 950f) / 900f,
+        (def.grip - 0.75f) / 0.6f + (if (def.drivetrain == "AWD") 0.15f else 0f),
+    )
+
+    /** Car stat block shared by the garage, dealer and shop. [preview] shows what a change would do. */
+    protected fun carStats(def: CarDef, x: Float, y: Float, preview: CarDef? = null) {
         val pass = DragMath.perfectPass(def)
         panel(x, y, 136f, 70f, CYAN, 0.7f)
-        val metric = game.settings.metric
-        statBar("POWER", x + 6f, y + 56f, def.hp * def.ratingFactor / 420f, PINK)
-        statBar("TORQUE", x + 6f, y + 46f, def.torqueNm * def.ratingFactor / 650f, ORANGE)
-        statBar("WEIGHT", x + 6f, y + 36f, 1f - (def.weightKg - 1000f) / 900f, CYAN)
-        statBar("GRIP", x + 6f, y + 26f, (def.grip - 0.75f) / 0.3f + (if (def.drivetrain == "AWD") 0.2f else 0f), GREEN)
-        val trap = if (metric) "%.0f KMH".format(pass.trapMph * 1.60934f) else "%.0f MPH".format(pass.trapMph)
-        font.draw(batch, "1/4  %.2f @ %s".format(pass.quarter, trap), x + 6f, y + 14f, YELLOW, 1, null)
-        font.draw(batch, "${def.drivetrain}  ${def.gears.size}-SPD  ${(def.hp * def.ratingFactor).toInt()} HP", x + 6f, y + 4f, SOFT, 1, null)
+        val now = statValues(def)
+        val next = preview?.let { statValues(it) }
+        val labels = arrayOf("POWER", "TORQUE", "WEIGHT", "GRIP")
+        val colors = arrayOf(PINK, ORANGE, CYAN, GREEN)
+        for (i in 0..3) statBar(labels[i], x + 6f, y + 56f - i * 10f, now[i], colors[i], preview = next?.get(i) ?: -1f)
+        if (preview != null) {
+            val after = DragMath.perfectPass(preview)
+            val better = after.quarter < pass.quarter
+            font.draw(batch, "1/4  %.2f > %.2f".format(pass.quarter, after.quarter), x + 6f, y + 14f, if (better) GREEN else RED, 1, null)
+        } else {
+            val trap = if (game.settings.metric) "%.0f KMH".format(pass.trapMph * 1.60934f) else "%.0f MPH".format(pass.trapMph)
+            font.draw(batch, "1/4  %.2f @ %s".format(pass.quarter, trap), x + 6f, y + 14f, YELLOW, 1, null)
+        }
+        font.draw(batch, "${def.drivetrain}  ${def.gears.size}-SPD  ${peakHp(def).toInt()} HP", x + 6f, y + 4f, SOFT, 1, null)
     }
 
     private var shownCash = -1L

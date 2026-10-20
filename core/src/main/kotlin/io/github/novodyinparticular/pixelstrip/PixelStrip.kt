@@ -7,6 +7,10 @@ import com.badlogic.gdx.Screen
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import io.github.novodyinparticular.pixelstrip.data.CarDef
 import io.github.novodyinparticular.pixelstrip.data.Economy
+import io.github.novodyinparticular.pixelstrip.data.PartCatalog
+import io.github.novodyinparticular.pixelstrip.data.Tune
+import io.github.novodyinparticular.pixelstrip.data.Upgrades
+import io.github.novodyinparticular.pixelstrip.save.OwnedCar
 import io.github.novodyinparticular.pixelstrip.gfx.Art
 import io.github.novodyinparticular.pixelstrip.gfx.PixelFont
 import io.github.novodyinparticular.pixelstrip.gfx.PostFx
@@ -34,7 +38,24 @@ class PixelStrip(val platform: Platform, val shots: ShotPlan? = null, private va
     lateinit var economy: Economy
         private set
 
+    lateinit var parts: PartCatalog
+        private set
+
     private val carCache = HashMap<String, CarDef>()
+
+    private val effectiveCache = HashMap<String, CarDef>()
+
+    /** The car as it drives: stock stats + installed parts + the active tune. */
+    fun effective(car: OwnedCar): CarDef = effectiveWith(car.carId, car.parts, car.cosmetics, car.tune)
+
+    /** Memoized by content, so per-frame callers share one instance (and its cached simulations). */
+    fun effectiveWith(carId: String, parts: Map<String, Int>, cosmetics: Map<String, Int>, tune: Tune?): CarDef {
+        val key = buildString {
+            append(carId).append('|').append(parts.toSortedMap()).append('|').append(cosmetics.toSortedMap()).append('|')
+            tune?.let { append(it.gears?.contentToString()).append(it.finalDrive).append(it.launchRpm).append(it.nitrousGear).append(it.tirePressure) }
+        }
+        return effectiveCache.getOrPut(key) { Upgrades.apply(car(carId), this.parts, parts, cosmetics, tune) }
+    }
     fun car(id: String): CarDef = carCache.getOrPut(id) { CarDef.load(id) }
     val carIds: List<String> by lazy { CarDef.ids() }
 
@@ -53,6 +74,7 @@ class PixelStrip(val platform: Platform, val shots: ShotPlan? = null, private va
         batch = SpriteBatch(4000)
         font = PixelFont(art.tex("ui/font.png"))
         economy = Economy.load()
+        parts = PartCatalog.load()
         // Screenshot runs never touch the real save
         save = SaveGame.load(platform.saveFile(if (shots != null) "save-shots.json" else "save.json"))
         if (shots != null) {
@@ -70,6 +92,7 @@ class PixelStrip(val platform: Platform, val shots: ShotPlan? = null, private va
         "dealer" -> DealerScreen(this)
         "settings" -> SettingsScreen(this)
         "starter" -> StarterScreen(this)
+        "upgrades" -> io.github.novodyinparticular.pixelstrip.ui.UpgradeScreen(this)
         null -> if (shots != null) RaceScreen(this, "neon_city", save.selectedCar()!!) else TitleScreen(this)
         else -> TitleScreen(this)
     }
