@@ -28,6 +28,8 @@ class Controls(private val post: PostFx, private val font: PixelFont, private va
     }
 
     val buttons = ArrayList<Button>()
+    /** Off while a text box has the keyboard, so typing doesn't press buttons. */
+    var keysEnabled = true
 
     fun add(b: Button): Button = b.also { buttons.add(it) }
 
@@ -39,7 +41,7 @@ class Controls(private val post: PostFx, private val font: PixelFont, private va
                 for (i in 0 until 5) {
                     if (Gdx.input.isTouched(i) && b.contains(post.toBufferX(Gdx.input.getX(i)), post.toBufferY(Gdx.input.getY(i)))) now = true
                 }
-                for (k in b.keys) if (Gdx.input.isKeyPressed(k)) now = true
+                if (keysEnabled) for (k in b.keys) if (Gdx.input.isKeyPressed(k)) now = true
             }
             b.down = now && b.visible
             b.justPressed = b.down && !was

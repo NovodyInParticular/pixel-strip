@@ -54,7 +54,7 @@ class PrizeScreen(game: PixelStrip, private val rival: Career.Rival) : MenuScree
         // the car drives in from the left and stops on the lift
         val roll = min(1f, time / 1.6f)
         val ease = 1f - (1f - roll) * (1f - roll)
-        stage.draw(game.effective(car), car.paint, -80f + (w / 2f + 80f) * ease, GarageScreen.GROUND, GarageScreen.AMBIENT, looks = CarLooks.of(car, game.parts))
+        stage.draw(game.effective(car), car.paint, -80f + (w / 2f + 80f) * ease, GarageScreen.GROUND, GarageScreen.AMBIENT, looks = game.looks(car))
         for (c in confetti) {
             batch.color = colors[c[4].toInt()]
             val flip = MathUtils.sin(time * 8f + c[5]) > 0f

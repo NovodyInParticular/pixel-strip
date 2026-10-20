@@ -33,6 +33,9 @@ class CarRenderer(val def: CarDef, private val art: Art, private val paint: Shad
     companion object {
         const val SPEC_POWER = 22f
         const val SPEC_STRENGTH = 0.8f
+        const val DOOR_EMBLEM = 9
+        /** Dark rims that blur to a plain disc: they always show a sharp frame, so they read as spinning. */
+        val NO_BLUR = setOf("split_black")
         /** Painted body kit layers, back to front. */
         val PAINTED_BODY = listOf("flares", "widebody", "skirts1", "skirts2", "rear1", "rear2", "bumper1", "bumper2", "bumper3", "hood2")
         /** True-colour details on top of the trim. */
@@ -78,7 +81,7 @@ class CarRenderer(val def: CarDef, private val art: Art, private val paint: Shad
         val period = 2f * PI.toFloat() / spokes
         val perFrame = rate[i] / 60f
         return when {
-            perFrame < period * 0.22f -> wheelFrames[((angle[i] % period) / period * s.wheelFrames).toInt().coerceIn(0, s.wheelFrames - 1)]
+            perFrame < period * 0.22f || looks.rim in NO_BLUR -> wheelFrames[((angle[i] % period) / period * s.wheelFrames).toInt().coerceIn(0, s.wheelFrames - 1)]
             perFrame < period * 0.55f -> wheelFrames[s.wheelFrames]
             perFrame < period * 1.3f -> wheelFrames[s.wheelFrames + 1]
             else -> wheelFrames[s.wheelFrames + 2]
@@ -147,7 +150,20 @@ class CarRenderer(val def: CarDef, private val art: Art, private val paint: Shad
         if (lights != null) lights.apply(paint, shakeX, shakeY) else paint.setUniformi("u_lightCount", 0)
         batch.draw(bodyRegion, bx, by + lift, ox, oy, s.width.toFloat(), s.height.toFloat(), 1f, 1f, pitch)
         for (v in PAINTED_BODY) if (v in looks.body) batch.draw(layer("body_$v"), bx, by + lift, ox, oy, s.width.toFloat(), s.height.toFloat(), 1f, 1f, pitch)
-        if (ghost <= 0f) looks.decal?.let { d ->
+        if (ghost <= 0f) looks.decal?.takeIf { it == "crew" }?.let {
+            // the crew emblem on the door, true colour
+            val e = looks.emblem
+            val door = s.door
+            if (e != null && door != null) {
+                batch.shader = tint
+                tint.setUniformf("u_ghost", 0f)
+                tint.setUniformf("u_lit", if (lights != null) 0.4f else 0f)
+                if (lights != null) lights.apply(tint, shakeX, shakeY)
+                batch.draw(art.emblems.texture(e, DOOR_EMBLEM), floor(bx + door.first - DOOR_EMBLEM / 2f), floor(by + lift + s.height - door.second - DOOR_EMBLEM / 2f))
+                batch.shader = paint
+            }
+        }
+        if (ghost <= 0f) looks.decal?.takeIf { it != "crew" }?.let { d ->
             batch.shader = tint
             tint.setUniformf("u_ghost", 0f)
             tint.setUniformf("u_lit", if (lights != null) 0.4f else 0f)

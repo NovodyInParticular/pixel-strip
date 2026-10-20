@@ -86,6 +86,9 @@ class PixelStrip(val platform: Platform, val shots: ShotPlan? = null, private va
 
     private val effectiveCache = HashMap<String, CarDef>()
 
+    /** How one of your cars looks, with your crew's emblem for the CREW decal. */
+    fun looks(car: OwnedCar) = io.github.novodyinparticular.pixelstrip.race.CarLooks.of(car, parts, cloud.badge?.emblem)
+
     /** The car as it drives: stock stats + installed parts + the active tune. */
     fun effective(car: OwnedCar): CarDef = effectiveWith(car.carId, car.parts, car.cosmetics, car.tune)
 
@@ -167,6 +170,7 @@ class PixelStrip(val platform: Platform, val shots: ShotPlan? = null, private va
         "career" -> io.github.novodyinparticular.pixelstrip.ui.CareerScreen(this)
         "vs" -> io.github.novodyinparticular.pixelstrip.ui.VsScreen(this, career.rivals.first { it.id == "joe" })
         "online" -> io.github.novodyinparticular.pixelstrip.ui.OnlineScreen(this)
+        "crew" -> io.github.novodyinparticular.pixelstrip.ui.CrewScreen(this)
         "boss" -> career.rivals.first { it.id == "joe" }.let { RaceScreen(this, it.track, save.selectedCar()!!, rival = it) }
         null -> if (shots != null) RaceScreen(this, System.getProperty("pixelstrip.track") ?: "neon_city", save.selectedCar()!!) else TitleScreen(this)
         else -> TitleScreen(this)

@@ -35,6 +35,7 @@ class GarageScreen(game: PixelStrip) : MenuScreen(game) {
         val car = save.cars[index]
         game.go(1) { RaceScreen(game, "neon_city", car, test = true) }
     }
+    private val crew = button("CREW", Color(0.6f, 0.3f, 0.1f, 1f), keys = intArrayOf(Input.Keys.C)) { game.go(0) { CrewScreen(game) } }
     private val dealer = button("DEALER", BTN_TEAL, keys = intArrayOf(Input.Keys.D)) { game.go(0) { DealerScreen(game) } }
     private val upgrades = button("PARTS", BTN_TEAL, keys = intArrayOf(Input.Keys.U)) { game.go(0) { UpgradeScreen(game) } }
     private val tune = button("TUNE", BTN_TEAL, keys = intArrayOf(Input.Keys.T)) { game.go(0) { TuneScreen(game) } }
@@ -60,7 +61,9 @@ class GarageScreen(game: PixelStrip) : MenuScreen(game) {
         flashColor.set(YELLOW)
     }
 
-    private val owned get() = save.cars[index]
+    /** Desktop shots only: -Dpixelstrip.showcase=RIVAL puts that rival's car on the lift, zoomed in. */
+    private val showcase = game.shots?.let { System.getProperty("pixelstrip.showcase") }?.let { id -> game.career.rivals.first { it.id == id }.asCar() }
+    private val owned get() = showcase ?: save.cars[index]
     private val def get() = game.car(owned.carId)
 
     private fun cycle(d: Int) {
@@ -79,6 +82,10 @@ class GarageScreen(game: PixelStrip) : MenuScreen(game) {
         quick.apply { x = w - 104f; y = 52f; this.w = 96f; this.h = 18f }
         testRun.apply { x = w - 104f; y = 74f; this.w = 96f; this.h = 18f; label = "TEST N TUNE" }
         onlineRace.apply { x = w - 190f; y = 8f; this.w = 82f; this.h = 40f }
+        crew.apply {
+            x = w - 190f; y = 52f; this.w = 82f; this.h = 18f
+            label = game.cloud.badge?.let { "CREW [${it.tag}]" } ?: "CREW"
+        }
         val row = listOf(dealer to 58f, upgrades to 52f, paintShop to 52f, tune to 46f, settings to 52f)
         var bx = 8f
         for ((b, bw) in row) {
@@ -99,6 +106,12 @@ class GarageScreen(game: PixelStrip) : MenuScreen(game) {
     private fun lampX(w: Int, i: Int) = bgX(w) + LAMPS[i]
 
     override fun update(dt: Float) {
+        if (showcase != null) {
+            zoom = 3.2f
+            focusX = post.width / 2f
+            focusY = post.height / 2f
+            for (b in controls.buttons) b.visible = false
+        }
         confirmSell = (confirmSell - dt).coerceAtLeast(0f)
         // the car on the lift idles, with a lumpy little blip every few seconds
         val blip = if ((time % 5f) in 2f..2.35f) 0.6f else 0f
@@ -119,7 +132,7 @@ class GarageScreen(game: PixelStrip) : MenuScreen(game) {
     override fun drawScene(w: Int, h: Int) {
         val bx = bgX(w)
         batch.draw(bg, bx, 0f)
-        stage.draw(game.effective(owned), owned.paint, w / 2f, GROUND, AMBIENT, looks = CarLooks.of(owned, game.parts))
+        stage.draw(game.effective(owned), owned.paint, w / 2f, if (showcase != null) h / 2f - 12f else GROUND, AMBIENT, looks = game.looks(owned))
         // lamp beams and the dust floating in them
         batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE)
         for (i in LAMPS.indices) {
@@ -144,6 +157,7 @@ class GarageScreen(game: PixelStrip) : MenuScreen(game) {
     }
 
     override fun drawUi(w: Int, h: Int) {
+        if (showcase != null) return
         font.draw(batch, def.brand.uppercase(), 8f, h - 14f, CYAN)
         font.draw(batch, def.name.uppercase(), 8f, h - 30f, Color.WHITE, 2)
         font.draw(batch, def.year.toString(), 8f, h - 42f, SOFT)

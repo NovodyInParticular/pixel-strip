@@ -1717,7 +1717,7 @@
 	}
 },
 "cosmetics": {
-	"rims": { "price": 2500, "styles": 11 },
+	"rims": { "price": 2500, "styles": 12 },
 	"wing": { "price": 3000, "styles": 4 },
 	"tint": { "price": 400, "styles": 3 },
 	"underglow": { "price": 1500, "styles": 6 }
@@ -1725,7 +1725,7 @@
 "colors": 14,
 "colorPrice": 1500,
 "finishes": [ 0, 2000, 6000, 8000, 12000 ],
-"decals": [ 0, 1000, 5000, 1500, 2500 ],
+"decals": [ 0, 1000, 5000, 1500, 2500, 2000 ],
 "decalColors": 8,
 "decalColorPrice": 500,
 "rivals": [
@@ -1776,7 +1776,7 @@
 			"throttle": 1,
 			"tires": 2
 		},
-		"cosmetics": { "finish": 1, "rims": 9 }
+		"cosmetics": { "finish": 1, "rims": 11 }
 	},
 	{
 		"id": "vega",

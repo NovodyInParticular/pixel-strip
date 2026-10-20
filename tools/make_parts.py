@@ -313,11 +313,18 @@ SLOTS = [
 
 COSMETIC = [
     {"id": "rims", "name": "RIMS", "group": "LOOKS",
-     "styles": ["stock", "magnum", "rally", "fivestar", "mesh", "turbine", "phone", "three", "sixspoke", "mesh_black", "steelie_black"], "price": 2500},
+     "styles": ["stock", "magnum", "rally", "fivestar", "mesh", "turbine", "phone", "three", "sixspoke", "mesh_black", "steelie_black", "split_black"], "price": 2500},
     {"id": "wing", "name": "SPOILER", "group": "LOOKS", "styles": ["stock", "ducktail", "gt", "drag"], "price": 3000, "dragArea": [0, 0.004, 0.012, 0.02]},
     {"id": "tint", "name": "WINDOW TINT", "group": "LOOKS", "styles": ["none", "light", "limo"], "price": 400},
     {"id": "underglow", "name": "UNDERGLOW", "group": "LOOKS", "styles": ["off", "cyan", "magenta", "green", "orange", "purple"], "price": 1500},
 ]
+
+
+def paint(p):
+    """Paint options; the CREW decal puts your crew's emblem on the door."""
+    if not any(d["name"] == "CREW" for d in p["decals"]):
+        p["decals"].append({"name": "CREW", "price": 2000})
+    return p
 
 
 def main():
@@ -333,7 +340,7 @@ def main():
         "classMultiplier": old["classMultiplier"],
         "slots": slots,
         "cosmetic": COSMETIC,
-        "paint": old["paint"],
+        "paint": paint(old["paint"]),
     }
     path.write_text(json.dumps(out, indent=1) + "\n")
     print(len(slots), "slots,", sum(len(s["options"]) for s in slots) - len(slots), "parts")

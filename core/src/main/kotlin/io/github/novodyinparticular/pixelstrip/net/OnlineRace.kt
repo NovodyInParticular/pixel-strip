@@ -1,6 +1,7 @@
 package io.github.novodyinparticular.pixelstrip.net
 
 import com.badlogic.gdx.utils.JsonValue
+import io.github.novodyinparticular.pixelstrip.gfx.Emblem
 import io.github.novodyinparticular.pixelstrip.race.RunRecorder
 import io.github.novodyinparticular.pixelstrip.race.Vehicle
 
@@ -9,7 +10,14 @@ import io.github.novodyinparticular.pixelstrip.race.Vehicle
  * the live lanes both phones stream through the Realtime Database, and the server's verdict.
  */
 class OnlineRace(private val cloud: Cloud, val raceId: String, room: JsonValue) {
-    class Player(val uid: String, val name: String, val car: String, val paint: Int, val parts: Map<String, Int>, val cosmetics: Map<String, Int>, val rating: Int)
+    class Player(
+        val uid: String, val name: String, val car: String, val paint: Int, val parts: Map<String, Int>, val cosmetics: Map<String, Int>, val rating: Int,
+        /** Their crew's tag and emblem (null when they race solo). */
+        val crew: Cloud.Badge? = null,
+    ) {
+        /** "[TAG] NAME", or just the name. */
+        val tagged get() = crew?.let { "[${it.tag}] $name" } ?: name
+    }
 
     /** The other phone's latest report. */
     class Live(val x: Float, val v: Float, val rpm: Float, val gear: Int, val mode: Vehicle.Mode, val leave: Float?, val splits: FloatArray?, val nitrous: Boolean, val t: Float)
@@ -78,7 +86,8 @@ class OnlineRace(private val cloud: Cloud, val raceId: String, room: JsonValue) 
     init {
         val uid = cloud.accountId ?: error("not signed in")
         val players = room.get("players").map { p ->
-            Player(p.name, p.getString("name"), p.getString("car"), p.getInt("paint", 0), ints(p.get("parts")), ints(p.get("cosmetics")), p.getInt("rating", 0))
+            Player(p.name, p.getString("name"), p.getString("car"), p.getInt("paint", 0), ints(p.get("parts")), ints(p.get("cosmetics")), p.getInt("rating", 0),
+                p.get("crew")?.takeIf { it.isObject }?.let { c -> Emblem.parse(c.get("emblem"))?.let { Cloud.Badge(c.getString("tag", ""), it) } })
         }
         me = players.first { it.uid == uid }
         them = players.first { it.uid != uid }

@@ -4,16 +4,16 @@
   "height": 40,
   "rearWheel": [
     16,
-    29.7
+    29.0
   ],
   "frontWheel": [
     61,
-    29.7
+    29.0
   ],
-  "wheelSize": 16,
+  "wheelSize": 18,
   "wheelFrames": 4,
   "blurFrames": 3,
-  "spokes": 10,
+  "spokes": 8,
   "headlight": [
     76.2,
     25.7
@@ -23,8 +23,8 @@
     24.6
   ],
   "exhaust": [
-    6.0,
-    31.0
+    8.0,
+    31.1
   ],
   "groundY": 35.5,
   "frontX": 76,
@@ -33,9 +33,13 @@
     30.05,
     12.8
   ],
-  "wheelRadius10": 58,
+  "wheelRadius10": 65,
   "sideExhaust": [
-    23.5,
+    24.1,
     33.4
+  ],
+  "door": [
+    32,
+    29
   ]
 }

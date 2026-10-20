@@ -38,7 +38,7 @@ class PixelFont(texture: Texture) {
     }
 
     companion object {
-        const val ORDER = " ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.,:;!?'\"-+/%$#()<>=_*&@"
+        const val ORDER = " ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.,:;!?'\"-+/%$#()<>=_*&@[]"
         const val CELL_W = 6
         val SHADOW = Color(0.04f, 0.03f, 0.09f, 1f)
     }

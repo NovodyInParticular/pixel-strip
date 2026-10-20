@@ -9,6 +9,8 @@ import com.badlogic.gdx.utils.Disposable
 class Art : Disposable {
     private val textures = HashMap<String, Texture>()
     private val shaders = HashMap<String, ShaderProgram>()
+    /** Crew emblems, drawn on demand. */
+    val emblems = EmblemCache()
 
     fun tex(path: String): Texture = textures.getOrPut(path) {
         Texture(Gdx.files.internal(path)).apply {
@@ -26,6 +28,7 @@ class Art : Disposable {
     }
 
     override fun dispose() {
+        emblems.dispose()
         textures.values.forEach { it.dispose() }
         shaders.values.forEach { it.dispose() }
         textures.clear()

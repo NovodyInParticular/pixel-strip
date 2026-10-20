@@ -84,7 +84,7 @@ class RaceScreen(
     private var autoPlayer: AutoDriver? = null
     private val playerView = CarRenderer(carDef, art, paint, tint, ramps).apply {
         paintRow = owned.paint
-        looks = CarLooks.of(owned, game.parts)
+        looks = game.looks(owned)
     }
     private val rivalCar = rival?.asCar() ?: online?.them?.let {
         OwnedCar("online", it.car, it.paint, it.parts.toMutableMap(), it.cosmetics.toMutableMap())
@@ -92,7 +92,7 @@ class RaceScreen(
     private val opponentDef = rivalCar?.let { game.effective(it) } ?: carDef
     private val ghostView = CarRenderer(opponentDef, art, paint, tint, ramps).apply {
         paintRow = rivalCar?.paint ?: 2
-        rivalCar?.let { looks = CarLooks.of(it, game.parts) }
+        rivalCar?.let { looks = CarLooks.of(it, game.parts, online?.them?.crew?.emblem) }
         if (rival?.driver == "joe") driver = 1
     }
     /** A real car in the far lane (a career rival or another player), not the practice hologram. */
@@ -852,7 +852,7 @@ class RaceScreen(
             Hud.SlipLine(if (quarter) "1/4 ET" else "1/8 ET", r?.let { et(it.mine) } ?: fmt(player.splits[finishSplit]), r?.let { et(it.theirs) } ?: fmt(ghost.splits[finishSplit])),
             Hud.SlipLine(unit, r?.let { mph(it.mine) } ?: speedOf(player.splitSpeed[finishSplit]), r?.let { mph(it.theirs) } ?: "-"),
         )
-        val notes = arrayListOf("VS ${o.them.name}")
+        val notes = arrayListOf("VS ${o.them.tagged}")
         player.ratings.firstOrNull()?.let { notes.add("LAUNCH  ${it.name}") }
         when {
             o.error != null -> notes.add("SERVER: ${o.error!!.uppercase().take(28)}")

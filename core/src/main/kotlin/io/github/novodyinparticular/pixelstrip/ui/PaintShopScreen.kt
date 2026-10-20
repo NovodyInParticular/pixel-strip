@@ -39,6 +39,9 @@ class PaintShopScreen(game: PixelStrip) : MenuScreen(game) {
     private val apply = button("APPLY", BTN_RED, big = true, keys = intArrayOf(Input.Keys.ENTER)) { commit() }
     private val back = button("BACK", BTN_GREY, keys = intArrayOf(Input.Keys.B)) { onBack() }
 
+    /** The CREW decal is your crew's emblem in its own colours: no ink to pick. */
+    private fun inked() = decal > 0 && cat.decals[decal].name != "CREW"
+
     private fun cost(): Long = Ledger.paintCost(game.rules, owned, listOf(color, finish, decal, decalColor))
 
     private fun commit() {
@@ -51,7 +54,7 @@ class PaintShopScreen(game: PixelStrip) : MenuScreen(game) {
     override fun onBack() = game.go(0) { GarageScreen(game) }
 
     private fun previewLooks(): CarLooks {
-        val base = CarLooks.of(owned, cat)
+        val base = CarLooks.of(owned, cat, game.cloud.badge?.emblem)
         val dc = cat.decalColors[decalColor]
         return base.copy(finish = finish, decal = if (decal > 0) cat.decals[decal].name.lowercase() else null, decalColor = Color(dc[0], dc[1], dc[2], 1f))
     }
@@ -72,7 +75,7 @@ class PaintShopScreen(game: PixelStrip) : MenuScreen(game) {
         row(finishButtons, h - 80f, 56f, 3f, finish, false)
         row(decalButtons, h - 102f, 56f, 3f, decal, false)
         row(decalColorButtons, h - 122f, 16f, 3f, decalColor, true)
-        decalColorButtons.forEach { it.visible = decal > 0 }
+        decalColorButtons.forEach { it.visible = inked() }
         val c = cost()
         apply.apply {
             x = w - 112f; y = 8f; this.w = 104f; this.h = 40f
@@ -123,7 +126,9 @@ class PaintShopScreen(game: PixelStrip) : MenuScreen(game) {
         font.draw(batch, "COLOR", 8f, h - 54f, SOFT, 1, null)
         font.draw(batch, "FINISH", 8f, h - 76f, SOFT, 1, null)
         font.draw(batch, "DECAL", 8f, h - 98f, SOFT, 1, null)
-        if (decal > 0) font.draw(batch, "DECAL INK", 8f, h - 118f, SOFT, 1, null)
+        if (inked()) font.draw(batch, "DECAL INK", 8f, h - 118f, SOFT, 1, null)
+        else if (decal > 0) font.draw(batch, game.cloud.badge?.let { "[${it.tag}] ON THE DOOR" } ?: "JOIN A CREW TO SHOW ITS EMBLEM", 70f, h - 118f,
+            if (game.cloud.badge != null) CYAN else ORANGE, 1, null)
         val c = cost()
         if (c > 0) font.draw(batch, "$" + "%,d".format(c), w - 112f, 52f, if (save.cash >= c) YELLOW else RED, 1, null)
         if (applied > 0f) font.drawCentered(batch, "FRESH PAINT!", w / 2f - 10f, h / 2f + 6f, YELLOW, if (applied > 1.25f) 3 else 2)
@@ -131,7 +136,7 @@ class PaintShopScreen(game: PixelStrip) : MenuScreen(game) {
 
     override fun drawUiOver(w: Int, h: Int) {
         // selection rings on the swatches
-        val sel = listOf(colorButtons[color]) + (if (decal > 0) listOf(decalColorButtons[decalColor]) else emptyList())
+        val sel = listOf(colorButtons[color]) + (if (inked()) listOf(decalColorButtons[decalColor]) else emptyList())
         for (b in sel) {
             batch.color = Color.WHITE
             batch.draw(white, b.x - 2f, b.y - 2f, b.w + 4f, 1f)

@@ -106,7 +106,7 @@ class DynoScreen(game: PixelStrip) : MenuScreen(game) {
         batch.color = Color.WHITE
         val v = stage.view(def)
         v.update(1f / 60f, 0f, if (pulling) rpm / 60f else 0f)
-        stage.draw(def, owned.paint, w / 2f + sx, GarageScreen.GROUND, GarageScreen.AMBIENT, looks = CarLooks.of(owned, game.parts))
+        stage.draw(def, owned.paint, w / 2f + sx, GarageScreen.GROUND, GarageScreen.AMBIENT, looks = game.looks(owned))
         if (pop > 0f) {
             val ex = carX() + s.exhaust.first
             val ey = GarageScreen.GROUND + (s.height - s.groundY) * 0f + (s.groundY - s.exhaust.second)

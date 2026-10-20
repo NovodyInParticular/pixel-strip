@@ -103,7 +103,23 @@ def body_layer(p):
                 yb = _interp_y(p["beltline"], lx) + PAD_Y
                 s = (y + 0.5 - yb) / max(1.0, yr - yb)
                 hot = any(a <= lx <= b for a, b in p["hotspots"])
-                if s < 0.07:
+                if p.get("flat_sides"):
+                    # slab sides: a lit edge under the beltline, then an even, gently darkening panel
+                    if s < 0.07:
+                        i = 6
+                        shine[y, x] = 230
+                    elif s < 0.5:
+                        i = 5
+                        shine[y, x] = 150
+                    elif s < 0.84:
+                        i = 5
+                        shine[y, x] = 110
+                    elif s < 0.93:
+                        i = 5 if bayer(x, y) > (s - 0.84) / 0.09 else 4
+                        shine[y, x] = 80
+                    else:
+                        i = 3
+                elif s < 0.07:
                     i = 7 if hot else 6
                     shine[y, x] = 255
                 elif abs(s - p["crease_t"]) < 0.045:
@@ -115,6 +131,8 @@ def body_layer(p):
                 elif s < 0.44:
                     i = 4 if s > 0.3 or bayer(x, y) > (s - p["crease_t"]) / 0.1 else 5
                     shine[y, x] = 160
+                elif p.get("flat_sides") and s < 0.92:
+                    i = 4 if s < 0.62 or bayer(x, y) > (s - 0.62) / 0.3 else 3   # slab sides: one tone down to the sill
                 elif s < 0.58:
                     i = 4 if bayer(x, y) > (s - 0.44) / 0.14 else 3   # soft horizon line
                 elif s < 0.8:
@@ -258,6 +276,8 @@ def normal_layer(p, idx):
                     ny = 0.55
                 elif s_ < 0.44:
                     ny = 0.22
+                elif p.get("flat_sides") and s_ < 0.92:
+                    ny = 0.12                              # slab door skin, facing out all the way down
                 elif s_ < 0.7:
                     ny = 0.0
                 elif s_ < 0.88:
@@ -349,7 +369,8 @@ def trim_layer(p, idx):
 
     if p.get("handle"):
         hx, hy = p["handle"]
-        for dx, dy, c in ((0, 0, P("steel", 5)), (1, 0, P("steel", 4)), (0, 1, P("night", 1)), (1, 1, P("night", 1))):
+        lip = (P("steel", 3), P("night", 0)) if style == "black" else (P("steel", 5), P("steel", 4))   # black handles on black-trim cars
+        for dx, dy, c in ((0, 0, lip[0]), (1, 0, lip[1]), (0, 1, P("night", 1)), (1, 1, P("night", 1))):
             put(out, hx + dx + PAD_X, hy + dy + PAD_Y, c)
     if p.get("mirror"):
         mx, my = p["mirror"]
@@ -362,11 +383,11 @@ def trim_layer(p, idx):
         for dx, dy, c in ((0, 0, P("steel", 6)), (1, 0, P("steel", 4)), (0, 1, P("steel", 3)), (1, 1, P("steel", 2))):
             put(out, gx + dx + PAD_X, gy + dy + PAD_Y, c)
 
-    # Rocker trim between the wheels
-    rx0 = p["rear_wheel"][0] + p["arch_r"] + 1
+    # Rocker trim between the wheels (unless the sills are body colour)
+    rx0 = p["rear_wheel"][0] + p["arch_r"] + 1 if p.get("rocker_trim", True) else 0
     rx1 = p["front_wheel"][0] - p["arch_r"] - 1
     ry = int(p["rocker_y"] + PAD_Y) - 1
-    for x in range(int(rx0 + PAD_X), int(rx1 + PAD_X)):
+    for x in range(int(rx0 + PAD_X), int(rx1 + PAD_X) if p.get("rocker_trim", True) else 0):
         if 0 <= ry < CH and idx[ry, x] >= 0:
             out[ry, x] = P("steel", 1)
             out[ry - 1, x] = P("steel", 3) if x % 2 else P("steel", 2)
@@ -482,6 +503,25 @@ def _trim_extra(out, cw, idx, e, p):
         x0, y0, x1, y1 = e["rect"]
         c = P(*e.get("color", ("steel", 6)))
         _rect(out, x0, y0, x1, y1, lambda x, y: c if idx[y, x] >= 0 else None)
+    elif k == "fill":
+        # a solid trim colour over the body (black pillars and the like)
+        x0, y0, x1, y1 = e["rect"]
+        c = P(*e.get("color", ("night", 0)))
+        _rect(out, x0, y0, x1, y1, lambda x, y: c)
+    elif k == "outline":
+        # a panel's shut line: a one-pixel ring (fuel doors, hatches)
+        x0, y0, x1, y1 = e["rect"]
+        c = P(*e.get("color", ("night", 1)))
+        ys, ye = int(round(y0 + PAD_Y)), int(round(y1 + PAD_Y)) - 1
+        xs, xe = int(round(x0 + PAD_X)), int(round(x1 + PAD_X)) - 1
+        _rect(out, x0, y0, x1, y1, lambda x, y: c if (y in (ys, ye) or x in (xs, xe)) and idx[y, x] >= 0 else None)
+    elif k == "line":
+        c = P(*e.get("color", ("night", 1)))
+        for (ax, ay), (bx, by) in zip(e["pts"], e["pts"][1:]):
+            n = int(max(abs(bx - ax), abs(by - ay)) * 2) + 1
+            for i in range(n + 1):
+                t = i / n
+                put(out, ax + (bx - ax) * t + PAD_X, ay + (by - ay) * t + PAD_Y, c)
 
 
 def lights_layer(p):
@@ -542,6 +582,8 @@ def _wheel_sample(px, py, angle, p):
         return None
     a = math.atan2(py, px) - angle
     lit = (-px - py) / (d + 1e-6)
+    if rim["style"] == "split":
+        return _split_sample(px, py, d, a, lit, r_tire, r_tire * rim.get("size", 0.72), rim.get("spokes", 8))
     if d > r_rim + 0.35:
         # Tyre: cool dark rubber, sidewall lit from the top-left, tread edge darkest
         if d > r_tire - 0.75:
@@ -595,6 +637,31 @@ def _wheel_sample(px, py, angle, p):
     return P("night", 1) if d > 2.4 else cols[3]
 
 
+# True neutral blacks for the gloss-black wheel: the palette's darks are all tinted blue-purple.
+BLACK = [(5, 5, 6, 255), (14, 14, 15, 255), (26, 26, 28, 255), (44, 44, 47, 255), (110, 110, 114, 255)]
+
+
+def _split_sample(px, py, d, a, lit, r_tire, r_rim, n):
+    """Gloss-black spoked wheel (RPF1 style) on a fat black tyre, in neutral blacks (BLACK) rather
+    than the palette: the spokes are wedges a shade lighter than the gaps between them, and the
+    gloss shows on the lip."""
+    if d > r_tire - 0.2:                                  # keep the tyre's outline round, no nubs
+        return None
+    if d > r_rim + 0.4:                                   # tyre
+        if d > r_tire - 0.9:
+            return BLACK[0]
+        return BLACK[2] if lit > 0.6 else BLACK[1]
+    if d > r_rim - 0.6:                                   # lip: gloss black, one bright arc up top
+        return BLACK[4] if lit > 0.75 else (BLACK[2] if lit > 0.2 else BLACK[0])
+    if d < 1.0:                                           # centre cap
+        return BLACK[3]
+    period = 2 * math.pi / n
+    sa = abs((a % period) - period / 2) / period          # 0 on a spoke's centre line, 0.5 between spokes
+    if sa < 0.24:                                         # spoke wedge: black, lit edge toward the light
+        return BLACK[3] if lit > 0.3 else BLACK[2]
+    return BLACK[0]
+
+
 def _mode(samples):
     cols = [s for s in samples if s is not None]
     if len(cols) < len(samples) * 0.5:
@@ -639,7 +706,8 @@ def wheel_frames(p):
         if f < ROT_FRAMES:
             angles = [period * f / ROT_FRAMES]
         else:
-            spread = [period * 0.5, period, period * 2.5][f - ROT_FRAMES]
+            spread = ([period * 0.25, period * 0.4, period * 0.55] if p["rim"]["style"] == "split"   # turned in game
+                      else [period * 0.5, period, period * 2.5])[f - ROT_FRAMES]
             angles = [spread * k / 12 for k in range(12)]
         for y in range(size):
             for x in range(size):
@@ -650,7 +718,8 @@ def wheel_frames(p):
                         py = y + (sy + 0.5) / sub - c
                         for a in angles:
                             samples.append(_wheel_sample(px, py, a, p))
-                img[y, x] = _mode(samples) if f < ROT_FRAMES else _avg_to_palette(samples)
+                # the split wheel keeps its own colours when blurred, so a blurred wheel matches a sharp one
+                img[y, x] = _mode(samples) if f < ROT_FRAMES or p["rim"]["style"] == "split" else _avg_to_palette(samples)
         frames.append(img)
     return np.concatenate(frames, axis=1)
 
@@ -846,12 +915,13 @@ def looks_build(p):
     return side_exhaust
 
 
-RIM_STYLES = ["magnum", "rally", "fivestar", "mesh", "turbine", "phone", "three", "sixspoke", "mesh_black", "steelie_black"]
+RIM_STYLES = ["magnum", "rally", "fivestar", "mesh", "turbine", "phone", "three", "sixspoke", "mesh_black", "steelie_black", "split_black"]
 # name -> (generator style, spokes, colour)
 RIM_DEFAULTS = {"magnum": ("magnum", 5, "chrome"), "rally": ("rally", 6, "silver"), "fivestar": ("fivestar", 5, "silver"),
                 "mesh": ("mesh", 10, "silver"), "turbine": ("turbine", 10, "silver"), "phone": ("phone", 6, "silver"),
                 "three": ("three", 3, "silver"), "sixspoke": ("sixspoke", 6, "silver"),
-                "mesh_black": ("mesh", 10, "black"), "steelie_black": ("rally", 6, "black")}
+                "mesh_black": ("mesh", 10, "black"), "steelie_black": ("rally", 6, "black"),
+                "split_black": ("split", 8, "black")}
 
 
 def rim_sheets(radii):
@@ -864,7 +934,8 @@ def rim_sheets(radii):
 
 
 def decal_layers(p, idx):
-    """White masks clipped to the body side; the game tints them. stripe, flames, number, checker."""
+    """White masks clipped to the body side; the game tints them. stripe, flames, number, checker.
+    Also returns the door roundel's centre, where the game draws a crew emblem (the CREW decal)."""
     cw = width_of(p)
     yr = p["rocker_y"] + PAD_Y
     body = (idx >= 0)
@@ -894,6 +965,7 @@ def decal_layers(p, idx):
                 out["checker"][y, x] = (255, 255, 255, 255)
             if num_cy is None and abs(lx - (num_cx - PAD_X)) < 0.6 and 0.45 < s_:
                 num_cy = y + 3
+    door = (int(num_cx), num_cy) if num_cy is not None else (int((rx + fx) / 2), int(yr - 6))
     if num_cy is not None:
         cx = int(num_cx)
         for y in range(num_cy - 4, num_cy + 5):
@@ -904,7 +976,7 @@ def decal_layers(p, idx):
         for dx, dy in ((-2, -2), (-1, -2), (0, -2), (1, -2), (1, -1), (0, 0), (0, 1), (-1, 2)):
             if 0 <= num_cy + dy < CH:
                 out["number"][num_cy + dy, cx + dx] = TRANSPARENT
-    return out
+    return out, door
 
 
 # --- Output ----------------------------------------------------------------------------------
@@ -921,7 +993,7 @@ def _driver_anchor(p):
     return [x0 + (x1 - x0) * 0.38 + PAD_X, bottom - 8.5 + PAD_Y]
 
 
-def sprite_json(p, side_exhaust=None):
+def sprite_json(p, side_exhaust=None, door=None):
     hx0, hy0, hx1, hy1 = p["head_lamp"]
     tx0, ty0, tx1, ty1 = p["tail_lamp"]
     ex, ey = p["exhaust"]
@@ -944,6 +1016,7 @@ def sprite_json(p, side_exhaust=None):
         "driver": _driver_anchor(p),
         "wheelRadius10": int(round(p["wheel_r"] * 10)),
         "sideExhaust": [side_exhaust[0] + PAD_X, side_exhaust[1] + PAD_Y] if side_exhaust else None,
+        "door": list(door) if door else None,
     }
 
 
@@ -967,10 +1040,11 @@ def build(p):
     save(wells, f"{base}/wells.png")
     save(wheels, f"{base}/wheel.png")
     side_exhaust = looks_build(p)
-    for name, img in decal_layers(p, idx).items():
+    decals, door = decal_layers(p, idx)
+    for name, img in decals.items():
         save(img, f"{base}/decal_{name}.png")
     with open(os.path.join(ASSETS, base, "sprite.json"), "w") as f:
-        json.dump(sprite_json(p, side_exhaust), f, indent=2)
+        json.dump(sprite_json(p, side_exhaust, door), f, indent=2)
     return body, idx, trim, lights, wells, wheels, popup, pidx
 
 

@@ -518,21 +518,27 @@ ASP["windshield"] = [(38.0, Y(19.8)), (39.0, Y(19.8)), (46.0, Y(15.0)), (45.0, Y
 
 KITE_EF = make(  # '90 EF hatch (boss car "Ground Control"): lowered, flat hood, long roof, roof spoiler, black lower
     # bumpers and side molding, black mesh wheels, the sticker on the quarter glass
-    "kite_ef", 72, 5.8, 12, 57,
+    "kite_ef", 72, 6.5, 12, 57,
     belt=[(0, 13.8), (5, 14.2), (42, 14.0), (54, 13.6), (64, 12.8), (72, 11.6)],
     nose=[(72.4, 10.6), (72.4, 6.2), (71.6, 4.4)],
     tail=[(0.2, 4.6), (-0.2, 8.2), (0, 13.4)],
     rocker=3.6,
-    greenhouse=[(1.2, 13.8), (5.5, 20.8), (8.5, 22.6), (30, 22.8), (33.5, 22.0), (43, 13.8)],
-    glass=[[(17.5, 14.4), (17.5, 22.0), (29.5, 22.0), (32.5, 21.2), (40, 14.2)], [(8, 14.4), (9.6, 21.2), (11, 22.0), (15.5, 22.0), (15.5, 14.4)]],
+    greenhouse=[(1.2, 13.8), (5.5, 21.4), (8.5, 23.3), (30, 23.5), (33.8, 22.6), (43, 13.8)],
+    glass=[[(17.5, 14.4), (17.5, 21.3), (29.5, 21.3), (32.0, 20.7), (40, 14.2)], [(8, 14.4), (9.6, 20.6), (11, 21.3), (15.5, 21.3), (15.5, 14.4)]],
     head=(69, 9.0, 72.2, 10.6), tail_lamp=(-0.3, 9.0, 0.7, 12.8),
-    rim={"style": "mesh", "spokes": 10, "color": "black"},
+    rim={"style": "split", "spokes": 8, "color": "black"},
     bumpers="black", front_bumper=(67.5, 72.8, 3.8, 7.6), rear_bumper=(-0.4, 3.5, 4.2, 7.8),
-    extras=[{"kind": "roof_spoiler", "polys": [[(4.5, 22.2), (10, 22.6), (10, 23.2), (5, 23.5)]]},
-            {"kind": "stripe", "rect": (13.5, 8.2, 58, 10.2), "color": ("night", 1)},
-            {"kind": "glass_text", "rect": (9.5, 15.4, 15, 15.9)}],
-    rear_strip=True, seams=[16.3, 41.5], arch=6.5,
+    extras=[{"kind": "roof_spoiler", "polys": [[(4.5, 22.9), (10, 23.3), (10, 23.9), (5, 24.2)]]},
+            {"kind": "stripe", "rect": (0.5, 8.0, 71.8, 10.0), "color": ("night", 0)},
+            {"kind": "glass_text", "rect": (9.5, 15.4, 15, 15.9)},
+            {"kind": "fill", "rect": (15.5, 14.4, 17.5, 21.3), "color": ("night", 0)},          # black B-pillar sash
+            {"kind": "line", "pts": [(38.5, 14.7), (42.5, 14.3)], "color": ("night", 0)}],       # wiper
+    rear_strip=True, seams=[16.3, 41.5], arch=7.1, exhaust=[(4.0, 4.4)],
 )
+
+# the EF's sides are flat slabs, pale blue right down to the sills: no rocker trim
+KITE_EF["flat_sides"] = True
+KITE_EF["rocker_trim"] = False
 
 ROSTER = [VANDAL, RANGER, CORSAIR, MAMMOTH, PIRANHA, WARRIOR,
           PHANTOM, RANGER50, CORSAIR_IROC, KESTREL, SPIRAL_TURBO, KESSLER, ZEPHYR,

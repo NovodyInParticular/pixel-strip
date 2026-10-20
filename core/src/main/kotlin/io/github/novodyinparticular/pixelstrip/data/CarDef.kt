@@ -114,6 +114,8 @@ data class CarDef(
         val wheelRadius10: Int,
         val sideExhaust: Pair<Float, Float>?,
         val driver: Pair<Float, Float>?,
+        /** Centre of the door roundel, where a crew emblem goes (the CREW decal). */
+        val door: Pair<Float, Float>?,
     )
 
     companion object {
@@ -187,6 +189,7 @@ data class CarDef(
                     wheelRadius10 = s.getInt("wheelRadius10", 70),
                     sideExhaust = s.get("sideExhaust")?.takeIf { it.isArray }?.let { it.getFloat(0) to it.getFloat(1) },
                     driver = s.get("driver")?.takeIf { it.isArray }?.let { it.getFloat(0) to it.getFloat(1) },
+                    door = s.get("door")?.takeIf { it.isArray }?.let { it.getFloat(0) to it.getFloat(1) },
                 ),
             )
         }

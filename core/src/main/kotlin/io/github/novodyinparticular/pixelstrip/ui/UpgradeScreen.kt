@@ -185,7 +185,7 @@ class UpgradeScreen(game: PixelStrip) : MenuScreen(game) {
         batch.setColor(0.45f, 0.45f, 0.58f, 1f)
         batch.draw(white, w / 2f - 110f, carY() - 3f, 200f, 3f)
         batch.color = Color.WHITE
-        stage.draw(game.effective(owned), owned.paint, w / 2f - 12f, carY(), GarageScreen.AMBIENT, looks = CarLooks.of(shownCar(), catalog))
+        stage.draw(game.effective(owned), owned.paint, w / 2f - 12f, carY(), GarageScreen.AMBIENT, looks = game.looks(shownCar()))
     }
 
     override fun drawGlow(w: Int, h: Int) {

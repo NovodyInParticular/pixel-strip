@@ -1491,7 +1491,8 @@
     "three",
     "sixspoke",
     "mesh_black",
-    "steelie_black"
+    "steelie_black",
+    "split_black"
    ],
    "price": 2500
   },
@@ -1583,6 +1584,10 @@
    {
     "name": "CHECKER",
     "price": 2500
+   },
+   {
+    "name": "CREW",
+    "price": 2000
    }
   ],
   "decalColors": [

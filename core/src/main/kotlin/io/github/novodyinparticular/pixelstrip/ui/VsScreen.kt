@@ -79,7 +79,7 @@ class VsScreen(game: PixelStrip, private val rival: Career.Rival, private val pi
         // cars roll in from each side
         val roll = min(1f, time / 0.9f)
         val ease = 1f - (1f - roll) * (1f - roll) * (1f - roll)
-        stage.draw(game.effective(mine), mine.paint, -60f + (w * 0.28f + 60f) * ease, GROUND, AMBIENT, looks = CarLooks.of(mine, game.parts))
+        stage.draw(game.effective(mine), mine.paint, -60f + (w * 0.28f + 60f) * ease, GROUND, AMBIENT, looks = game.looks(mine))
         if (rival.driver == "joe") stage.view(game.effective(theirs)).driver = 1
         stage.draw(game.effective(theirs), theirs.paint, w + 60f - (w * 0.28f + 60f) * ease, GROUND, AMBIENT, looks = CarLooks.of(theirs, game.parts))
     }

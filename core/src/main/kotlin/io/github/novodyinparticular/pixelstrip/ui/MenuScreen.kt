@@ -47,6 +47,8 @@ abstract class MenuScreen(protected val game: PixelStrip) : ScreenAdapter() {
     protected var focusX = 0f
     protected var focusY = 0f
     private var shotIndex = 0
+    /** The text box being typed into, if any: button shortcuts and the back key wait until it closes. */
+    protected var typing: TextEntry? = null
 
     protected fun button(label: String, color: Color, big: Boolean = false, keys: IntArray = intArrayOf(), onClick: () -> Unit): Controls.Button {
         val b = controls.add(Controls.Button(keys, label, color, big))
@@ -64,12 +66,18 @@ abstract class MenuScreen(protected val game: PixelStrip) : ScreenAdapter() {
     protected open fun drawUiOver(w: Int, h: Int) {}
     protected open fun onBack() {}
 
+    override fun hide() {
+        typing?.cancel()
+    }
+
     override fun render(delta: Float) {
         val dt = min(delta, 1f / 20f)
         time += dt
         val w = post.width
         val h = post.height
         layout(w, h)
+        val typingNow = typing?.active == true
+        controls.keysEnabled = !typingNow
         controls.update(dt)
         if (!game.transitioning) {
             for ((b, fn) in handlers) if (b.justPressed && b.visible) {
@@ -77,7 +85,7 @@ abstract class MenuScreen(protected val game: PixelStrip) : ScreenAdapter() {
                 fn()
                 break
             }
-            if (Gdx.input.isKeyJustPressed(Input.Keys.BACK) || Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) onBack()
+            if (!typingNow && (Gdx.input.isKeyJustPressed(Input.Keys.BACK) || Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE))) onBack()
         }
         game.audio.music(song, MENU_MUSIC)
         update(dt)

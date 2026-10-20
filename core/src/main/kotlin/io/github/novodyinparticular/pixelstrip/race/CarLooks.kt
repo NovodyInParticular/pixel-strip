@@ -19,6 +19,8 @@ data class CarLooks(
     /** Body parts by visual id (bumper2, skirts1, rear2, hood1, flares, widebody, carbon, cage, wheeliebar, chute). */
     val body: Set<String> = emptySet(),
     val tint: Int = 0,
+    /** The crew emblem painted on the door (with the CREW decal). */
+    val emblem: io.github.novodyinparticular.pixelstrip.gfx.Emblem? = null,
 ) {
     companion object {
         val STOCK = CarLooks()
@@ -30,9 +32,9 @@ data class CarLooks(
 
         /** Spoke counts of the shared rim sheets (tools/art/car.py RIM_DEFAULTS). */
         val RIM_SPOKES = mapOf("magnum" to 5, "rally" to 6, "fivestar" to 5, "mesh" to 10, "turbine" to 10, "phone" to 6, "three" to 3,
-            "sixspoke" to 6, "mesh_black" to 10, "steelie_black" to 6)
+            "sixspoke" to 6, "mesh_black" to 10, "steelie_black" to 6, "split_black" to 8)
 
-        fun of(car: OwnedCar, catalog: PartCatalog): CarLooks {
+        fun of(car: OwnedCar, catalog: PartCatalog, emblem: io.github.novodyinparticular.pixelstrip.gfx.Emblem? = null): CarLooks {
             val visuals = HashSet<String>()
             for (slot in catalog.slots) catalog.fitted(car.parts, slot.id).visual?.let { visuals.add(it) }
             fun style(id: String): String? {
@@ -53,6 +55,7 @@ data class CarLooks(
                 decalColor = catalog.decalColors.getOrNull(car.cosmetics["decalColor"] ?: 0)?.let { Color(it[0], it[1], it[2], 1f) } ?: Color.WHITE,
                 body = visuals,
                 tint = car.cosmetics["tint"] ?: 0,
+                emblem = emblem,
             )
         }
     }

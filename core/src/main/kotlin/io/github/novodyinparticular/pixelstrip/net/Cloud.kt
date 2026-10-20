@@ -6,6 +6,7 @@ import com.badlogic.gdx.utils.JsonReader
 import com.badlogic.gdx.utils.JsonValue
 import com.badlogic.gdx.utils.JsonWriter
 import io.github.novodyinparticular.pixelstrip.PixelStrip
+import io.github.novodyinparticular.pixelstrip.gfx.Emblem
 import io.github.novodyinparticular.pixelstrip.save.Ledger
 
 /**
@@ -61,13 +62,36 @@ class Cloud(private val game: PixelStrip, enabled: Boolean) {
     private val dbUrl = if (emulator != null) "http://$emulator:9000" else cfg?.getString("databaseURL", "") ?: ""
     private val dbQuery = if (emulator != null) "ns=$projectId&" else ""
 
+    /** Your crew's tag and emblem, from the last crewHome (kept on disk so it shows offline too). */
+    class Badge(val tag: String, val emblem: Emblem)
+
+    private val badgeFile = game.platform.saveFile(if (emulator != null) "crew-emulator.json" else "crew.json")
+    var badge: Badge? = runCatching {
+        val j = JsonReader().parse(badgeFile)
+        Emblem.parse(j.get("emblem"))?.let { Badge(j.getString("tag"), it) }
+    }.getOrNull()
+        private set
+    var displayName: String? = null
+
+    fun rememberBadge(b: Badge?) {
+        badge = b
+        if (b == null) {
+            badgeFile.delete()
+            return
+        }
+        val o = JsonValue(JsonValue.ValueType.`object`)
+        o.addChild("tag", JsonValue(b.tag))
+        o.addChild("emblem", b.emblem.toJson())
+        badgeFile.writeString(o.toJson(JsonWriter.OutputType.json), false)
+    }
+
     /** The signed-in account's id (null until the first sign-in). */
     val accountId get() = uid
 
     /** Calls a callable function; [then] gets its result, or null and the error message. */
     fun call(name: String, data: JsonValue, then: (JsonValue?, String?) -> Unit) {
         if (!configured) return then(null, "OFFLINE")
-        withToken { token ->
+        withToken({ then(null, it) }) { token ->
             val body = JsonValue(JsonValue.ValueType.`object`).also { it.addChild("data", data) }
             post(fnUrl(name), body.toJson(JsonWriter.OutputType.json), token) { code, res ->
                 val result = res?.get("result")
@@ -124,22 +148,28 @@ class Cloud(private val game: PixelStrip, enabled: Boolean) {
 
     // --- auth ---------------------------------------------------------------------------------------
 
-    /** Runs [then] with a fresh ID token; on failure it reports and never calls [then]. */
-    private fun withToken(then: (String) -> Unit) {
+    /** Runs [then] with a fresh ID token; on failure it reports, tells [failed] why, and never calls [then]. */
+    private fun withToken(failed: (String) -> Unit = {}, then: (String) -> Unit) {
         val token = idToken
         if (token != null && System.currentTimeMillis() < idTokenExpires - 60_000L) return then(token)
         val refresh = refreshToken
         if (refresh == null) {
             status = Status.SIGNING_IN
             post("$authBase/v1/accounts:signUp?key=$apiKey", """{"returnSecureToken":true}""", null) { code, body ->
-                if (code != 200 || body == null) return@post fail("sign-in failed ($code)")
+                if (code != 200 || body == null) {
+                    fail("sign-in failed ($code)")
+                    return@post failed("SIGN-IN FAILED ($code)")
+                }
                 uid = body.getString("localId")
                 storeTokens(body.getString("idToken"), body.getString("refreshToken"), body.getLong("expiresIn", 3600))
                 then(id())
             }
         } else {
             post("$tokenBase/v1/token?key=$apiKey", "grant_type=refresh_token&refresh_token=$refresh", null, form = true) { code, body ->
-                if (code != 200 || body == null) return@post fail("token refresh failed ($code)")
+                if (code != 200 || body == null) {
+                    fail("token refresh failed ($code)")
+                    return@post failed("SIGN-IN FAILED ($code)")
+                }
                 uid = body.getString("user_id", uid)
                 storeTokens(body.getString("id_token"), body.getString("refresh_token"), body.getLong("expires_in", 3600))
                 then(id())
