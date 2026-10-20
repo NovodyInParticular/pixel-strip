@@ -57,7 +57,10 @@ Done so far:
 - Tournaments: a daily time trial per class with an entry fee, five server-checked passes, a
   live leaderboard, and the top ten splitting the pool (see below)
 
-Next: leaderboards.
+- Leaderboards: the quickest server-checked ETs per class and distance, the most online wins and
+  the top crews, this week or all time (see below)
+
+Next: XP and levels.
 
 ### How to race
 
@@ -196,6 +199,16 @@ earlier run). After midnight UTC the first call settles it once: 40/20/12/8/6/5/
 of the pool to the top ten (fewer finishers split it all), credited to their garages.
 `server/functions/src/tournaments.ts`; the e2e test enters, races, hits the run limit and checks
 a payout.
+
+### Leaderboards
+
+RANKS in the garage. QUICKEST lists each racer's best ET in a class over the 1/8 or 1/4 mile;
+only runs the server replayed count (online races, tournament passes), each appended to
+`runs/` with the car's class at the time. WINS counts online wins this ISO week or all time
+(`stats/{uid}`); CREWS ranks crews by their weekly war score or all-time wins. Names and tags
+are looked up when a board is read, so a rename shows straight away. Production needs the
+composite index in `server/firestore.indexes.json` (deployed with the rules).
+`server/functions/src/leaderboards.ts`.
 
 ### Testing against the emulators
 

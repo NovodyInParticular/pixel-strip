@@ -7,7 +7,7 @@
   },
   "scripts": {
     "build": "tsc && cp ../../assets/data/rules.json lib/rules.json && rm -rf lib/data && mkdir -p lib/data/tracks && cp -r ../../assets/data/cars lib/data/cars && cp ../../assets/data/parts.json ../../assets/data/economy.json lib/data/ && cp ../../assets/data/tracks/*.json lib/data/tracks/",
-    "test": "npm run build && node --test lib/test/ledger.test.js lib/test/physics.test.js lib/test/wager.test.js lib/test/crews.test.js lib/test/tournaments.test.js"
+    "test": "npm run build && node --test lib/test/ledger.test.js lib/test/physics.test.js lib/test/wager.test.js lib/test/crews.test.js lib/test/tournaments.test.js lib/test/leaderboards.test.js"
   },
   "dependencies": {
     "firebase-admin": "14.5.0",

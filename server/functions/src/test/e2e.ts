@@ -88,6 +88,7 @@ async function main() {
   await wagers();
   await crews();
   await tournaments();
+  await leaderboards();
   console.log("e2e: all checks passed");
 }
 
@@ -359,4 +360,25 @@ async function tournaments() {
   assert.equal(await cashOf(b), 30_000);
   await call("tournaments", {}, c.token);
   assert.equal(await cashOf(c), 60_000, "paid once");
+}
+
+/** Leaderboards, after the races and tournaments above have filled them. */
+async function leaderboards() {
+  const s = await json(`${auth}/identitytoolkit.googleapis.com/v1/accounts:signUp?key=emulator`, { returnSecureToken: true });
+  const token: string = s.body.idToken;
+  const board = async (data: unknown) => (await call("leaderboard", data, token)).body.result;
+  const sport = await board({ board: "et", cls: "SPORT", dist: "quarter" });
+  assert.ok(sport.rows.length >= 1, "the tournament passes are on the SPORT quarter-mile board");
+  assert.equal(new Set(sport.rows.map((r: any) => r.uid)).size, sport.rows.length, "one row per racer");
+  for (let i = 1; i < sport.rows.length; i++) assert.ok(sport.rows[i].et >= sport.rows[i - 1].et, "quickest first");
+  assert.ok(sport.rows[0].name, "names are looked up");
+  assert.equal(sport.mine, null, "a newcomer isn't on it");
+  const wins = await board({ board: "wins", period: "week" });
+  assert.ok(wins.rows.length >= 1 && wins.rows[0].wins >= 1, "online wins count");
+  const allWins = await board({ board: "wins", period: "all" });
+  assert.ok(allWins.rows[0].wins >= wins.rows[0].wins);
+  const crews = await board({ board: "crews", period: "week" });
+  // the crews test ends with its crew disbanded, so only the board's shape can be checked here
+  assert.ok(Array.isArray(crews.rows) && crews.rows.every((c: any) => c.wins >= 1 && c.tag), "crews with a win this week");
+  assert.equal((await call("leaderboard", { board: "et", cls: "ROCKET" }, token)).status, 400);
 }

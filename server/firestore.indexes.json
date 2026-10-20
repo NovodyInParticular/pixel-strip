@@ -1,0 +1,14 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "runs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "cls", "order": "ASCENDING" },
+        { "fieldPath": "dist", "order": "ASCENDING" },
+        { "fieldPath": "et", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

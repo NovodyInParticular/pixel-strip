@@ -19,6 +19,8 @@ import { MAX_STEPS, perfectPass, replay, RunEvent } from "./physics/vehicle";
 import { Car, State } from "./ledger";
 import { cannotStake, escrow, parseWager, payout, refund, Wager, wagerKey } from "./wager";
 import { badgeOf, recordWin } from "./crews";
+import { classFor } from "./classes";
+import { recordRun, recordWinStat } from "./leaderboards";
 
 const data = join(__dirname, "data");
 const catalog: Catalog = parseCatalog(JSON.parse(readFileSync(join(data, "parts.json"), "utf8")));
@@ -298,6 +300,15 @@ async function settle(raceId: string): Promise<unknown | null> {
     const won = race.entries[winner].car as Car;
     const et = runs[winner]?.et;
     await recordWin(tx, winner, race.track, et ? { car: won.car, paint: won.paint, parts: won.parts, cosmetics: won.cosmetics, et } : null, winnerDoc, crewDoc);
+    // the leaderboards: the win, and every clean run with its car's class
+    recordWinStat(tx, winner);
+    for (const u of uids) {
+      const run = runs[u];
+      if (!run || run.et === null || run.red) continue;
+      const car = race.entries[u].car as Car;
+      const cls = classFor(perfectPass(effective(car, race.entries[u].tune)).quarter);
+      recordRun(tx, { uid: u, et: run.et, mph: run.mph, car: car.car, paint: car.paint, at: run.at, cls, dist: race.quarter ? "quarter" : "eighth", track: race.track, src: "online" });
+    }
     const result = { winner, runs, forfeit, wager: race.wager ?? { kind: "none" }, prize };
     tx.update(ref, { result, state: "done", settled: now });
     await getDatabase().ref(`races/${raceId}`).update({ result, state: "done" });

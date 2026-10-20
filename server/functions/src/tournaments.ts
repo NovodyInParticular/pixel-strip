@@ -7,8 +7,6 @@
  * Firestore: tournaments/{id} (the event, its pool and, once settled, the results) and
  * tournaments/{id}/entries/{uid} (the car as entered, runs used, best run).
  */
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import { FieldValue, getFirestore } from "firebase-admin/firestore";
 import { HttpsError, onCall } from "firebase-functions/v2/https";
 import { SPLITS_M } from "./physics/consts";
@@ -16,6 +14,10 @@ import { perfectPass, replay } from "./physics/vehicle";
 import { Car, State } from "./ledger";
 import { effective, sanitizeEvents, START_X, TRACKS } from "./race";
 import { handleOf } from "./crews";
+import { classFor } from "./classes";
+import { recordRun } from "./leaderboards";
+
+export { classFor };
 
 export const CLASSES = ["STREET", "SPORT", "PRO", "OUTLAW"] as const;
 export type Cls = (typeof CLASSES)[number];
@@ -27,15 +29,7 @@ export const MAX_RUNS = 5;
 export const SHARES = [40, 20, 12, 8, 6, 5, 3, 2, 2, 2];
 const DAY_MS = 86_400_000;
 
-/** Class limits from the game's economy.json: the quickest class whose limit a car's perfect pass is under. */
-const economy = JSON.parse(readFileSync(join(__dirname, "data", "economy.json"), "utf8"));
-const LIMITS: { name: string; maxEt: number }[] = economy.classes;
-
 // --- pure, tested -----------------------------------------------------------------------------
-
-export function classFor(quarter: number): string {
-  return (LIMITS.find((c) => quarter <= c.maxEt) ?? LIMITS[LIMITS.length - 1]).name;
-}
 
 /** "2026-10-20" for the UTC day containing t. */
 export const dayKey = (t: number) => new Date(Math.floor(t / DAY_MS) * DAY_MS).toISOString().slice(0, 10);
@@ -207,6 +201,9 @@ export const tournamentRun = onCall({ maxInstances: 10 }, async (req) => {
     const better = run.et !== null && run.rt !== null && (!best || run.et < best.et);
     const next = better ? { et: run.et!, mph: run.mph, rt: run.rt!, at: now } : best;
     tx.update(entryRef, { runs: e.runs + 1, best: next, last: { ...run, at: now } });
+    if (run.et !== null && run.rt !== null) {
+      recordRun(tx, { uid, et: run.et, mph: run.mph, car: e.car, paint: e.paint ?? 0, at: now, cls: p.cls, dist: "quarter", track: ev.track, src: "tournament" });
+    }
     return { run, best: next, runsLeft: MAX_RUNS - e.runs - 1, newBest: better };
   });
 });
