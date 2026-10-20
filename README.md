@@ -66,6 +66,11 @@ Done so far:
 - Daily rewards: a claim a day in the garage, a seven-day streak with growing cash (and XP on day
   seven); the server's clock decides (see below)
 
+- Polish, first pass: rubber in the lanes (a rubbered-in groove off the line, darkened by your
+  burnouts and wheelspin), tyres throwing up water and mist at Dockside, snow at the airfield
+  and dust in the desert, camera-flash volleys from the stands on the green and at the line,
+  and confetti for a win, with fireworks over the stands on clear nights
+
 Next: cash packs (Play Billing).
 
 ### How to race

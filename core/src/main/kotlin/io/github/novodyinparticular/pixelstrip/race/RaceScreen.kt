@@ -130,6 +130,13 @@ class RaceScreen(
         lostCar = save.cars.size < cars
         wonPrize = save.cars.size > cars
     }
+    private val marks = RubberMarks(white)
+    /** Where each lane's spinning tyre laid rubber last (world px), so a moving car leaves a streak, not dots. */
+    private val lastMark = floatArrayOf(Float.NaN, Float.NaN)
+    private var celebrated = false
+    private var fireworks = 0
+    private var fireworkTimer = 0f
+
     /** XP this race earned (career: from the ledger; online and tournaments: the server's numbers). */
     private var xpGained = 0L
     private val playerMotion = CarMotion()
@@ -187,6 +194,10 @@ class RaceScreen(
         ghost.startBurnout()
         tree.reset()
         particles.clear()
+        marks.clear()
+        lastMark.fill(Float.NaN)
+        celebrated = false
+        fireworks = 0
         playerFoul = false
         greenSeen = false
         slowMo = false
@@ -280,7 +291,10 @@ class RaceScreen(
                 if (actionButton.justPressed) player.shift()
                 if (nosButton.justPressed && player.nitrous()) buzz(60)
             }
-            Phase.PHOTO -> if (phaseTime > PHOTO_HOLD_S) setPhase(Phase.FINISHED)
+            Phase.PHOTO -> if (phaseTime > PHOTO_HOLD_S) {
+                setPhase(Phase.FINISHED)
+                if (!solo && online == null && playerWon()) celebrate()      // won it by a nose
+            }
             Phase.FINISHED -> if (phaseTime > 1.5f && actionButton.justPressed) {
                 val r = rival
                 if (online != null) {
@@ -353,11 +367,15 @@ class RaceScreen(
         }
         if (tree.green && !greenSeen) {
             greenSeen = true
+            trackView.volley(14)
             buzz(25)
         }
 
         if (phase == Phase.FINISHED && rival != null && !settled) settleCareer()
         if (phase == Phase.FINISHED && online != null) player.recorder?.let { online.submit(it) }
+        // online and tournaments: the server's word decides whether to celebrate
+        if (online?.result?.let { it.won && !it.off } == true || tResult?.newBest == true) celebrate()
+        updateCelebration(dt)
         if (phase == Phase.FINISHED && tournament != null && !tSent) player.recorder?.let { rec ->
             tSent = true
             game.tournaments.submit(tournament.id, rec) { r, err ->
@@ -396,8 +414,8 @@ class RaceScreen(
             smokeTimer += dt
             if (smokeTimer > 1f / 60f) {
                 smokeTimer = 0f
-                emitCarEffects(player, playerView, TrackRenderer.SCREEN_H - track.nearLaneTop)
-                emitCarEffects(ghost, ghostView, TrackRenderer.SCREEN_H - track.farLaneTop)
+                emitCarEffects(player, playerView, TrackRenderer.SCREEN_H - track.nearLaneTop, 0)
+                if (!solo) emitCarEffects(ghost, ghostView, TrackRenderer.SCREEN_H - track.farLaneTop, 1)
             }
             particles.update(dt)
             trackView.update(dt, if (phase == Phase.RACING) min(1f, player.v / 40f) else if (player.spinning) 0.6f else 0.15f)
@@ -422,6 +440,7 @@ class RaceScreen(
         if (ghost.splits[finishSplit] >= 0f) ghostView.chute = min(1f, ghostView.chute + com.badlogic.gdx.Gdx.graphics.deltaTime * 1.5f)
         if (playerDone && !cheered) {
             cheered = true
+            trackView.volley(18)
             game.audio.play(Sfx.Kind.CHEER, 0.8f)
         }
         if (playerDone && ghostDone && slowMo) {
@@ -433,6 +452,7 @@ class RaceScreen(
         } else if (playerDone && (ghostDone || solo || player.x > distanceM + 40f)) {
             timeScale = 1f
             setPhase(Phase.FINISHED)
+            if (!solo && online == null && playerWon()) celebrate()
             if (test && !playerFoul) {
                 bestBefore = owned.bestRun(owned.tuneName, quarter)
                 owned.logRun(RunRecord(owned.tuneName, quarter, player.splits[finishSplit], player.splits[0], player.splitSpeed[finishSplit] * 2.23694f, player.leaveTime))
@@ -524,9 +544,47 @@ class RaceScreen(
     private fun flameOn(car: Vehicle, lane: Int) = boosted(car.def) && (flame[lane] > 0f || (car.nitrousActive && car.throttle > 0f))
 
     /** Smoke and rubber from spinning tyres, heat haze off the pipes, nitrous purges while staged. */
-    private fun emitCarEffects(car: Vehicle, view: CarRenderer, ground: Float) {
+    private fun emitCarEffects(car: Vehicle, view: CarRenderer, ground: Float, lane: Int) {
         val s = carDef.sprite
         val canvasX = car.x * PX_PER_M - s.frontX
+        // rubber on the track under the driven tyres: a patch while it spins in place, a streak while it moves
+        val driven = when (car.def.drivetrain) {
+            "FWD" -> listOf(s.frontWheel.first)
+            "AWD" -> listOf(s.rearWheel.first, s.frontWheel.first)
+            else -> listOf(s.rearWheel.first)
+        }
+        if (car.slipSpeed >= 1.5f && car.wheelie < 0.5f) {
+            val heat = (car.slipSpeed / 20f).coerceIn(0.2f, 1f)
+            val wx = canvasX + driven.last()
+            val from = if (lastMark[lane].isNaN()) wx else lastMark[lane]
+            val span = (wx - from).coerceIn(0f, 40f)
+            val amount = if (span < 1f) 0.012f * (0.5f + heat) else 0.22f * heat
+            for (wheel in driven) {
+                val off = wheel - driven.last()
+                var x = from + off
+                while (x <= wx + off) {
+                    marks.lay(lane, x, amount)
+                    x += 1f
+                }
+            }
+            lastMark[lane] = wx
+        } else lastMark[lane] = Float.NaN
+        // what the tyres throw up off the surface
+        val spray = SPRAY[track.weather]
+        val speedPx = car.v * PX_PER_M
+        if ((track.weather == "rain" || track.weather == "sand") && car.v > 4f) {
+            // a rooster tail off the rear tyres: mist on the wet, dust on the dry
+            val dust = track.weather == "sand"
+            val chance = (car.v / 30f).coerceIn(0.2f, 0.8f)
+            if (MathUtils.random() < chance) particles.smoke(canvasX + s.rearWheel.first - 6f, ground + 1f, 0.25f,
+                if (dust) DUST_LIT else MIST_LIT, if (dust) DUST_AMBIENT else MIST_AMBIENT, 0.45f, carry = speedPx * 0.7f)
+        }
+        if (spray != null && (car.v > 2f || car.slipSpeed > 3f)) {
+            val n = ((speedPx + car.slipSpeed * PX_PER_M) / 90f).toInt().coerceIn(1, 7)
+            for (wheel in listOf(s.rearWheel.first, s.frontWheel.first)) {
+                repeat(n) { particles.spray(canvasX + wheel - 4f, ground, max(speedPx, car.slipSpeed * PX_PER_M * 0.6f), spray, 2f) }
+            }
+        }
         if (car.slipSpeed >= 1.5f) {
             val wheelX = canvasX + s.rearWheel.first
             val heat = (car.slipSpeed / 20f).coerceIn(0.2f, 1f)
@@ -547,6 +605,28 @@ class RaceScreen(
     }
 
     private fun carCanvasX(v: Vehicle) = v.x * PX_PER_M - carDef.sprite.frontX
+
+    /** A win: confetti over the screen, and on a clear night, fireworks over the stands. */
+    private fun celebrate() {
+        if (celebrated) return
+        celebrated = true
+        val w = post.width.toFloat()
+        repeat(90) { particles.confetti(0f, w, TrackRenderer.SCREEN_H) }
+        if (track.headlights && track.weather != "rain") {
+            fireworks = 7
+            fireworkTimer = 0.3f
+        }
+    }
+
+    private fun updateCelebration(dt: Float) {
+        if (fireworks <= 0) return
+        fireworkTimer -= dt
+        if (fireworkTimer > 0f) return
+        fireworkTimer = MathUtils.random(0.25f, 0.6f)
+        fireworks--
+        particles.rocket(post.width * MathUtils.random(0.15f, 0.85f), TrackRenderer.SCREEN_H * 0.45f)
+        game.audio.play(Sfx.Kind.POP, 0.5f)
+    }
 
     private fun collectLights(camPx: Float, w: Int, nearGround: Float, farGround: Float, treeX: Float, treeY: Float) {
         lights.clear()
@@ -609,6 +689,8 @@ class RaceScreen(
         trackView.drawSky(batch, w)
         trackView.drawWorld(batch, camPx, w)
         trackView.drawLights(batch, camPx, w)
+        marks.draw(batch, camPx, w, 1, farGround, 2f, track.wet)
+        marks.draw(batch, camPx, w, 0, nearGround, 3f, track.wet)
         if (track.wet) drawReflections(playerX, ghostX, nearGround, farGround, t)
         particles.draw(batch, camPx, front = false)
         drawFlame(ghost, ghostView, ghostX, farGround, 1)
@@ -1004,6 +1086,16 @@ class RaceScreen(
     }
 
     companion object {
+        /** What tyres kick up, by weather: water at Dockside, snow at the airfield, grit in the desert. */
+        val SPRAY = mapOf(
+            "rain" to Color(0.85f, 0.92f, 1f, 0.8f),
+            "snow" to Color(0.95f, 0.97f, 1f, 0.9f),
+            "sand" to Color(0.98f, 0.82f, 0.55f, 0.85f),
+        )
+        val MIST_LIT = Color(0.75f, 0.82f, 0.95f, 1f)
+        val MIST_AMBIENT = Color(0.45f, 0.5f, 0.62f, 1f)
+        val DUST_LIT = Color(0.95f, 0.78f, 0.52f, 1f)
+        val DUST_AMBIENT = Color(0.62f, 0.45f, 0.32f, 1f)
         const val STEP = 1f / 240f
         const val BURNOUT_X = -9f
         const val CAM_LEAD = 0.42f

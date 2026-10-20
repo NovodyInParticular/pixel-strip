@@ -13,9 +13,11 @@ import kotlin.math.floor
  *         behind the car and billowing in front of it.
  *  RUBBER falls.  SPARK bounces and glows.  PURGE is the nitrous purge jet's white puffs.
  *  HAZE   is invisible: it only draws into the heat-distortion buffer.
+ *  SPRAY  is what the tyres throw up off the surface: water droplets, snow, grit; falls.
+ *  CONFETTI flutters down after a win.  ROCKET climbs and bursts into STARs (fireworks), which glow.
  */
 class Particles(private val smoke: Texture, private val white: Texture, private val haze: Texture, capacity: Int = 900) {
-    enum class Kind { SMOKE, RUBBER, SPARK, PURGE, HAZE }
+    enum class Kind { SMOKE, RUBBER, SPARK, PURGE, HAZE, SPRAY, CONFETTI, ROCKET, STAR }
 
     private class P {
         var kind = Kind.SMOKE
@@ -31,6 +33,8 @@ class Particles(private val smoke: Texture, private val white: Texture, private 
         val color2 = Color()
         var alpha = 1f
         var front = false
+        /** Drawn in screen pixels (confetti, fireworks), not on the track. */
+        var screen = false
         var floor = 0f
         var alive = false
     }
@@ -46,22 +50,24 @@ class Particles(private val smoke: Texture, private val white: Texture, private 
             val p = pool[(next + i) % pool.size]
             if (!p.alive) {
                 next = (next + i + 1) % pool.size
+                p.screen = false
                 return p
             }
         }
         val p = pool[next]          // full: recycle the next slot
         next = (next + 1) % pool.size
+        p.screen = false
         return p
     }
 
     /** Tyre smoke at world (x, y). [heat] 0..1 scales size and lifetime; [lit] is the lamp colour it starts in. */
-    fun smoke(x: Float, y: Float, heat: Float, lit: Color, ambient: Color, linger: Float = 1f) {
+    fun smoke(x: Float, y: Float, heat: Float, lit: Color, ambient: Color, linger: Float = 1f, carry: Float = 0f) {
         val p = obtain()
         p.kind = Kind.SMOKE
         p.alive = true
         p.x = x + MathUtils.random(-4f, 4f)
         p.y = y + MathUtils.random(-1f, 3f)
-        p.vx = MathUtils.random(-34f, -6f) * (0.5f + heat)
+        p.vx = MathUtils.random(-34f, -6f) * (0.5f + heat) + carry
         p.vy = MathUtils.random(3f, 16f)
         p.life = 0f
         p.maxLife = MathUtils.random(1.8f, 3.6f) * (0.6f + heat * 0.7f) * linger
@@ -122,6 +128,85 @@ class Particles(private val smoke: Texture, private val white: Texture, private 
         p.front = true
     }
 
+    /** A droplet (or flake, or grain) flung back off a tyre moving at [speedPx] pixels a second. */
+    fun spray(x: Float, y: Float, speedPx: Float, color: Color, size: Float = 1f) {
+        val p = obtain()
+        p.kind = Kind.SPRAY
+        p.alive = true
+        p.x = x + MathUtils.random(-2f, 2f)
+        p.y = y + MathUtils.random(0f, 2f)
+        p.floor = y - 2f
+        // carried along by the tyre: it trails just behind the wheel as a plume, not left in the car's wake
+        p.vx = speedPx * MathUtils.random(0.45f, 0.85f)
+        p.vy = MathUtils.random(25f, 70f) + speedPx * 0.08f
+        p.life = 0f
+        p.maxLife = MathUtils.random(0.25f, 0.45f)
+        p.color.set(color)
+        p.size0 = size
+        p.alpha = color.a
+        p.front = MathUtils.random() < 0.7f
+    }
+
+    private val confettiColors = arrayOf(
+        Color(0.94f, 0.37f, 0.68f, 1f), Color(0.49f, 0.95f, 0.86f, 1f), Color(1f, 0.91f, 0.56f, 1f),
+        Color(0.58f, 0.84f, 0.42f, 1f), Color(1f, 0.6f, 0.24f, 1f), Color(0.6f, 0.45f, 1f, 1f),
+    )
+
+    /** A piece of confetti from above the screen, somewhere over screen x [x0]..[x1]. */
+    fun confetti(x0: Float, x1: Float, top: Float) {
+        val p = obtain()
+        p.kind = Kind.CONFETTI
+        p.alive = true
+        p.screen = true
+        p.x = MathUtils.random(x0, x1)
+        p.y = top + MathUtils.random(0f, 60f)
+        p.vx = MathUtils.random(-14f, 14f)
+        p.vy = MathUtils.random(-38f, -22f)
+        p.life = 0f
+        p.maxLife = MathUtils.random(3f, 5f)
+        p.color.set(confettiColors[MathUtils.random(confettiColors.size - 1)])
+        p.size0 = MathUtils.random(0f, 6.28f)          // flutter phase
+        p.front = true
+    }
+
+    /** A firework: climbs from screen (x, y) and bursts near the top of its flight. */
+    fun rocket(x: Float, y: Float) {
+        val p = obtain()
+        p.kind = Kind.ROCKET
+        p.alive = true
+        p.screen = true
+        p.x = x
+        p.y = y
+        p.vx = MathUtils.random(-12f, 12f)
+        p.vy = MathUtils.random(120f, 160f)
+        p.life = 0f
+        p.maxLife = MathUtils.random(0.7f, 1f)
+        p.color.set(confettiColors[MathUtils.random(confettiColors.size - 1)])
+        p.front = false
+    }
+
+    private fun burst(x: Float, y: Float, color: Color) {
+        val n = 48
+        for (i in 0 until n) {
+            val p = obtain()
+            val a = i * 6.2832f / n + MathUtils.random(-0.1f, 0.1f)
+            val sp = MathUtils.random(55f, 95f)
+            p.kind = Kind.STAR
+            p.alive = true
+            p.screen = true
+            p.x = x
+            p.y = y
+            p.vx = MathUtils.cos(a) * sp
+            p.vy = MathUtils.sin(a) * sp
+            p.life = 0f
+            p.maxLife = MathUtils.random(0.9f, 1.4f)
+            p.color.set(color)
+            p.front = false
+        }
+    }
+
+    private val bursts = ArrayList<P>()
+
     fun haze(x: Float, y: Float, strength: Float) {
         val p = obtain()
         p.kind = Kind.HAZE
@@ -143,6 +228,7 @@ class Particles(private val smoke: Texture, private val white: Texture, private 
             p.life += dt
             if (p.life >= p.maxLife) {
                 p.alive = false
+                if (p.kind == Kind.ROCKET) bursts.add(p)
                 continue
             }
             when (p.kind) {
@@ -162,10 +248,22 @@ class Particles(private val smoke: Texture, private val white: Texture, private 
                     }
                 }
                 Kind.HAZE -> p.vy *= 1f - dt
+                Kind.SPRAY -> {
+                    p.vy -= 220f * dt
+                    if (p.y < p.floor) p.alive = false
+                }
+                Kind.CONFETTI -> p.vx = MathUtils.sin(p.life * 5f + p.size0) * 18f
+                Kind.ROCKET -> p.vy -= 60f * dt
+                Kind.STAR -> {
+                    p.vx *= 1f - dt * 1.8f
+                    p.vy = p.vy * (1f - dt * 1.8f) - 28f * dt
+                }
             }
             p.x += p.vx * dt
             p.y += p.vy * dt
         }
+        for (r in bursts) burst(r.x, r.y, r.color)
+        bursts.clear()
     }
 
     /** Smoke, rubber, sparks and purge, behind ([front] = false) or in front of the cars. */
@@ -173,6 +271,7 @@ class Particles(private val smoke: Texture, private val white: Texture, private 
         for (p in pool) {
             if (!p.alive || p.front != front || p.kind == Kind.HAZE) continue
             val t = p.life / p.maxLife
+            val camX = if (p.screen) 0f else camX
             when (p.kind) {
                 Kind.SMOKE, Kind.PURGE -> {
                     val size = p.size0 + (p.size1 - p.size0) * (1f - (1f - t) * (1f - t))
@@ -187,6 +286,28 @@ class Particles(private val smoke: Texture, private val white: Texture, private 
                     batch.setColor(p.color.r, p.color.g, p.color.b, 1f)
                     batch.draw(white, floor(p.x - camX), floor(p.y), if (p.kind == Kind.SPARK) 2f else 1f, 1f)
                 }
+                Kind.SPRAY -> {
+                    batch.setColor(p.color.r, p.color.g, p.color.b, p.alpha * (1f - t * 0.6f))
+                    batch.draw(white, floor(p.x - camX), floor(p.y), p.size0, p.size0)
+                }
+                Kind.CONFETTI -> {
+                    // a flat piece turning over: wide, then edge-on, then wide again
+                    val wide = MathUtils.sin(p.life * 7f + p.size0) > 0f
+                    batch.setColor(p.color.r, p.color.g, p.color.b, if (t > 0.85f) (1f - t) / 0.15f else 1f)
+                    batch.draw(white, floor(p.x - camX), floor(p.y), if (wide) 3f else 1f, if (wide) 2f else 3f)
+                }
+                Kind.ROCKET -> {
+                    batch.setColor(1f, 0.9f, 0.7f, 1f)
+                    batch.draw(white, floor(p.x - camX), floor(p.y), 1f, 2f)
+                }
+                Kind.STAR -> {
+                    // white-hot at first, then its colour; a short trail behind it
+                    tmp.set(Color.WHITE).lerp(p.color, min1(t * 4f))
+                    batch.setColor(tmp.r, tmp.g, tmp.b, 1f - t * t)
+                    batch.draw(white, floor(p.x - camX), floor(p.y), 2f, 2f)
+                    batch.setColor(p.color.r, p.color.g, p.color.b, (1f - t) * 0.5f)
+                    batch.draw(white, floor(p.x - camX - p.vx * 0.05f), floor(p.y - p.vy * 0.05f), 1f, 1f)
+                }
                 Kind.HAZE -> {}
             }
         }
@@ -200,6 +321,12 @@ class Particles(private val smoke: Texture, private val white: Texture, private 
             if (p.kind == Kind.SPARK) {
                 batch.setColor(p.color.r, p.color.g * 0.8f, p.color.b * 0.5f, 1f)
                 batch.draw(white, floor(p.x - camX) - 1f, floor(p.y) - 1f, 4f, 3f)
+            }
+            if (p.kind == Kind.STAR || p.kind == Kind.ROCKET) {
+                val t = p.life / p.maxLife
+                val camX = 0f
+                batch.setColor(p.color.r, p.color.g, p.color.b, (1f - t) * 0.9f)
+                batch.draw(white, floor(p.x - camX) - 1f, floor(p.y) - 1f, 4f, 4f)
             }
         }
         batch.color = Color.WHITE

@@ -37,12 +37,21 @@ class TrackRenderer(val def: TrackDef, private val art: Art) {
 
     private class Star(val x: Float, val top: Float, val phase: Float, val speed: Float, val bright: Float)
     private class Flash(val x: Float, val top: Float, var life: Float)
+    /** Flashes queued by [volley], each waiting its turn. */
+    private val queued = ArrayList<Pair<Float, Flash>>()
 
     /** [excitement] 0..1 makes the crowd jump and photographers fire more often. */
     fun update(dt: Float, excitement: Float) {
         time += dt
         flashes.forEach { it.life -= dt }
         flashes.removeAll { it.life <= 0f }
+        for (i in queued.indices.reversed()) {
+            val (at, f) = queued[i]
+            if (time >= at) {
+                flashes.add(f)
+                queued.removeAt(i)
+            }
+        }
         val rate = 1.5f + excitement * 10f
         if (crowdLayer != null && MathUtils.random() < rate * dt) {
             flashes.add(Flash(MathUtils.random(0f, 640f), crowdLayer.top + MathUtils.random(4f, 26f), 0.07f))
@@ -51,6 +60,14 @@ class TrackRenderer(val def: TrackDef, private val art: Art) {
     }
 
     private var excitement = 0f
+
+    /** A burst of [n] camera flashes from the stands over the next second (the green, the finish). */
+    fun volley(n: Int) {
+        val l = crowdLayer ?: return
+        repeat(n) {
+            queued.add((time + MathUtils.random(0f, 0.9f)) to Flash(MathUtils.random(0f, 640f), l.top + MathUtils.random(4f, 26f), 0.07f))
+        }
+    }
 
     private fun bottomOf(top: Float, h: Int) = SCREEN_H - top - h
 
