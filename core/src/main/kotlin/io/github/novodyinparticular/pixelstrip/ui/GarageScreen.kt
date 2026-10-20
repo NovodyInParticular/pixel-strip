@@ -26,7 +26,7 @@ class GarageScreen(game: PixelStrip) : MenuScreen(game) {
     private val prev = button("<", BTN_GREY, keys = intArrayOf(Input.Keys.LEFT)) { cycle(-1) }
     private val next = button(">", BTN_GREY, keys = intArrayOf(Input.Keys.RIGHT)) { cycle(1) }
     private val race = button("CAREER", BTN_RED, big = true, keys = intArrayOf(Input.Keys.ENTER)) { game.go(0) { CareerScreen(game) } }
-    private val onlineRace = button("ONLINE", Color(0.15f, 0.35f, 0.75f, 1f), keys = intArrayOf(Input.Keys.O)) { game.go(0) { OnlineScreen(game) } }
+    private val onlineRace = button("ONLINE", Color(0.15f, 0.35f, 0.75f, 1f), big = true, keys = intArrayOf(Input.Keys.O)) { game.go(0) { OnlineScreen(game) } }
     private val quick = button("QUICK RACE", Color(0.5f, 0.15f, 0.3f, 1f), keys = intArrayOf(Input.Keys.Q)) {
         val car = save.cars[index]
         game.go(1) { RaceScreen(game, TrackDef.GENERAL.random(), car) }
@@ -78,7 +78,7 @@ class GarageScreen(game: PixelStrip) : MenuScreen(game) {
         race.apply { x = w - 104f; y = 8f; this.w = 96f; this.h = 40f }
         quick.apply { x = w - 104f; y = 52f; this.w = 96f; this.h = 18f }
         testRun.apply { x = w - 104f; y = 74f; this.w = 96f; this.h = 18f; label = "TEST N TUNE" }
-        onlineRace.apply { x = w - 104f; y = 96f; this.w = 96f; this.h = 18f }
+        onlineRace.apply { x = w - 190f; y = 8f; this.w = 82f; this.h = 40f }
         val row = listOf(dealer to 58f, upgrades to 52f, paintShop to 52f, tune to 46f, settings to 52f)
         var bx = 8f
         for ((b, bw) in row) {

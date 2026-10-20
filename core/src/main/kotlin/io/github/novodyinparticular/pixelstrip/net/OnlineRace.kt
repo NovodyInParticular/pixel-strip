@@ -15,13 +15,65 @@ class OnlineRace(private val cloud: Cloud, val raceId: String, room: JsonValue) 
     class Live(val x: Float, val v: Float, val rpm: Float, val gear: Int, val mode: Vehicle.Mode, val leave: Float?, val splits: FloatArray?, val nitrous: Boolean, val t: Float)
 
     class Run(val rt: Float?, val et: Float?, val mph: Float, val red: Boolean)
-    class Result(val won: Boolean, val forfeit: Boolean, val mine: Run?, val theirs: Run?)
+    /** [off]: the race was called off before it ran ([reason]); stakes, if taken, went back. */
+    class Result(
+        val won: Boolean, val forfeit: Boolean, val mine: Run?, val theirs: Run?, val off: Boolean = false, val reason: String? = null,
+        /** What the winner got: both cash stakes, or the loser's car (its model id). */
+        val prizeCash: Long = 0, val prizeCar: String? = null,
+    )
+
+    /** "none", "cash" or "pink"; [amount] for cash. */
+    class Wager(val kind: String, val amount: Long) {
+        val none get() = kind == "none"
+        val label get() = when (kind) {
+            "cash" -> "$" + "%,d".format(amount)
+            "pink" -> "PINK SLIPS"
+            else -> "FOR FUN"
+        }
+    }
 
     val me: Player
     val them: Player
     val track: String = room.getString("track")
     val quarter: Boolean = room.getBoolean("quarter", true)
     val treeDelay: Float = room.getFloat("treeDelay", 1f)
+    val wager = room.get("wager")?.let { Wager(it.getString("kind", "none"), it.getLong("amount", 0)) } ?: Wager("none", 0)
+    /** confirm (both must accept the stakes), racing, off or done. */
+    var state: String = room.getString("state", "racing")
+        private set
+    var offReason: String? = null
+        private set
+    /** Seconds left to accept the stakes. */
+    val confirmBy: Long = room.getLong("confirmBy", 0)
+    var accepted = false
+        private set
+
+    /** Accept or decline the stakes; [then] gets the room's state afterwards (racing, confirm or off). */
+    fun confirm(accept: Boolean, then: (String) -> Unit) {
+        val data = JsonValue(JsonValue.ValueType.`object`)
+        data.addChild("raceId", JsonValue(raceId))
+        data.addChild("accept", JsonValue(accept))
+        cloud.call("confirmWager", data) { r, err ->
+            if (r == null) {
+                error = err
+                return@call then("off")
+            }
+            accepted = accept
+            state = r.getString("state", state)
+            r.get("result")?.takeIf { it.isObject }?.let { offReason = it.getString("reason", null) }
+            then(state)
+        }
+    }
+
+    /** While confirming: picks up the other side's answer from the room. */
+    fun pollState(then: (String) -> Unit) {
+        cloud.dbGet("races/$raceId") { room ->
+            room ?: return@dbGet
+            state = room.getString("state", state)
+            room.get("result")?.takeIf { it.isObject }?.let { offReason = it.getString("reason", null) }
+            then(state)
+        }
+    }
 
     init {
         val uid = cloud.accountId ?: error("not signed in")
@@ -115,8 +167,16 @@ class OnlineRace(private val cloud: Cloud, val raceId: String, room: JsonValue) 
         fun run(o: JsonValue?) = o?.let {
             Run(it.get("rt")?.takeIf { v -> v.isNumber }?.asFloat(), it.get("et")?.takeIf { v -> v.isNumber }?.asFloat(), it.getFloat("mph", 0f), it.getBoolean("red", false))
         }
+        if (j.getBoolean("off", false)) {
+            result = Result(false, false, null, null, off = true, reason = j.getString("reason", null))
+            cloud.requestSync()
+            return
+        }
         val runs = j.get("runs")
-        result = Result(j.getString("winner") == me.uid, j.getBoolean("forfeit", false), run(runs?.get(me.uid)), run(runs?.get(them.uid)))
+        val prize = j.get("prize")
+        result = Result(j.getString("winner") == me.uid, j.getBoolean("forfeit", false), run(runs?.get(me.uid)), run(runs?.get(them.uid)),
+            prizeCash = prize?.getLong("cash", 0) ?: 0, prizeCar = prize?.getString("car", null))
+        if (!wager.none) cloud.requestSync()          // the server moved cash or a car: take its garage
     }
 
     companion object {

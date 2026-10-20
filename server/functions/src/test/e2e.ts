@@ -85,6 +85,7 @@ async function main() {
   assert.equal(again.body.result.state.cars[0].car, "vandal", "legacy import only on the first sync");
 
   await onlineRace();
+  await wagers();
   console.log("e2e: all checks passed");
 }
 
@@ -130,7 +131,17 @@ async function onlineRace() {
 
   const runA = await call("submitRun", { raceId, events: clean.events }, a.token);
   assert.equal(runA.status, 200, JSON.stringify(runA.body));
-  assert.ok(Math.abs(runA.body.result.run.et - clean.expect.splits[4]) < 0.01, "the server's replay matches the game's ET");
+  // the room picks the track, and tracks differ in grip: replay the same events here on that track's surface
+  const { parseCar } = await import("../physics/car");
+  const { apply, parseCatalog } = await import("../physics/parts");
+  const { replay } = await import("../physics/vehicle");
+  const root = join(__dirname, "../../../..");
+  const grip = JSON.parse(readFileSync(join(root, `assets/data/tracks/${room.body.track}.json`), "utf8")).trackGrip ?? 1.25;
+  const def = apply(parseCar(JSON.parse(readFileSync(join(root, "assets/data/cars/vandal.json"), "utf8"))),
+    parseCatalog(JSON.parse(readFileSync(join(root, "assets/data/parts.json"), "utf8"))), {}, {}, null);
+  const local = replay(def, clean.events, { trackGrip: grip, startX: clean.startX, finishM: clean.finishM }).splits[4];
+  assert.ok(Math.abs(runA.body.result.run.et - local) < 1e-9, `the server's replay is the physics port's: ${runA.body.result.run.et} vs ${local}`);
+  if (grip === clean.trackGrip) assert.ok(Math.abs(runA.body.result.run.et - clean.expect.splits[4]) < 0.01, "and the game's, on the same surface");
   assert.equal(runA.body.result.result, null, "not settled until both are in");
   assert.equal((await call("submitRun", { raceId, events: clean.events }, a.token)).status, 409, "one run each");
   assert.equal((await call("submitRun", { raceId, events: clean.events }, stranger.token)).status, 403, "strangers can't submit");
@@ -139,6 +150,84 @@ async function onlineRace() {
   assert.ok(runB.body.result.run.red, "the red light is caught by the replay");
   assert.equal(result.winner, a.uid, "a clean run beats a red light");
   assert.equal((await rtGet(`races/${raceId}/result`, b.token)).body.winner, a.uid, "the result is in the room");
+}
+
+/** Bets and pink slips: confirmation, escrow, payout, refunds, and the protections. */
+async function wagers() {
+  const { readFileSync } = await import("node:fs");
+  const { join } = await import("node:path");
+  const cases = JSON.parse(readFileSync(join(__dirname, "../../../../shared/physics_cases.json"), "utf8"));
+  const clean = cases.find((c: any) => c.name === "vandal stock").events;
+  const red = cases.find((c: any) => c.name === "red light").events;
+  const player = async (cash: number, cars: string[]) => {
+    const s = await json(`${auth}/identitytoolkit.googleapis.com/v1/accounts:signUp?key=emulator`, { returnSecureToken: true });
+    const token: string = s.body.idToken;
+    const legacy = { cash, beaten: [], cars: cars.map((car, i) => ({ uid: `c${i + 1}`, car, paint: 0, parts: {}, cosmetics: {} })) };
+    assert.equal((await call("sync", { base: 0, entries: [], legacy }, token)).status, 200);
+    return { token, uid: s.body.localId as string };
+  };
+  const garage = async (p: { token: string }) => (await call("sync", { entries: [] }, p.token)).body.result.state;
+  const match = async (a: any, b: any, wager: unknown, car = "c1") => {
+    assert.equal((await call("matchmake", { car, wager }, a.token)).body.result.waiting, true);
+    const r = await call("matchmake", { car, wager }, b.token);
+    assert.ok(r.body.result?.raceId, `paired: ${JSON.stringify(r.body)}`);
+    return r.body.result.raceId as string;
+  };
+
+  // cash: matched only on the same stake; nothing moves until both accept; winner takes both
+  const a = await player(10000, ["vandal"]);
+  const b = await player(10000, ["vandal"]);
+  const c = await player(10000, ["vandal"]);
+  assert.equal((await call("matchmake", { car: "c1", wager: { kind: "cash", amount: 20000 } }, c.token)).status, 400, "can't bet more than you have");
+  assert.equal((await call("matchmake", { car: "c1", wager: { kind: "cash", amount: 1000 } }, c.token)).body.result.waiting, true);
+  const id = await match(a, b, { kind: "cash", amount: 5000 });
+  assert.equal((await call("cancelMatch", {}, c.token)).status, 200, "a different stake never paired with them");
+  assert.equal((await rtGet(`races/${id}`, a.token)).body.state, "confirm");
+  assert.equal((await call("submitRun", { raceId: id, events: clean }, a.token)).status, 400, "no racing before both accept");
+  assert.equal((await call("confirmWager", { raceId: id, accept: true }, a.token)).body.result.state, "confirm", "waiting on the other");
+  assert.equal((await garage(a)).cash, 10000, "nothing taken yet");
+  assert.equal((await call("confirmWager", { raceId: id, accept: true }, b.token)).body.result.state, "racing");
+  assert.deepEqual([(await garage(a)).cash, (await garage(b)).cash], [5000, 5000], "both stakes held by the server");
+  await call("submitRun", { raceId: id, events: clean }, a.token);
+  const res = (await call("submitRun", { raceId: id, events: red }, b.token)).body.result.result;
+  assert.equal(res.winner, a.uid);
+  assert.deepEqual(res.prize, { cash: 10000 });
+  assert.deepEqual([(await garage(a)).cash, (await garage(b)).cash], [15000, 5000], "the winner takes both stakes");
+
+  // pink slips: a decline moves nothing; then a real one moves the car
+  const p = await player(0, ["vandal", "kite"]);
+  const q = await player(0, ["vandal", "kestrel"]);
+  const solo = await player(0, ["vandal"]);
+  assert.equal((await call("matchmake", { car: "c1", wager: { kind: "pink" } }, solo.token)).status, 400, "never your last car");
+  const off = await match(p, q, { kind: "pink" });
+  await call("confirmWager", { raceId: off, accept: true }, p.token);
+  assert.equal((await call("confirmWager", { raceId: off, accept: false }, q.token)).body.result.state, "off");
+  assert.equal((await call("submitRun", { raceId: off, events: clean }, p.token)).status, 400, "an off race can't be run");
+  assert.equal((await garage(q)).cars.length, 2, "a decline moves nothing");
+
+  const pink = await match(p, q, { kind: "pink" });
+  await call("confirmWager", { raceId: pink, accept: true }, p.token);
+  await call("confirmWager", { raceId: pink, accept: true }, q.token);
+  const sell = await call("sync", { entries: [{ type: "sell", t: Date.now(), uid: "c1" }] }, q.token);
+  assert.deepEqual(sell.body.result.rejected, [0], "a car on the line can't be sold mid-race");
+  await call("submitRun", { raceId: pink, events: red }, p.token);
+  const pr = (await call("submitRun", { raceId: pink, events: clean }, q.token)).body.result.result;
+  assert.equal(pr.winner, q.uid);
+  assert.equal(pr.prize.car, "vandal");
+  const gp = await garage(p);
+  const gq = await garage(q);
+  assert.deepEqual(gp.cars.map((x: any) => x.car), ["kite"], "the loser keeps their other car");
+  assert.deepEqual(gq.cars.map((x: any) => x.car), ["vandal", "kestrel", "vandal"], "the winner drives off in theirs");
+  assert.deepEqual([gp.staked, gq.staked], [[], []]);
+
+  // a negative balance (say, after a refunded purchase) blocks betting but not fun races
+  const broke = await player(0, ["vandal"]);
+  const fsUrl = `${firestore}/v1/projects/${project}/databases/(default)/documents/players/${broke.uid}?updateMask.fieldPaths=state.cash`;
+  await fetch(fsUrl, { method: "PATCH", headers: { Authorization: "Bearer owner", "Content-Type": "application/json" },
+    body: JSON.stringify({ fields: { state: { mapValue: { fields: { cash: { integerValue: "-500" } } } } } }) });
+  assert.equal((await call("matchmake", { car: "c1", wager: { kind: "cash", amount: 100 } }, broke.token)).status, 400);
+  assert.equal((await call("matchmake", { car: "c1" }, broke.token)).status, 200, "fun races still open");
+  await call("cancelMatch", {}, broke.token);
 }
 
 main().catch((e) => {

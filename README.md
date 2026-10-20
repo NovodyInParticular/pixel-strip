@@ -48,7 +48,10 @@ Done so far:
 - Online races (Firebase): matchmaking by build, the opponent shown live, and both runs
   replayed by the server to decide the winner (see below)
 
-Next: bet and pink-slip races online.
+- Bets and pink slips online: cash stakes of any size you can cover, or the car you race;
+  both players accept, the server holds the stakes and pays the winner (see below)
+
+Next: crews.
 
 ### How to race
 
@@ -154,6 +157,19 @@ What the replay can't prove: the race clock at the launch comes from the phone (
 when the other car staged), so a modified client could claim a perfect light, and a bot could
 press the buttons perfectly. If the other side never finishes, the race goes to whoever did after
 150 s.
+
+### Bets and pink slips
+
+In the online lobby pick FOR FUN, a CASH BET (stepped up to whatever you have), or PINK SLIP (the
+car you race; never your last one). You only meet someone staking exactly the same. After the
+match both players see the other car and have 25 s to accept; only when both have does the
+server take the stakes (the cash, or a lock on the car so it can't be sold mid-race). At the
+verdict the winner gets both cash stakes, or the loser's car with its parts. Declines, timeouts
+and races nobody finishes give the stakes back; a race only one side finished goes to them
+after 150 s. A negative balance (say, after a refunded purchase) blocks betting. Every step is
+logged in Firestore under `wagers/{raceId}`. The money logic is plain functions in
+`server/functions/src/wager.ts` with their own tests; the e2e test plays a cash race, a declined
+and a won pink slip, and the refusals.
 
 ### Testing against the emulators
 

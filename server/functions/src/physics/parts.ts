@@ -128,6 +128,10 @@ export function baseGears(def: CarDef, c: Catalog, parts: Record<string, number>
 
 export const defaultAfr = (forced: boolean) => (forced ? 11.5 : 12.8);
 
+/** Upgrades.spoolScale: big engines spool a given turbo sooner (rated for ~300 Nm, sqrt of stock torque, 0.6..1.4). */
+export const SPOOL_REF_NM = 300;
+export const spoolScale = (def: CarDef) => clamp(Math.sqrt(SPOOL_REF_NM / (def.torqueNm * ratingFactor(def))), 0.6, 1.4);
+
 export function apply(def: CarDef, c: Catalog, parts: Record<string, number>, cosmetics: Record<string, number>, tune: Tune | null): CarDef {
   const lim = limits(def, c, parts);
   let lo = 0, mid = 0, hi = 0, peakRpm = 0, idle = 0, weight = 0, rear = 0, grip = 0, clutch = 0, drag = 0;
@@ -225,7 +229,7 @@ export function apply(def: CarDef, c: Catalog, parts: Record<string, number>, co
     finalDrive,
     nitrous,
     boostGain: extraPsi * PSI_GAIN * icEff,
-    boostSpoolRpm: turbo.spool ?? 0,
+    boostSpoolRpm: (turbo.spool ?? 0) * spoolScale(def),
     boostLag: turbo.lag ?? 0.8,
     boostPsi: psi,
     boostByGear: byGear,

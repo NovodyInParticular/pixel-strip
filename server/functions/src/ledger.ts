@@ -36,7 +36,10 @@ export interface Rules {
 
 /** parts: slot -> fitted option; owned: slot -> bitmask of options bought for this car. */
 export interface Car { uid: string; car: string; paint: number; parts: Record<string, number>; cosmetics: Record<string, number>; owned: Record<string, number> }
-export interface State { cash: number; nextUid: number; lastRaceT: number; beaten: string[]; cars: Car[] }
+/** staked: cars on the line in an online pink-slip race (server only: they can't be sold or lost elsewhere). */
+export interface State { cash: number; nextUid: number; lastRaceT: number; beaten: string[]; cars: Car[]; staked?: string[] }
+
+const isStaked = (s: State, uid: string) => (s.staked ?? []).includes(uid);
 
 export interface Entry {
   type: string;
@@ -183,7 +186,7 @@ export function apply(r: Rules, s: State, e: Entry): boolean {
       return true;
     }
     case "sell": {
-      if (!car || s.cars.length < 2) return false;
+      if (!car || s.cars.length < 2 || isStaked(s, car.uid)) return false;
       s.cash += saleValue(r, car);
       removeCar(s, car.uid);
       return true;
@@ -193,6 +196,7 @@ export function apply(r: Rules, s: State, e: Entry): boolean {
       const rival = r.rivals.find((x) => x.id === e.rival);
       if (!rival || !unlocked(r, s, rival.id)) return false;
       if (e.pink && !s.beaten.includes(rival.id)) return false;
+      if (e.pink && isStaked(s, car.uid)) return false;
       if (s.lastRaceT !== 0 && e.t - s.lastRaceT < r.minRaceGapMs) return false;
       s.lastRaceT = e.t;
       if (!e.won) {

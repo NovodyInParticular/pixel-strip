@@ -199,8 +199,8 @@ export class Vehicle {
       this.boost *= d.blowOff ? 1 - dt * 0.4 : 1 - Math.min(1, dt * 6);
       return;
     }
-    const rate = target > this.boost ? dt / d.boostLag : dt * 3;
-    this.boost += (target - this.boost) * Math.min(1, rate * 3);
+    const rate = target > this.boost ? dt / d.boostLag : dt * 9;
+    this.boost += (target - this.boost) * Math.min(1, rate);
   }
 
   step(dt: number) {

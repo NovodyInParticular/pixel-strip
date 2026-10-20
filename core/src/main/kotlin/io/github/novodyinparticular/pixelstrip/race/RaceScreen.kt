@@ -12,6 +12,7 @@ import com.badlogic.gdx.graphics.PixmapIO
 import com.badlogic.gdx.math.MathUtils
 import io.github.novodyinparticular.pixelstrip.PixelStrip
 import io.github.novodyinparticular.pixelstrip.audio.Sfx
+import io.github.novodyinparticular.pixelstrip.data.CarDef
 import io.github.novodyinparticular.pixelstrip.data.Career
 import io.github.novodyinparticular.pixelstrip.save.OwnedCar
 import io.github.novodyinparticular.pixelstrip.save.RunRecord
@@ -370,7 +371,7 @@ class RaceScreen(
             playerView.update(dt, player.rollW, player.driveW)
             ghostView.update(dt, ghost.rollW, ghost.driveW)
             for (i in 0..1) flame[i] = max(0f, flame[i] - dt)
-            if (phase == Phase.COUNTDOWN && player.limiter && MathUtils.random() < 0.04f) flame[0] = 0.06f   // pops on the limiter
+            if (phase == Phase.COUNTDOWN && player.limiter && boosted(player.def) && MathUtils.random() < 0.04f) flame[0] = 0.06f   // pops on the limiter
             smokeTimer += dt
             if (smokeTimer > 1f / 60f) {
                 smokeTimer = 0f
@@ -463,9 +464,11 @@ class RaceScreen(
                 }
                 is Vehicle.Event.Shifted -> {
                     motion.kick()
-                    flame[lane] = 0.14f                       // backfire through the pipes
                     game.audio.play(Sfx.Kind.CLUNK, if (isPlayer) 0.8f else 0.35f)
-                    game.audio.play(Sfx.Kind.POP, if (isPlayer) 0.6f else 0.3f)
+                    if (boosted(car.def)) {
+                        flame[lane] = 0.14f                   // backfire through the pipes
+                        game.audio.play(Sfx.Kind.POP, if (isPlayer) 0.6f else 0.3f)
+                    }
                     if (!isPlayer) continue
                     shake = max(shake, 1.2f)
                     buzz(20)
@@ -494,7 +497,10 @@ class RaceScreen(
         flashColor.set(c)
     }
 
-    private fun flameOn(car: Vehicle, lane: Int) = flame[lane] > 0f || (car.nitrousActive && car.throttle > 0f)
+    /** Only forced induction (a turbo, a blower, or a factory turbo) spits flames: backfires, limiter pops, the spray. */
+    private fun boosted(def: CarDef) = def.boostGain > 0f || def.blowerGain > 0f || def.stockTurbo
+
+    private fun flameOn(car: Vehicle, lane: Int) = boosted(car.def) && (flame[lane] > 0f || (car.nitrousActive && car.throttle > 0f))
 
     /** Smoke and rubber from spinning tyres, heat haze off the pipes, nitrous purges while staged. */
     private fun emitCarEffects(car: Vehicle, view: CarRenderer, ground: Float) {
@@ -694,6 +700,22 @@ class RaceScreen(
 
     private data class Quad(val view: CarRenderer, val x: Float, val ground: Float, val skip: Boolean)
 
+    /** Boost gauge under the tach: watch a big turbo take its time. */
+    private fun drawBoost() {
+        val bw = Hud.RADIUS * 2f + 12f
+        val x = TACH_X - Hud.RADIUS - 6f
+        val y = TACH_Y - 27f
+        batch.setColor(0.03f, 0.02f, 0.08f, 0.82f)
+        batch.draw(white, x, y, bw, 9f)
+        batch.setColor(0.15f, 0.12f, 0.25f, 1f)
+        batch.draw(white, x + 2f, y + 2f, bw - 4f, 2f)
+        val b = player.boost.coerceIn(0f, 1f)
+        batch.color = if (b > 0.95f) RED_BOOST else CYAN_BOOST
+        batch.draw(white, x + 2f, y + 2f, floor((bw - 4f) * b), 2f)
+        batch.color = Color.WHITE
+        font.draw(batch, "%.1f PSI".format(b * carDef.boostPsi), x + 2f, y + 5f, BOOST_TEXT, 1, null)
+    }
+
     private fun tachZone(): Hud.Zone? = when {
         phase == Phase.STAGING || phase == Phase.COUNTDOWN -> Hud.Zone(DragMath.launchRpm(carDef, player.trackGrip), 0.08f, 0.18f)
         phase == Phase.RACING && player.gear < carDef.gears.size - 1 -> Hud.Zone(player.shiftPoints[player.gear], 0.035f, 0.09f)
@@ -724,6 +746,7 @@ class RaceScreen(
         if (phase != Phase.FINISHED) {
             val gearText = if (player.mode == Vehicle.Mode.SHIFT) "-" else (player.gear + 1).toString()
             hud.drawTach(batch, TACH_X, TACH_Y, player.rpm, carDef.redline, tachZone(), gearText, "${player.rpm.toInt()} RPM", player.limiter, trackView.time)
+            if (carDef.boostGain > 0f) drawBoost()
         }
         val blink = (screenTime * 2.5f).toInt() % 2 == 0
         if (phase == Phase.BURNOUT || phase == Phase.STAGING || phase == Phase.COUNTDOWN) {
@@ -834,11 +857,20 @@ class RaceScreen(
         when {
             o.error != null -> notes.add("SERVER: ${o.error!!.uppercase().take(28)}")
             r == null -> notes.add(if (o.silence > io.github.novodyinparticular.pixelstrip.net.OnlineRace.GONE_S) "OPPONENT GONE: WAITING TO SETTLE" else "SERVER CHECKING BOTH RUNS...")
+            r.off -> notes.add("CALLED OFF: ${(r.reason ?: "").uppercase().take(24)}")
             r.forfeit -> notes.add(if (r.won) "THEY NEVER FINISHED: YOU WIN" else "YOU DIDN'T FINISH")
             else -> notes.add("VERIFIED BY THE SERVER")
         }
+        if (r != null && !r.off && !o.wager.none) notes.add(when {
+            r.prizeCar != null && r.won -> "PINK SLIP: ${game.car(r.prizeCar).name.uppercase()} IS YOURS"
+            r.prizeCar != null -> "LOST: ${carDef.name.uppercase()}"
+            r.won -> "WON  $" + "%,d".format(r.prizeCash)
+            else -> "LOST  $" + "%,d".format(o.wager.amount)
+        })
+        if (r?.off == true && !o.wager.none) notes.add("STAKES RETURNED")
         val (stamp, color) = when {
             r == null -> "..." to Hud.INK_FAINT
+            r.off -> "OFF" to Hud.INK_FAINT
             r.mine?.red == true -> "RED LIGHT" to Hud.RED
             r.won -> "WIN" to Color(0.2f, 0.55f, 0.3f, 1f)
             else -> "LOSS" to Hud.RED
@@ -932,6 +964,9 @@ class RaceScreen(
         private val GHOST_MARK = Color(0.3f, 0.85f, 0.95f, 1f)
         private val BEAM = Color(1f, 0.9f, 0.7f, 1f)
         private val GHOST_BEAM = Color(0.5f, 0.9f, 1f, 1f)
+        private val CYAN_BOOST = Color(0.49f, 0.95f, 0.86f, 1f)
+        private val RED_BOOST = Color(1f, 0.35f, 0.3f, 1f)
+        private val BOOST_TEXT = Color(1f, 0.91f, 0.56f, 1f)
         private val SMOKE_LIT = Color(1f, 0.55f, 0.62f, 1f)
         private val SMOKE_AMBIENT = Color(0.78f, 0.74f, 0.95f, 1f)
     }

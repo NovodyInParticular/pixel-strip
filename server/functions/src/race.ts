@@ -9,7 +9,7 @@ import { randomBytes } from "node:crypto";
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { getDatabase } from "firebase-admin/database";
-import { getFirestore } from "firebase-admin/firestore";
+import { FieldValue, getFirestore, Transaction } from "firebase-admin/firestore";
 import { HttpsError, onCall } from "firebase-functions/v2/https";
 import { CarDef, parseCar } from "./physics/car";
 import { SPLITS_M } from "./physics/consts";
@@ -17,6 +17,7 @@ import { apply, Catalog, parseCatalog } from "./physics/parts";
 import { tuneFrom } from "./physics/tune";
 import { MAX_STEPS, perfectPass, replay, RunEvent } from "./physics/vehicle";
 import { Car, State } from "./ledger";
+import { cannotStake, escrow, parseWager, payout, refund, Wager, wagerKey } from "./wager";
 
 const data = join(__dirname, "data");
 const catalog: Catalog = parseCatalog(JSON.parse(readFileSync(join(data, "parts.json"), "utf8")));
@@ -40,6 +41,10 @@ const WINDOW_GROWTH = 4;
 const QUEUE_TTL_MS = 90_000;
 /** A race with only one finished run is settled as a forfeit after this long. */
 export const FORFEIT_MS = 150_000;
+/** Both racers must accept the stakes within this long, or the race is called off. */
+export const CONFIRM_MS = 25_000;
+/** A race nobody finished is called off (and stakes refunded) after this long. */
+export const ABANDON_MS = 300_000;
 /** Where every run starts: the burnout box (RaceScreen.BURNOUT_X). */
 const START_X = -9;
 const MAX_EVENTS = 6000;
@@ -52,15 +57,22 @@ interface Entry {
   rating: number;
   quarter: boolean;
   created: number;
+  wager: Wager;
+  key: string;
 }
 
-/** The player's car as the server knows it (from the ledger state) and how it races with [tune]. */
-async function carOf(uid: string, carUid: string): Promise<Car> {
+/** The player's garage and car as the server knows them (from the ledger state). */
+async function carOf(uid: string, carUid: string): Promise<{ state: State; car: Car }> {
   const snap = await getFirestore().collection("players").doc(uid).get();
   const state = snap.exists ? (snap.data()!.state as State) : null;
   const car = state?.cars.find((c) => c.uid === carUid);
-  if (!car) throw new HttpsError("failed-precondition", "sync your garage first: the server doesn't know that car");
-  return car;
+  if (!state || !car) throw new HttpsError("failed-precondition", "sync your garage first: the server doesn't know that car");
+  return { state, car };
+}
+
+/** Appends to the race's wager log (Firestore wagers/{raceId}). */
+function log(tx: Transaction, raceId: string, what: string, detail: Record<string, unknown> = {}) {
+  tx.set(getFirestore().collection("wagers").doc(raceId), { log: FieldValue.arrayUnion({ at: Date.now(), what, ...detail }) }, { merge: true });
 }
 
 export function effective(car: Car, tune: unknown): CarDef {
@@ -82,9 +94,15 @@ export const matchmake = onCall({ maxInstances: 10 }, async (req) => {
   const d = (req.data ?? {}) as Record<string, unknown>;
   if (typeof d.car !== "string") throw new HttpsError("invalid-argument", "car");
   const quarter = d.quarter !== false;
-  const car = await carOf(uid, d.car);
+  const wager = parseWager(d.wager);
+  if (!wager) throw new HttpsError("invalid-argument", "wager");
+  const { state, car } = await carOf(uid, d.car);
+  const why = cannotStake(state, wager, d.car);
+  if (why) throw new HttpsError("failed-precondition", why);
   const def = effective(car, d.tune);
-  const me: Entry = { uid, carUid: d.car, car, tune: d.tune ?? null, rating: rating(perfectPass(def).quarter), quarter, created: Date.now() };
+  const me: Entry = {
+    uid, carUid: d.car, car, tune: d.tune ?? null, rating: rating(perfectPass(def).quarter), quarter, created: Date.now(), wager, key: wagerKey(wager),
+  };
 
   const fs = getFirestore();
   const paired = await fs.runTransaction(async (tx) => {
@@ -94,7 +112,7 @@ export const matchmake = onCall({ maxInstances: 10 }, async (req) => {
     let best: Entry | null = null;
     for (const doc of waiting.docs) {
       const e = doc.data() as Entry;
-      if (e.uid === uid || e.quarter !== quarter) continue;
+      if (e.uid === uid || e.quarter !== quarter || e.key !== me.key) continue;
       const window = RATING_WINDOW + WINDOW_GROWTH * (now - e.created) / 1000;
       if (Math.abs(e.rating - me.rating) > window) continue;
       if (!best || e.created < best.created) best = e;
@@ -122,12 +140,20 @@ export const matchmake = onCall({ maxInstances: 10 }, async (req) => {
     /** The starter's wait between both staged and the first amber (Tree.start). */
     treeDelay: 0.7 + Math.random() * 0.9,
     created: Date.now(),
+    wager,
+    /** confirm: both must accept the stakes first; racing; off: called off, stakes back. */
+    state: wager.kind === "none" ? "racing" : "confirm",
+    confirmBy: Date.now() + CONFIRM_MS,
   };
   // the room is public to its two racers; the builds and tunes stay on the server for the replay
   await fs.collection("races").doc(raceId).set({
     ...room, uids: [paired.uid, uid], trackGrip: track.grip,
     entries: { [paired.uid]: { carUid: paired.carUid, car: paired.car, tune: paired.tune }, [uid]: { carUid: me.carUid, car: me.car, tune: me.tune } },
   });
+  if (wager.kind !== "none") {
+    await fs.collection("wagers").doc(raceId).set({ uids: [paired.uid, uid], wager, cars: { [paired.uid]: paired.carUid, [uid]: me.carUid },
+      log: [{ at: Date.now(), what: "matched" }] });
+  }
   const db = getDatabase();
   await db.ref(`races/${raceId}`).set(room);
   await db.ref(`matches/${paired.uid}`).set(raceId);
@@ -143,6 +169,68 @@ export const cancelMatch = onCall({ maxInstances: 10 }, async (req) => {
 });
 
 interface Run { rt: number | null; et: number | null; mph: number; red: boolean; at: number }
+
+const playerRef = (uid: string) => getFirestore().collection("players").doc(uid);
+
+/** Calls a race off before it ran: stakes back (if they were taken), room closed. */
+async function callOff(tx: Transaction, raceId: string, race: FirebaseFirestore.DocumentData, reason: string,
+  states: Record<string, State> | null) {
+  if (states && race.state === "racing" && race.wager.kind !== "none") {
+    for (const u of race.uids as string[]) {
+      refund(states[u], race.wager, race.entries[u].carUid);
+      tx.update(playerRef(u), { state: states[u] });
+    }
+  }
+  const result = { off: true, reason };
+  tx.update(getFirestore().collection("races").doc(raceId), { state: "off", result, settled: Date.now() });
+  if (race.wager.kind !== "none") log(tx, raceId, "called off", { reason, refunded: race.state === "racing" });
+  await getDatabase().ref(`races/${raceId}`).update({ state: "off", result });
+  return result;
+}
+
+/**
+ * Accept or decline the stakes. When both have accepted, the server checks both can still cover
+ * them and takes them; if either can't (or declines, or the time runs out) the race is off.
+ */
+export const confirmWager = onCall({ maxInstances: 10 }, async (req) => {
+  if (!req.auth) throw new HttpsError("unauthenticated", "sign in first");
+  const uid = req.auth.uid;
+  const d = (req.data ?? {}) as Record<string, unknown>;
+  if (typeof d.raceId !== "string") throw new HttpsError("invalid-argument", "raceId");
+  const raceId = d.raceId;
+  const fs = getFirestore();
+  return fs.runTransaction(async (tx) => {
+    const ref = fs.collection("races").doc(raceId);
+    const race = (await tx.get(ref)).data();
+    if (!race || !(race.uids as string[]).includes(uid)) throw new HttpsError("permission-denied", "not your race");
+    if (race.state !== "confirm") return { state: race.state, result: race.result ?? null };
+    const uids = race.uids as string[];
+    const snaps = await Promise.all(uids.map((u) => tx.get(playerRef(u))));
+    const states: Record<string, State> = {};
+    uids.forEach((u, i) => { states[u] = snaps[i].data()!.state as State; });
+    if (d.accept !== true) return { state: "off", result: await callOff(tx, raceId, race, `${handle(uid)} declined`, null) };
+    if (Date.now() > race.confirmBy) return { state: "off", result: await callOff(tx, raceId, race, "time ran out to accept", null) };
+    const accepted = { ...(race.accepted ?? {}), [uid]: true };
+    log(tx, raceId, "accepted", { uid });
+    if (!uids.every((u) => accepted[u])) {
+      tx.update(ref, { accepted });
+      await getDatabase().ref(`races/${raceId}/accepted/${uid}`).set(true);
+      return { state: "confirm" };
+    }
+    for (const u of uids) {
+      const why = cannotStake(states[u], race.wager, race.entries[u].carUid);
+      if (why) return { state: "off", result: await callOff(tx, raceId, race, `${handle(u)}: ${why}`, null) };
+    }
+    for (const u of uids) {
+      escrow(states[u], race.wager, race.entries[u].carUid);
+      tx.update(playerRef(u), { state: states[u] });
+    }
+    tx.update(ref, { accepted, state: "racing" });
+    log(tx, raceId, "stakes taken", { wager: race.wager });
+    await getDatabase().ref(`races/${raceId}`).update({ state: "racing", [`accepted/${uid}`]: true });
+    return { state: "racing" };
+  });
+});
 
 function sanitizeEvents(raw: unknown): RunEvent[] {
   if (!Array.isArray(raw) || raw.length > MAX_EVENTS) throw new HttpsError("invalid-argument", "events");
@@ -174,17 +262,36 @@ async function settle(raceId: string): Promise<unknown | null> {
     const race = (await tx.get(ref)).data();
     if (!race) return null;
     if (race.result) return race.result;
+    const uids = race.uids as string[];
+    const staked = race.wager && race.wager.kind !== "none";
+    const snaps = staked ? await Promise.all(uids.map((u) => tx.get(playerRef(u)))) : [];
+    const states: Record<string, State> = {};
+    snaps.forEach((snap, i) => { states[uids[i]] = snap.data()!.state as State; });
+    const now = Date.now();
+    if (race.state === "confirm") return now > race.confirmBy ? callOff(tx, raceId, race, "time ran out to accept", null) : null;
     const runs = (race.runs ?? {}) as Record<string, Run>;
-    const [ua, ub] = race.uids as string[];
-    let result;
-    if (runs[ua] && runs[ub]) {
-      const w = decide(runs[ua], runs[ub]);
-      result = { winner: w === 0 ? ua : ub, runs, forfeit: false };
-    } else if ((runs[ua] || runs[ub]) && Date.now() - race.created > FORFEIT_MS) {
-      result = { winner: runs[ua] ? ua : ub, runs, forfeit: true };
+    const [ua, ub] = uids;
+    let winner: string;
+    let forfeit = false;
+    if (runs[ua] && runs[ub]) winner = decide(runs[ua], runs[ub]) === 0 ? ua : ub;
+    else if ((runs[ua] || runs[ub]) && now - race.created > FORFEIT_MS) {
+      winner = runs[ua] ? ua : ub;
+      forfeit = true;
+    } else if (!runs[ua] && !runs[ub] && now - race.created > ABANDON_MS) {
+      return callOff(tx, raceId, race, "nobody finished", staked ? states : null);
     } else return null;
-    tx.update(ref, { result, settled: Date.now() });
-    await getDatabase().ref(`races/${raceId}/result`).set(result);
+    const loser = winner === ua ? ub : ua;
+    let prize: Record<string, unknown> | null = null;
+    if (staked) {
+      const won = payout(states[winner], states[loser], race.wager, race.entries[winner].carUid, race.entries[loser].carUid);
+      prize = race.wager.kind === "cash" ? { cash: race.wager.amount * 2 } : { car: won?.car ?? null, uid: won?.uid ?? null };
+      tx.update(playerRef(winner), { state: states[winner] });
+      tx.update(playerRef(loser), { state: states[loser] });
+      log(tx, raceId, "paid out", { winner, forfeit, ...prize });
+    }
+    const result = { winner, runs, forfeit, wager: race.wager ?? { kind: "none" }, prize };
+    tx.update(ref, { result, state: "done", settled: now });
+    await getDatabase().ref(`races/${raceId}`).update({ result, state: "done" });
     return result;
   });
 }
@@ -204,6 +311,7 @@ export const submitRun = onCall({ maxInstances: 10 }, async (req) => {
   const race = (await ref.get()).data();
   if (!race || !(race.uids as string[]).includes(uid)) throw new HttpsError("permission-denied", "not your race");
   if (race.runs?.[uid]) throw new HttpsError("already-exists", "run already in");
+  if (race.state !== "racing") throw new HttpsError("failed-precondition", race.state === "confirm" ? "both must accept the stakes first" : "this race is off");
   const entry = race.entries[uid];
   const def = effective(entry.car, entry.tune);
   const finishM = SPLITS_M[race.quarter ? 4 : 2];

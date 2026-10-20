@@ -283,7 +283,7 @@ object Upgrades {
             finalDrive = finalDrive,
             nitrous = nitrous,
             boostGain = extraPsi * PSI_GAIN * icEff,
-            boostSpoolRpm = turbo["spool"] ?: 0f,
+            boostSpoolRpm = (turbo["spool"] ?: 0f) * spoolScale(def),
             boostLag = turbo["lag"] ?: 0.8f,
             boostPsi = psi,
             boostByGear = byGear,
@@ -311,6 +311,13 @@ object Upgrades {
         )
     }
 
+    /**
+     * A big engine moves more air and spools a given turbo sooner: the turbo's rated spool rpm is
+     * for a ~300 Nm engine and scales with the square root of the stock torque, within 0.6..1.4.
+     */
+    fun spoolScale(def: CarDef) = Math.sqrt((SPOOL_REF_NM / (def.torqueNm * def.ratingFactor)).toDouble()).toFloat().coerceIn(0.6f, 1.4f)
+
+    const val SPOOL_REF_NM = 300f
     const val BASE_RANGE = 0.05f
     /** Timing adjustment allowed by each ECU level. */
     val TIMING_RANGE = floatArrayOf(0f, 2f, 4f, 6f)

@@ -5,7 +5,7 @@ import { getFirestore } from "firebase-admin/firestore";
 import { HttpsError, onCall } from "firebase-functions/v2/https";
 import { apply, emptyState, Entry, importLegacy, Rules, sanitize, State } from "./ledger";
 
-export { cancelMatch, matchmake, raceResult, submitRun } from "./race";
+export { cancelMatch, confirmWager, matchmake, raceResult, submitRun } from "./race";
 
 initializeApp();
 const db = getFirestore();

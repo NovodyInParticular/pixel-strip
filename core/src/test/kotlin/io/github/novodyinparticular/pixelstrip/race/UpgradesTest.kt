@@ -119,6 +119,31 @@ class UpgradesTest {
         assertTrue(turbo.sixty > blower.sixty, "the turbo should launch softer (lag)")
     }
 
+    /** Seconds from the launch until the turbo makes 90% of its boost, flat out with perfect shifts. */
+    private fun spoolTime(def: CarDef): Float {
+        val car = Vehicle(def)
+        car.prime(DragMath.launchRpm(def, Vehicle.DEFAULT_PREP), 0.78f)
+        car.launch(0f, rate = false)
+        car.throttle = 1f
+        var t = 0f
+        while (car.boost < 0.9f && t < 20f) {
+            if (car.mode == Vehicle.Mode.DRIVE && car.gear < def.gears.size - 1 && car.rpm >= car.shiftPoints[car.gear]) car.shift()
+            car.step(1f / 240f)
+            t += 1f / 240f
+        }
+        return t
+    }
+
+    @Test
+    fun biggerTurbosLagMore() {
+        val grip = supported + mapOf("tires" to 4, "tubs" to 1, "bov" to 1)
+        val times = (1..5).associateWith { spoolTime(build("vandal", grip + mapOf("turbo" to it), Tune(boostPsi = 15f))) }
+        val names = catalog.slot("turbo").options
+        for ((o, t) in times) println("%-14s full boost after %.2f s".format(names[o].name, t))
+        assertTrue(times[1]!! < times[2]!! && times[2]!! < times[4]!! && times[4]!! < times[5]!!, "small < medium < large < 88mm")
+        assertTrue(times[5]!! > times[1]!! + 1f, "the big one makes you wait")
+    }
+
     @Test
     fun gearboxAndTuneLimits() {
         val sixSpeed = build("vandal", mapOf("gearbox" to 3))

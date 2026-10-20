@@ -291,8 +291,9 @@ class Vehicle(val def: CarDef, private val powerScale: Float = 1f) {
             boost *= if (def.blowOff) 1f - dt * 0.4f else 1f - min(1f, dt * 6f)
             return
         }
-        val rate = if (target > boost) dt / def.boostLag else dt * 3f      // blow-off: boost drops fast
-        boost += (target - boost) * minOf(1f, rate * 3f)
+        // boostLag is the turbo's spool time: a small one snaps on, a big one makes you wait; off-throttle it dumps fast
+        val rate = if (target > boost) dt / def.boostLag else dt * 9f
+        boost += (target - boost) * minOf(1f, rate)
     }
 
     private var autoSpray = false
