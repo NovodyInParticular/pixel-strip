@@ -12,6 +12,7 @@ import com.badlogic.gdx.graphics.Texture
 import io.github.novodyinparticular.pixelstrip.PixelStrip
 import io.github.novodyinparticular.pixelstrip.data.CarDef
 import io.github.novodyinparticular.pixelstrip.gfx.Lights
+import io.github.novodyinparticular.pixelstrip.race.CarLooks
 import io.github.novodyinparticular.pixelstrip.race.CarRenderer
 import io.github.novodyinparticular.pixelstrip.race.Controls
 import io.github.novodyinparticular.pixelstrip.race.DragMath
@@ -233,9 +234,10 @@ abstract class MenuScreen(protected val game: PixelStrip) : ScreenAdapter() {
 
         fun view(def: CarDef): CarRenderer = views.getOrPut(def.id) { CarRenderer(def, art, paint, tint, ramps) }
 
-        fun draw(def: CarDef, paintRow: Int, centerX: Float, groundY: Float, ambient: Color, lit: Boolean = true) {
+        fun draw(def: CarDef, paintRow: Int, centerX: Float, groundY: Float, ambient: Color, lit: Boolean = true, looks: CarLooks = CarLooks.STOCK) {
             val v = view(def)
             v.paintRow = paintRow
+            if (v.looks != looks) v.looks = looks
             v.update(1f / 60f, 0f, 0f)
             v.draw(batch, floor(centerX - def.sprite.width / 2f), groundY, time, lit = lit, ambient = ambient, lights = lights)
         }

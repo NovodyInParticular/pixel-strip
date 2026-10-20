@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.math.MathUtils
 import io.github.novodyinparticular.pixelstrip.PixelStrip
+import io.github.novodyinparticular.pixelstrip.race.CarLooks
 import io.github.novodyinparticular.pixelstrip.race.RaceScreen
 import kotlin.math.floor
 import kotlin.math.sin
@@ -73,7 +74,7 @@ class GarageScreen(game: PixelStrip) : MenuScreen(game) {
     override fun drawScene(w: Int, h: Int) {
         val bx = bgX(w)
         batch.draw(bg, bx, 0f)
-        stage.draw(game.effective(owned), owned.paint, w / 2f, GROUND, AMBIENT)
+        stage.draw(game.effective(owned), owned.paint, w / 2f, GROUND, AMBIENT, looks = CarLooks.of(owned, game.parts))
         // lamp beams and the dust floating in them
         batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE)
         for (i in LAMPS.indices) {

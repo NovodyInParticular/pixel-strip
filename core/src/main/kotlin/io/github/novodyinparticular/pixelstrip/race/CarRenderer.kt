@@ -17,7 +17,7 @@ import kotlin.math.floor
  * Stacks a car's layers: wheel wells, wheels (rotation or motion-blur frames), the paint-index body
  * through the paint shader, trim, and lamps. Body layers can pitch around the rear contact patch.
  */
-class CarRenderer(val def: CarDef, art: Art, private val paint: ShaderProgram, private val tint: ShaderProgram, private val ramps: Texture) {
+class CarRenderer(val def: CarDef, private val art: Art, private val paint: ShaderProgram, private val tint: ShaderProgram, private val ramps: Texture) {
     private val s = def.sprite
     private val body = art.tex("${s.dir}/body.png")
     private val normals = art.tex("${s.dir}/body_n.png")
@@ -36,6 +36,22 @@ class CarRenderer(val def: CarDef, art: Art, private val paint: ShaderProgram, p
     }
 
     var paintRow = def.defaultPaint
+    var looks: CarLooks = CarLooks.STOCK
+        set(value) {
+            field = value
+            rimFrames = value.rim?.let { rimFramesFor(it) }
+        }
+    private val layerCache = HashMap<String, TextureRegion>()
+    private fun layer(name: String) = layerCache.getOrPut(name) { TextureRegion(art.tex("${s.dir}/$name.png")) }
+    private var rimFrames: Array<TextureRegion>? = null
+    private val glowTex = art.tex("fx/light_soft.png")
+
+    private fun rimFramesFor(style: String): Array<TextureRegion> {
+        val tex = art.tex("wheels/r${s.wheelRadius10}_$style.png")
+        return Array(s.wheelFrames + s.blurFrames) { TextureRegion(tex, it * s.wheelSize, 0, s.wheelSize, s.wheelSize) }
+    }
+
+    private val spokes get() = looks.rim?.let { CarLooks.RIM_SPOKES[it] } ?: s.spokes
     private val angle = FloatArray(2)    // rear, front
     private val rate = FloatArray(2)     // rad/s
 
@@ -47,7 +63,8 @@ class CarRenderer(val def: CarDef, art: Art, private val paint: ShaderProgram, p
     }
 
     private fun wheelFrame(i: Int): TextureRegion {
-        val period = 2f * PI.toFloat() / s.spokes
+        val wheelFrames = rimFrames ?: this.wheelFrames
+        val period = 2f * PI.toFloat() / spokes
         val perFrame = rate[i] / 60f
         return when {
             perFrame < period * 0.22f -> wheelFrames[((angle[i] % period) / period * s.wheelFrames).toInt().coerceIn(0, s.wheelFrames - 1)]
@@ -75,7 +92,16 @@ class CarRenderer(val def: CarDef, art: Art, private val paint: ShaderProgram, p
         tint.setUniformf("u_time", time)
         tint.setUniformf("u_lit", if (litTrim) 0.55f else 0f)
         if (litTrim) lights!!.apply(tint, shakeX, shakeY)
-        if (ghost <= 0f) batch.draw(wells, bx, by + lift)
+        if (ghost <= 0f) {
+            looks.underglow?.let { c ->
+                batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE)
+                batch.setColor(c.r, c.g, c.b, 0.55f + 0.1f * kotlin.math.sin(time * 3f))
+                batch.draw(glowTex, bx + 6f, groundY - 5f, s.width - 12f, 12f)
+                batch.color = Color.WHITE
+                batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
+            }
+            batch.draw(wells, bx, by + lift)
+        }
         for ((i, wheel) in listOf(s.rearWheel, s.frontWheel).withIndex()) {
             val (wx, wy) = wheel
             // a wheelstanding car's front wheel leaves the ground with the body
@@ -98,6 +124,9 @@ class CarRenderer(val def: CarDef, art: Art, private val paint: ShaderProgram, p
         paint.setUniformf("u_specStrength", SPEC_STRENGTH)
         if (lights != null) lights.apply(paint, shakeX, shakeY) else paint.setUniformi("u_lightCount", 0)
         batch.draw(bodyRegion, bx, by + lift, ox, oy, s.width.toFloat(), s.height.toFloat(), 1f, 1f, pitch)
+        looks.kit?.let { batch.draw(layer("kit_$it"), bx, by + lift, ox, oy, s.width.toFloat(), s.height.toFloat(), 1f, 1f, pitch) }
+        looks.wing?.let { batch.draw(layer("wing_$it"), bx, by + lift, ox, oy, s.width.toFloat(), s.height.toFloat(), 1f, 1f, pitch) }
+        if (looks.scoop) batch.draw(layer("scoop"), bx, by + lift, ox, oy, s.width.toFloat(), s.height.toFloat(), 1f, 1f, pitch)
         if (lit && popupRegion != null) batch.draw(popupRegion, bx, by + lift, ox, oy, s.width.toFloat(), s.height.toFloat(), 1f, 1f, pitch)
 
         batch.shader = tint
@@ -106,6 +135,11 @@ class CarRenderer(val def: CarDef, art: Art, private val paint: ShaderProgram, p
         tint.setUniformf("u_lit", if (litTrim) 0.55f else 0f)
         if (litTrim) lights!!.apply(tint, shakeX, shakeY)
         batch.draw(trim, bx, by + lift, ox, oy, s.width.toFloat(), s.height.toFloat(), 1f, 1f, pitch)
+        if (ghost <= 0f) {
+            if (looks.blower) batch.draw(layer("blower"), bx, by + lift, ox, oy, s.width.toFloat(), s.height.toFloat(), 1f, 1f, pitch)
+            if (looks.intercooler) batch.draw(layer("intercooler"), bx, by + lift, ox, oy, s.width.toFloat(), s.height.toFloat(), 1f, 1f, pitch)
+            if (looks.sidepipe) batch.draw(layer("sidepipe"), bx, by + lift, ox, oy, s.width.toFloat(), s.height.toFloat(), 1f, 1f, pitch)
+        }
         if (lit && ghost <= 0f) batch.draw(lampLayer, bx, by + lift, ox, oy, s.width.toFloat(), s.height.toFloat(), 1f, 1f, pitch)
         batch.shader = null
     }
@@ -113,7 +147,10 @@ class CarRenderer(val def: CarDef, art: Art, private val paint: ShaderProgram, p
     private fun baseY(groundY: Float) = floor(groundY - (s.height - s.groundY))
 
     /** Exhaust tip, headlamp and tail lamp positions this frame, in framebuffer pixels. */
-    fun exhaustAt(x: Float, groundY: Float) = floor(x) + s.exhaust.first to baseY(groundY) + (s.height - s.exhaust.second)
+    fun exhaustAt(x: Float, groundY: Float): Pair<Float, Float> {
+        val e = if (looks.sidepipe) s.sideExhaust ?: s.exhaust else s.exhaust
+        return floor(x) + e.first to baseY(groundY) + (s.height - e.second)
+    }
     fun headlampAt(x: Float, groundY: Float) = floor(x) + s.headlight.first to baseY(groundY) + (s.height - s.headlight.second)
     fun taillampAt(x: Float, groundY: Float) = floor(x) + s.taillight.first to baseY(groundY) + (s.height - s.taillight.second)
 

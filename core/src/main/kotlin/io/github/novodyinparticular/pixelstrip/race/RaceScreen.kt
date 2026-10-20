@@ -64,7 +64,10 @@ class RaceScreen(private val game: PixelStrip, trackId: String, private val owne
     private lateinit var ghost: Vehicle
     private lateinit var ghostDriver: AutoDriver
     private var autoPlayer: AutoDriver? = null
-    private val playerView = CarRenderer(carDef, art, paint, tint, ramps).apply { paintRow = owned.paint }
+    private val playerView = CarRenderer(carDef, art, paint, tint, ramps).apply {
+        paintRow = owned.paint
+        looks = CarLooks.of(owned, game.parts)
+    }
     private val ghostView = CarRenderer(carDef, art, paint, tint, ramps).apply { paintRow = 2 }
     private val playerMotion = CarMotion()
     private val ghostMotion = CarMotion()

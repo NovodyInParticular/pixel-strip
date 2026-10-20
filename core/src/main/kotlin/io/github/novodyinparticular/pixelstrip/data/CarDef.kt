@@ -76,6 +76,8 @@ data class CarDef(
         val groundY: Float,
         val frontX: Float,
         val popup: Boolean,
+        val wheelRadius10: Int,
+        val sideExhaust: Pair<Float, Float>?,
     )
 
     companion object {
@@ -142,6 +144,8 @@ data class CarDef(
                     groundY = s.getFloat("groundY"),
                     frontX = s.getFloat("frontX"),
                     popup = s.getBoolean("popup", false),
+                    wheelRadius10 = s.getInt("wheelRadius10", 70),
+                    sideExhaust = s.get("sideExhaust")?.takeIf { it.isArray }?.let { it.getFloat(0) to it.getFloat(1) },
                 ),
             )
         }

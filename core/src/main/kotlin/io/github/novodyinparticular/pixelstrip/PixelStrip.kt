@@ -80,7 +80,11 @@ class PixelStrip(val platform: Platform, val shots: ShotPlan? = null, private va
         if (shots != null) {
             save.cars.clear()
             save.cash = 250_000
-            save.addCar(startCar ?: "vandal", car(startCar ?: "vandal").defaultPaint)
+            val c = save.addCar(startCar ?: "vandal", car(startCar ?: "vandal").defaultPaint)
+            if (shots.loaded) {
+                parts.slots.filter { it.id != "turbo" }.forEach { c.parts[it.id] = it.tiers.size }
+                c.cosmetics.putAll(mapOf("wing" to 3, "kit" to 2, "rims" to 4, "underglow" to 2))
+            }
         }
         Gdx.input.setCatchKey(Input.Keys.BACK, true)
         setScreen(firstScreen())

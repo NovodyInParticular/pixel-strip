@@ -33,6 +33,8 @@ def main():
     cars = [p for p in roster.ROSTER if only is None or p["id"] in only]
     built = [(p, car.build(p)) for p in cars]
     if only is None:
+        car.rim_sheets({p["wheel_r"] for p in roster.ROSTER})
+    if only is None:
         track_neon.build()
         ui.build()
         icon.build()

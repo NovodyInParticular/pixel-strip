@@ -651,9 +651,134 @@ def wheel_frames(p):
     return np.concatenate(frames, axis=1)
 
 
+# --- Visible upgrades -----------------------------------------------------------------------
+
+def _deck(p):
+    """Rear deck: (x range, y) where a wing mounts."""
+    return 1.5, 10.0, _interp_y(p["beltline"], 5.0)
+
+
+def _hood(p):
+    """Hood: (x0, x1, function x -> y) from the windshield base to the nose."""
+    x0 = p["greenhouse"][-1][0] + 2
+    x1 = p["length"] - 4
+    return x0, x1, lambda x: _interp_y(p["beltline"], x)
+
+
+def _paint_shape(p, polys, top_index=6):
+    """Paint-index layer from polygons: lit top edge, mid body, dark underside, dark outline."""
+    cw = width_of(p)
+    m = np.zeros((CH, cw), dtype=np.float32)
+    for poly in polys:
+        m = np.maximum(m, poly_mask(cw, CH, L(poly)))
+    solid = m >= 0.5
+    idx = np.full((CH, cw), -1, dtype=np.int32)
+    shine = np.zeros((CH, cw), dtype=np.uint8)
+    for y, x in zip(*np.nonzero(solid)):
+        above = y > 0 and solid[y - 1, x]
+        below = y < CH - 1 and solid[y + 1, x]
+        left = x > 0 and solid[y, x - 1]
+        right = x < cw - 1 and solid[y, x + 1]
+        i = top_index if not above else (1 if not below else 4)
+        if not left or not right:
+            i = min(i, 2)
+        idx[y, x] = i
+        shine[y, x] = 200 if not above else 0
+    return _encode(idx, shine), idx
+
+
+def wing_layers(p):
+    x0, x1, deck = _deck(p)
+    d = GROUND - deck                 # deck height above ground, px
+    Yh = lambda h: GROUND - h
+    out = {}
+    out["wing_ducktail"] = [[(0, Yh(d)), (7, Yh(d + 0.2)), (7, Yh(d + 1.0)), (0.5, Yh(d + 1.8))]]
+    blade = d + 3.2
+    out["wing_gt"] = [[(-0.5, Yh(blade + 1.8)), (12, Yh(blade + 1.4)), (12.5, Yh(blade + 0.2)), (0, Yh(blade - 0.2))],
+                      [(2.5, Yh(d)), (3.7, Yh(d)), (3.6, Yh(blade)), (2.4, Yh(blade))],
+                      [(9, Yh(d)), (10.2, Yh(d)), (10.1, Yh(blade)), (8.9, Yh(blade))],
+                      [(-0.8, Yh(blade + 2.6)), (0.4, Yh(blade + 2.6)), (0.4, Yh(blade - 1)), (-0.8, Yh(blade - 1))]]
+    blade = d + 9.0
+    out["wing_drag"] = [[(-2, Yh(blade + 2.6)), (11, Yh(blade + 2.0)), (11.5, Yh(blade + 0.4)), (-1.5, Yh(blade - 0.3))],
+                        [(1.5, Yh(d - 1)), (2.8, Yh(d - 1)), (2.6, Yh(blade)), (1.3, Yh(blade))],
+                        [(7.5, Yh(d - 1)), (8.8, Yh(d - 1)), (8.6, Yh(blade)), (7.3, Yh(blade))],
+                        [(-2.4, Yh(blade + 4)), (-1.0, Yh(blade + 4)), (-1.0, Yh(blade - 2)), (-2.4, Yh(blade - 2))]]
+    return {k: _paint_shape(p, v)[0] for k, v in out.items()}
+
+
+def scoop_layer(p):
+    hx0, hx1, hy = _hood(p)
+    cx = hx0 + (hx1 - hx0) * 0.35
+    y = hy(cx)
+    return _paint_shape(p, [[(cx - 5, y + 0.3), (cx - 4, y - 2.4), (cx + 4, y - 2.6), (cx + 4.4, y + 0.3)]])[0]
+
+
+def kit_layers(p):
+    """Street: side skirts and a front lip. Race: deeper splitter, skirts and a rear diffuser."""
+    rx0 = p["rear_wheel"][0] + p["arch_r"] - 0.5
+    rx1 = p["front_wheel"][0] - p["arch_r"] + 0.5
+    ry = p["rocker_y"]
+    L_ = p["length"]
+    street = [[(rx0, ry - 0.6), (rx1, ry - 0.6), (rx1, ry + 1.4), (rx0, ry + 1.4)],
+              [(L_ - 9, ry - 0.2), (L_ + 0.4, ry - 0.2), (L_ + 0.2, ry + 1.4), (L_ - 9, ry + 1.2)]]
+    race = [[(rx0, ry - 0.6), (rx1, ry - 0.6), (rx1, ry + 2.0), (rx0, ry + 2.0)],
+            [(L_ - 11, ry - 0.4), (L_ + 1.6, ry - 0.4), (L_ + 1.6, ry + 1.0), (L_ - 11, ry + 2.2)],
+            [(-1.0, ry - 1.0), (8, ry - 1.0), (8, ry + 1.4), (-1.0, ry + 2.0)]]
+    return {"kit_street": _paint_shape(p, street, 5)[0], "kit_race": _paint_shape(p, race, 4)[0]}
+
+
+def trim_extra_layers(p):
+    """True-colour parts: blower through the hood, intercooler behind the nose, side pipes."""
+    cw = width_of(p)
+    hx0, hx1, hy = _hood(p)
+    cx = hx0 + (hx1 - hx0) * 0.4
+    top = hy(cx)
+    blower = canvas(cw, CH)
+    _rect(blower, cx - 4, top - 4.5, cx + 4, top + 0.5, lambda x, y: P("steel", 6) if y == int(top - 4.5 + PAD_Y) else (P("steel", 4) if x % 2 else P("steel", 3)))
+    _rect(blower, cx - 3, top - 7.5, cx + 3.5, top - 4.5, lambda x, y: P("night", 1) if x == int(cx + 3.5 + PAD_X) - 1 else P("steel", 5))   # scoop hat
+    _rect(blower, cx - 5, top - 1.5, cx + 5, top + 0.5, lambda x, y: P("steel", 2))
+    intercooler = canvas(cw, CH)
+    ix = p["length"] - 2.4
+    iy = p["rocker_y"] - 2.6
+    _rect(intercooler, ix - 1, iy - 3, ix + 2.4, iy + 0.4, lambda x, y: P("steel", 5) if (x + y) % 2 else P("steel", 3))
+    side = canvas(cw, CH)
+    x0 = p["rear_wheel"][0] + p["arch_r"] + 1
+    x1 = p["front_wheel"][0] - p["arch_r"] - 1
+    y0 = p["rocker_y"] + 0.6
+    _trim_extra(side, cw, np.full((CH, cw), 1), {"kind": "sidepipe", "rect": (x0, y0, x1, y0 + 1.8)}, p)
+    return {"blower": blower, "intercooler": intercooler, "sidepipe": side}, (x0, y0 + 0.9)
+
+
+def looks_build(p):
+    base = f"cars/{p['id']}"
+    for name, img in wing_layers(p).items():
+        save(img, f"{base}/{name}.png")
+    for name, img in kit_layers(p).items():
+        save(img, f"{base}/{name}.png")
+    save(scoop_layer(p), f"{base}/scoop.png")
+    trims, side_exhaust = trim_extra_layers(p)
+    for name, img in trims.items():
+        save(img, f"{base}/{name}.png")
+    return side_exhaust
+
+
+RIM_STYLES = ["magnum", "rally", "fivestar", "mesh", "turbine", "phone", "three", "sixspoke"]
+RIM_DEFAULTS = {"magnum": (5, "chrome"), "rally": (6, "silver"), "fivestar": (5, "silver"), "mesh": (10, "silver"),
+                "turbine": (10, "silver"), "phone": (6, "silver"), "three": (3, "silver"), "sixspoke": (6, "silver")}
+
+
+def rim_sheets(radii):
+    """Shared wheel sheets: one per (tyre radius, rim style), used by any car with that tyre size."""
+    for r in sorted(radii):
+        for style in RIM_STYLES:
+            spokes, color = RIM_DEFAULTS[style]
+            prof = {"wheel_r": r, "rim": {"style": style, "spokes": spokes, "color": color, "letters": style in ("magnum", "rally")}}
+            save(wheel_frames(prof), f"wheels/r{int(round(r * 10))}_{style}.png")
+
+
 # --- Output ----------------------------------------------------------------------------------
 
-def sprite_json(p):
+def sprite_json(p, side_exhaust=None):
     hx0, hy0, hx1, hy1 = p["head_lamp"]
     tx0, ty0, tx1, ty1 = p["tail_lamp"]
     ex, ey = p["exhaust"]
@@ -673,6 +798,8 @@ def sprite_json(p):
         "groundY": GROUND + PAD_Y,
         "frontX": p["length"] + PAD_X,
         "popup": bool(p.get("popup")),
+        "wheelRadius10": int(round(p["wheel_r"] * 10)),
+        "sideExhaust": [side_exhaust[0] + PAD_X, side_exhaust[1] + PAD_Y] if side_exhaust else None,
     }
 
 
@@ -695,8 +822,9 @@ def build(p):
     save(lights, f"{base}/lights.png")
     save(wells, f"{base}/wells.png")
     save(wheels, f"{base}/wheel.png")
+    side_exhaust = looks_build(p)
     with open(os.path.join(ASSETS, base, "sprite.json"), "w") as f:
-        json.dump(sprite_json(p), f, indent=2)
+        json.dump(sprite_json(p, side_exhaust), f, indent=2)
     return body, idx, trim, lights, wells, wheels, popup, pidx
 
 

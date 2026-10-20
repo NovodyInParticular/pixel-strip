@@ -35,7 +35,9 @@ void main() {
         return;
     }
 
-    vec3 n = normalize(texture2D(u_normal, v_uv).xyz * 2.0 - 1.0);
+    // Bolt-on parts (wings, kits) sit outside the body's normal map: treat them as facing up/out
+    vec4 nTex = texture2D(u_normal, v_uv);
+    vec3 n = nTex.a < 0.5 ? vec3(0.0, 0.5, 0.86) : normalize(nTex.xyz * 2.0 - 1.0);
     vec3 diffuse = vec3(0.0);
     vec3 spec = vec3(0.0);
     vec3 frag = vec3(gl_FragCoord.xy, 0.0);

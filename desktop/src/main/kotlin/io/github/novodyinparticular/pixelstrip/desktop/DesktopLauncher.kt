@@ -15,7 +15,7 @@ import io.github.novodyinparticular.pixelstrip.ShotPlan
 fun main(args: Array<String>) {
     val shots = args.indexOf("--shots").takeIf { it >= 0 }?.let {
         ShotPlan(args[it + 1], args[it + 2].split(",").map(String::toFloat), close = "--close" in args,
-            screen = args.indexOf("--screen").takeIf { i -> i >= 0 }?.let { i -> args[i + 1] })
+            screen = args.indexOf("--screen").takeIf { i -> i >= 0 }?.let { i -> args[i + 1] }, loaded = "--loaded" in args)
     }
     val (w, h) = args.indexOf("--size").takeIf { it >= 0 }?.let { args[it + 1].split("x").map(String::toInt) } ?: listOf(1440, 810)
     val config = Lwjgl3ApplicationConfiguration().apply {

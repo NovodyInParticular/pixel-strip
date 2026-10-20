@@ -28,5 +28,10 @@
   ],
   "groundY": 35.5,
   "frontX": 93,
-  "popup": false
+  "popup": false,
+  "wheelRadius10": 64,
+  "sideExhaust": [
+    35.616,
+    33.0
+  ]
 }

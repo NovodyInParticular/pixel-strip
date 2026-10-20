@@ -4,6 +4,7 @@ import com.badlogic.gdx.Input
 import com.badlogic.gdx.graphics.Color
 import io.github.novodyinparticular.pixelstrip.PixelStrip
 import io.github.novodyinparticular.pixelstrip.data.PartCatalog
+import io.github.novodyinparticular.pixelstrip.race.CarLooks
 import io.github.novodyinparticular.pixelstrip.race.DragMath
 import kotlin.math.floor
 import kotlin.math.min
@@ -139,7 +140,7 @@ class UpgradeScreen(game: PixelStrip) : MenuScreen(game) {
         batch.setColor(0.45f, 0.45f, 0.58f, 1f)
         batch.draw(white, w / 2f - 120f, carY() - 3f, 240f, 3f)
         batch.color = Color.WHITE
-        stage.draw(game.effective(owned), owned.paint, w / 2f + 40f, carY(), GarageScreen.AMBIENT)
+        stage.draw(game.effective(owned), owned.paint, w / 2f + 40f, carY(), GarageScreen.AMBIENT, looks = CarLooks.of(owned, catalog))
     }
 
     override fun drawGlow(w: Int, h: Int) {
