@@ -67,7 +67,7 @@
   }
  },
  {
-  "name": "parts cost the per-car price and need the cash",
+  "name": "parts cost the per-car price, any option can be bought directly",
   "entries": [
    {
     "type": "start",
@@ -78,28 +78,104 @@
     "type": "part",
     "t": 2000,
     "uid": "c1",
-    "slot": "intake"
-   },
-   {
-    "type": "part",
-    "t": 2000,
-    "uid": "c1",
-    "slot": "intake"
+    "slot": "intake",
+    "opt": 2
    }
   ],
   "expect": {
-   "cash": 3500,
+   "cash": 2800,
    "cars": [
     {
      "uid": "c1",
      "car": "kite",
      "parts": {
-      "intake": 1
+      "intake": 2
+     }
+    }
+   ],
+   "refused": []
+  }
+ },
+ {
+  "name": "swapping back to an owned part is free; refitting the fitted one is refused",
+  "entries": [
+   {
+    "type": "start",
+    "t": 1000,
+    "car": "kite"
+   },
+   {
+    "type": "part",
+    "t": 2000,
+    "uid": "c1",
+    "slot": "intake",
+    "opt": 2
+   },
+   {
+    "type": "part",
+    "t": 2000,
+    "uid": "c1",
+    "slot": "intake",
+    "opt": 0
+   },
+   {
+    "type": "part",
+    "t": 2000,
+    "uid": "c1",
+    "slot": "intake",
+    "opt": 2
+   },
+   {
+    "type": "part",
+    "t": 2000,
+    "uid": "c1",
+    "slot": "intake",
+    "opt": 2
+   }
+  ],
+  "expect": {
+   "cash": 2800,
+   "cars": [
+    {
+     "uid": "c1",
+     "car": "kite",
+     "parts": {
+      "intake": 2
      }
     }
    ],
    "refused": [
-    2
+    4
+   ]
+  }
+ },
+ {
+  "name": "a part needs the cash",
+  "entries": [
+   {
+    "type": "start",
+    "t": 1000,
+    "car": "kite"
+   },
+   {
+    "type": "part",
+    "t": 2000,
+    "uid": "c1",
+    "slot": "swap",
+    "opt": 3
+   }
+  ],
+  "expect": {
+   "cash": 5000,
+   "cars": [
+    {
+     "uid": "c1",
+     "car": "kite",
+     "parts": {}
+    }
+   ],
+   "refused": [
+    1
    ]
   }
  },
@@ -290,14 +366,16 @@
      "parts": {
       "cams": 1,
       "clutch": 1,
+      "diff": 2,
       "ecu": 2,
-      "exhaust": 2,
+      "exhaust": 1,
       "gearbox": 1,
-      "intake": 2,
-      "lsd": 2,
-      "swap": 3,
-      "tires": 2,
-      "weight": 1
+      "headers": 1,
+      "intake": 1,
+      "interior": 1,
+      "swap": 2,
+      "throttle": 1,
+      "tires": 2
      },
      "paint": 12
     }
@@ -368,14 +446,16 @@
      "parts": {
       "cams": 1,
       "clutch": 1,
+      "diff": 2,
       "ecu": 2,
-      "exhaust": 2,
+      "exhaust": 1,
       "gearbox": 1,
-      "intake": 2,
-      "lsd": 2,
-      "swap": 3,
-      "tires": 2,
-      "weight": 1
+      "headers": 1,
+      "intake": 1,
+      "interior": 1,
+      "swap": 2,
+      "throttle": 1,
+      "tires": 2
      }
     }
    ],
@@ -429,7 +509,7 @@
    }
   ],
   "expect": {
-   "cash": 58700,
+   "cash": 46940,
    "cars": [
     {
      "uid": "c1",
@@ -729,7 +809,7 @@
   }
  },
  {
-  "name": "cosmetics cycle styles",
+  "name": "cosmetics: next style, or pick one; the current style is refused",
   "entries": [
    {
     "type": "start",
@@ -737,15 +817,39 @@
     "car": "kite"
    },
    {
+    "type": "race",
+    "t": 1500,
+    "uid": "c1",
+    "rival": "dash",
+    "won": true,
+    "pink": false
+   },
+   {
     "type": "look",
     "t": 2000,
     "uid": "c1",
     "slot": "wing"
+   },
+   {
+    "type": "look",
+    "t": 2000,
+    "uid": "c1",
+    "slot": "wing",
+    "opt": 3
+   },
+   {
+    "type": "look",
+    "t": 2000,
+    "uid": "c1",
+    "slot": "wing",
+    "opt": 3
    }
   ],
   "expect": {
    "cash": 2000,
-   "refused": []
+   "refused": [
+    4
+   ]
   }
  },
  {
@@ -776,17 +880,19 @@
     "type": "part",
     "t": 2000,
     "uid": "c1",
-    "slot": "turbo"
+    "slot": "turbo",
+    "opt": 1
    },
    {
     "type": "part",
     "t": 2000,
     "uid": "c1",
-    "slot": "supercharger"
+    "slot": "supercharger",
+    "opt": 1
    }
   ],
   "expect": {
-   "cash": 9000,
+   "cash": 3500,
    "cars": [
     {
      "uid": "c1",
@@ -797,6 +903,162 @@
     }
    ],
    "refused": []
+  }
+ },
+ {
+  "name": "wide tyres need tubs or a widebody, and the widebody can't come off under them",
+  "entries": [
+   {
+    "type": "start",
+    "t": 1000,
+    "car": "kite"
+   },
+   {
+    "type": "race",
+    "t": 10000,
+    "uid": "c1",
+    "rival": "dash",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "race",
+    "t": 20000,
+    "uid": "c1",
+    "rival": "kat",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "part",
+    "t": 2000,
+    "uid": "c1",
+    "slot": "tires",
+    "opt": 4
+   },
+   {
+    "type": "part",
+    "t": 2000,
+    "uid": "c1",
+    "slot": "fenders",
+    "opt": 2
+   },
+   {
+    "type": "part",
+    "t": 2000,
+    "uid": "c1",
+    "slot": "tires",
+    "opt": 4
+   },
+   {
+    "type": "part",
+    "t": 2000,
+    "uid": "c1",
+    "slot": "fenders",
+    "opt": 0
+   }
+  ],
+  "expect": {
+   "cash": 1200,
+   "cars": [
+    {
+     "uid": "c1",
+     "car": "kite",
+     "parts": {
+      "fenders": 2,
+      "tires": 4
+     }
+    }
+   ],
+   "refused": [
+    3,
+    6
+   ]
+  }
+ },
+ {
+  "name": "RWD-only parts on a front-driver are refused",
+  "entries": [
+   {
+    "type": "start",
+    "t": 1000,
+    "car": "kite"
+   },
+   {
+    "type": "part",
+    "t": 2000,
+    "uid": "c1",
+    "slot": "wheeliebars",
+    "opt": 1
+   }
+  ],
+  "expect": {
+   "cash": 5000,
+   "refused": [
+    1
+   ]
+  }
+ },
+ {
+  "name": "Joe's AWD conversion only fits his EF",
+  "entries": [
+   {
+    "type": "start",
+    "t": 1000,
+    "car": "kite"
+   },
+   {
+    "type": "race",
+    "t": 10000,
+    "uid": "c1",
+    "rival": "dash",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "race",
+    "t": 20000,
+    "uid": "c1",
+    "rival": "kat",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "race",
+    "t": 30000,
+    "uid": "c1",
+    "rival": "tiny",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "race",
+    "t": 40000,
+    "uid": "c1",
+    "rival": "joe",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "part",
+    "t": 2000,
+    "uid": "c1",
+    "slot": "drive",
+    "opt": 1
+   },
+   {
+    "type": "part",
+    "t": 41000,
+    "uid": "c2",
+    "slot": "drive",
+    "opt": 1
+   }
+  ],
+  "expect": {
+   "cash": 14000,
+   "refused": [
+    5
+   ]
   }
  },
  {
@@ -815,13 +1077,15 @@
     "type": "part",
     "t": 2000,
     "uid": "c1",
-    "slot": "rocket"
+    "slot": "rocket",
+    "opt": 1
    },
    {
     "type": "part",
     "t": 2000,
     "uid": "c9",
-    "slot": "intake"
+    "slot": "intake",
+    "opt": 1
    },
    {
     "type": "race",

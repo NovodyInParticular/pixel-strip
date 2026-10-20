@@ -18,11 +18,19 @@ Done so far:
 - Title screen, first-launch starter pick, garage, dealership, settings, local save, pixel
   transitions (dissolve, wipe, garage door)
 
-- Parts and upgrades (14 slots, Stage 1-3 + Race), visible on the cars (wings, kits, scoops,
-  blowers, intercoolers, side pipes, rims, underglow)
+- Parts: 46 slots and over a hundred real parts (`tools/make_parts.py` documents every effect).
+  Cams, heads and manifolds reshape the torque curve; turbos come in sizes (spool vs top end),
+  superchargers in types, nitrous in shot sizes; boost and nitrous are held back by the knock
+  limit (bottom end, fuel octane, timing, air/fuel) and the fuel system's capacity, so big power
+  needs the supporting parts. Clutches, flywheels, gearboxes, diffs, suspension (squat, shock
+  speed, wheelie bars), tyres, weight reduction and body aero. Bought parts stay with the car, so
+  swapping back is free. Joe's EF has two parts nothing else can take (an AWD conversion and a
+  K-series swap) and, built right, is the quickest Street-class car (`PotentialTest`).
 - Paint shop: 12 colours, gloss/metallic/pearl/matte/candy finishes, decals
-- Deep tuning: every gear, final drive, launch control, nitrous timing, tyre pressure; neon gear
-  chart; 4 presets per car; share codes via the clipboard
+- Deep tuning in five pages: gears and final drive; ignition timing, air/fuel, rev limit, launch
+  control; turbo and blower boost and boost by gear; nitrous shot, timing and ramp; tyre pressure,
+  ride height and shocks. The ECU and other parts decide which of these unlock. Neon gear chart
+  and a live power curve that marks knock and fuel limits; 4 presets per car; share codes
 - Test-n-tune runs with a run log, and a dyno with before/after pulls
 
 - Career: a city map with four tiers (Street, Sport, Pro, Outlaw) of three rivals and a boss each;

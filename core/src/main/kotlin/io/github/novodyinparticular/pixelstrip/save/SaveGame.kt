@@ -7,7 +7,8 @@ import com.badlogic.gdx.utils.JsonWriter
 import io.github.novodyinparticular.pixelstrip.data.Tune
 
 /**
- * A car in the player's garage. [parts]: performance slot -> tier (0 = stock). [cosmetics]:
+ * A car in the player's garage. [parts]: slot -> fitted option (0 = factory). [owned]: slot ->
+ * bitmask of options bought for this car (swapping between them is free). [cosmetics]:
  * cosmetic id -> style index. [tunes]: saved presets, [activeTune] the one in use (-1 = stock).
  */
 class OwnedCar(
@@ -21,7 +22,10 @@ class OwnedCar(
     val runs: MutableList<RunRecord> = mutableListOf(),
     /** Last dyno pull: wheel horsepower sampled every [DYNO_STEP_RPM] from idle, for before/after. */
     var dyno: FloatArray? = null,
+    val owned: MutableMap<String, Int> = mutableMapOf(),
 ) {
+    fun owns(slot: String, option: Int) = option == 0 || (owned[slot] ?: 0) and (1 shl option) != 0
+
     val tune: Tune? get() = tunes.getOrNull(activeTune)
     val tuneName: String get() = tune?.name ?: "STOCK"
 
@@ -96,6 +100,7 @@ class SaveGame(private val file: FileHandle) {
             val parts = JsonValue(JsonValue.ValueType.`object`)
             for ((k, v) in c.parts) parts.addChild(k, JsonValue(v.toLong()))
             o.addChild("parts", parts)
+            o.addChild("owned", intMap(c.owned))
             val cos = JsonValue(JsonValue.ValueType.`object`)
             for ((k, v) in c.cosmetics) cos.addChild(k, JsonValue(v.toLong()))
             o.addChild("cosmetics", cos)
@@ -149,6 +154,7 @@ class SaveGame(private val file: FileHandle) {
                 co.addChild("car", JsonValue(c.carId))
                 co.addChild("paint", JsonValue(c.paint.toLong()))
                 co.addChild("parts", JsonValue(JsonValue.ValueType.`object`).also { po -> for ((k, v) in c.parts.toSortedMap()) po.addChild(k, JsonValue(v.toLong())) })
+                co.addChild("owned", intMap(c.owned))
                 co.addChild("cosmetics", JsonValue(JsonValue.ValueType.`object`).also { po -> for ((k, v) in c.cosmetics.toSortedMap()) po.addChild(k, JsonValue(v.toLong())) })
             })
         })
@@ -177,12 +183,20 @@ class SaveGame(private val file: FileHandle) {
             val cos = mutableMapOf<String, Int>()
             o.get("cosmetics")?.forEach { cos[it.name] = it.asInt() }
             cars.add(OwnedCar(uid, o.getString("car"), o.getInt("paint"), parts, cos,
-                keep?.tunes ?: mutableListOf(), keep?.activeTune ?: -1, keep?.runs ?: mutableListOf(), keep?.dyno))
+                keep?.tunes ?: mutableListOf(), keep?.activeTune ?: -1, keep?.runs ?: mutableListOf(), keep?.dyno, ints(o.get("owned"))))
         }
         if (cars.none { it.uid == selected }) selected = fromProfile.keys.firstOrNull { k -> cars.any { it.uid == k } } ?: cars.firstOrNull()?.uid
     }
 
+    /** Set when the save predates the current parts catalog (PixelStrip converts it after loading). */
+    var oldParts = false
+
     companion object {
+        private fun intMap(m: Map<String, Int>) =
+            JsonValue(JsonValue.ValueType.`object`).also { po -> for ((k, v) in m.toSortedMap()) po.addChild(k, JsonValue(v.toLong())) }
+
+        private fun ints(j: JsonValue?): MutableMap<String, Int> = j?.associate { it.name to it.asInt() }?.toMutableMap() ?: mutableMapOf()
+
         fun tuneJson(t: Tune): JsonValue {
             val o = JsonValue(JsonValue.ValueType.`object`)
             o.addChild("name", JsonValue(t.name))
@@ -195,6 +209,16 @@ class SaveGame(private val file: FileHandle) {
             o.addChild("launch", JsonValue(t.launchRpm.toDouble()))
             o.addChild("nosGear", JsonValue(t.nitrousGear.toLong()))
             o.addChild("psi", JsonValue(t.tirePressure.toDouble()))
+            t.boostPsi?.let { o.addChild("boost", JsonValue(it.toDouble())) }
+            t.boostByGear?.let { g -> o.addChild("boostByGear", JsonValue(JsonValue.ValueType.array).also { a -> g.forEach { a.addChild(JsonValue(it.toDouble())) } }) }
+            t.scPsi?.let { o.addChild("sc", JsonValue(it.toDouble())) }
+            o.addChild("timing", JsonValue(t.timing.toDouble()))
+            t.afr?.let { o.addChild("afr", JsonValue(it.toDouble())) }
+            t.limiter?.let { o.addChild("limiter", JsonValue(it.toDouble())) }
+            t.nitrousShot?.let { o.addChild("shot", JsonValue(it.toDouble())) }
+            o.addChild("ramp", JsonValue(t.nitrousRamp.toDouble()))
+            o.addChild("ride", JsonValue(t.rideHeight.toDouble()))
+            o.addChild("shock", JsonValue(t.shockRate.toDouble()))
             return o
         }
 
@@ -205,9 +229,20 @@ class SaveGame(private val file: FileHandle) {
             launchRpm = o.getFloat("launch", 0f),
             nitrousGear = o.getInt("nosGear", 0),
             tirePressure = o.getFloat("psi", 32f),
+            boostPsi = o.get("boost")?.asFloat(),
+            boostByGear = o.get("boostByGear")?.asFloatArray(),
+            scPsi = o.get("sc")?.asFloat(),
+            timing = o.getFloat("timing", 0f),
+            afr = o.get("afr")?.asFloat(),
+            limiter = o.get("limiter")?.asFloat(),
+            nitrousShot = o.get("shot")?.asFloat(),
+            nitrousRamp = o.getFloat("ramp", 0.6f),
+            rideHeight = o.getFloat("ride", 0f),
+            shockRate = o.getFloat("shock", 0.5f),
         )
 
-        const val VERSION = 2L
+        /** 2: the ledger. 3: the option-based parts catalog. */
+        const val VERSION = 3L
 
         fun load(file: FileHandle): SaveGame {
             if (!file.exists()) return SaveGame(file)
@@ -234,10 +269,12 @@ class SaveGame(private val file: FileHandle) {
                     RunRecord(it.getString("tune"), it.getBoolean("q"), it.getFloat("et"), it.getFloat("s60"), it.getFloat("mph"), it.getFloat("rt", 0f))
                 }?.toMutableList() ?: mutableListOf()
                 save.cars.add(OwnedCar(o.getString("uid"), o.getString("car"), o.getInt("paint", 0), parts, cos, tunes,
-                    o.getInt("activeTune", -1), runs, o.get("dyno")?.asFloatArray()))
+                    o.getInt("activeTune", -1), runs, o.get("dyno")?.asFloatArray(), ints(o.get("owned"))))
             }
             // version 1 saves predate the ledger; nothing in them was ever checked by a server
-            save.legacy = root.getBoolean("legacy", root.getLong("version", 1) < VERSION && save.cars.isNotEmpty())
+            val version = root.getLong("version", 1)
+            save.legacy = root.getBoolean("legacy", version < 2 && save.cars.isNotEmpty())
+            save.oldParts = version < 3 && save.cars.isNotEmpty()
             return save
         }
     }

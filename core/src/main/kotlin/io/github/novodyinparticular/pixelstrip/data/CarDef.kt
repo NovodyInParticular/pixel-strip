@@ -61,6 +61,35 @@ data class CarDef(
     val launchControl: Float = 0f,
     /** Spray automatically on reaching this gear (1-based, 0 = manual). */
     val nitrousAutoGear: Int = 0,
+    /** Progressive nitrous: seconds to bring the full shot in (0 = all at once). */
+    val nitrousRamp: Float = 0f,
+    /** Turbo boost target (psi, for the gauges), its share allowed per gear, blow-off valve, anti-lag on the two-step. */
+    val boostPsi: Float = 0f,
+    val boostByGear: FloatArray? = null,
+    val blowOff: Boolean = false,
+    val antiLag: Boolean = false,
+    /** Supercharger type: 0 none, 1 roots, 2 twin-screw, 3 centrifugal (boost builds with rpm). */
+    val blowerType: Int = 0,
+    /** Torque added near idle / at the torque peak / at peak power and above (shares), and a global multiplier. */
+    val bandLo: Float = 0f,
+    val bandMid: Float = 0f,
+    val bandHi: Float = 0f,
+    val powerMult: Float = 1f,
+    /**
+     * Highest cylinder-pressure multiplier (boost, blower and nitrous over the engine on its own)
+     * before it knocks; past it the ECU pulls timing and power is capped there.
+     */
+    val knockLimit: Float = Float.MAX_VALUE,
+    /** Crank horsepower the fuel system can feed; past it the engine runs lean and is held there. */
+    val fuelHp: Float = Float.MAX_VALUE,
+    /** Weight transfer: amount and speed multipliers; wheelie bars stop the driver lifting. */
+    val transferMult: Float = 1f,
+    val transferRate: Float = 1f,
+    val wheelieBars: Boolean = false,
+    /** Tyre temperature this compound likes best (slicks want more heat). */
+    val tireWarm: Float = 0.78f,
+    val timingDeg: Float = 0f,
+    val afr: Float = 12.8f,
 ) {
     data class Nitrous(val hp: Float, val charges: Int, val seconds: Float)
 

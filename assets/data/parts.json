@@ -1,10 +1,5 @@
 {
- "tierPrices": [
-  1500,
-  4000,
-  9000,
-  20000
- ],
+ "version": 2,
  "classMultiplier": {
   "STREET": 1.0,
   "SPORT": 1.6,
@@ -14,412 +9,1470 @@
  "slots": [
   {
    "id": "intake",
-   "name": "INTAKE",
+   "name": "AIR INTAKE",
    "group": "ENGINE",
-   "tiers": [
+   "options": [
     {
-     "name": "STAGE 1",
-     "hp": 0.04,
-     "tq": 0.03
+     "name": "STOCK",
+     "price": 0,
+     "info": "FACTORY AIRBOX"
     },
     {
-     "name": "STAGE 2",
-     "hp": 0.07,
-     "tq": 0.05
+     "name": "COLD AIR INTAKE",
+     "price": 900,
+     "info": "COOLER AIR, A LITTLE MORE EVERYWHERE",
+     "lo": 0.01,
+     "mid": 0.02,
+     "hi": 0.03
     },
     {
-     "name": "STAGE 3",
-     "hp": 0.11,
-     "tq": 0.07,
-     "visual": "scoop"
-    },
-    {
-     "name": "RACE",
-     "hp": 0.16,
-     "tq": 0.09,
+     "name": "RAM AIR",
+     "price": 2200,
+     "info": "HOOD SCOOP FEEDS IT. BEST UP TOP",
+     "mid": 0.02,
+     "hi": 0.05,
      "visual": "scoop"
     }
-   ]
+   ],
+   "excludes": []
+  },
+  {
+   "id": "throttle",
+   "name": "THROTTLE BODY",
+   "group": "ENGINE",
+   "options": [
+    {
+     "name": "STOCK",
+     "price": 0,
+     "info": "FACTORY PART"
+    },
+    {
+     "name": "BIG BORE",
+     "price": 700,
+     "info": "MORE AIR AT HIGH RPM",
+     "mid": 0.01,
+     "hi": 0.03
+    },
+    {
+     "name": "INDIVIDUAL THROTTLES",
+     "price": 4500,
+     "info": "ONE PER CYLINDER. SHARP, PEAKY",
+     "lo": -0.02,
+     "mid": 0.03,
+     "hi": 0.07,
+     "peakRpm": 150
+    }
+   ],
+   "excludes": []
+  },
+  {
+   "id": "manifold",
+   "name": "INTAKE MANIFOLD",
+   "group": "ENGINE",
+   "options": [
+    {
+     "name": "STOCK",
+     "price": 0,
+     "info": "FACTORY PART"
+    },
+    {
+     "name": "PORTED",
+     "price": 1800,
+     "info": "SMOOTHER RUNNERS",
+     "mid": 0.02,
+     "hi": 0.03
+    },
+    {
+     "name": "LONG RUNNER",
+     "price": 3000,
+     "info": "FAT MIDRANGE, FADES UP TOP",
+     "lo": 0.05,
+     "mid": 0.05,
+     "hi": -0.02,
+     "peakRpm": -200
+    },
+    {
+     "name": "SHORT RUNNER",
+     "price": 3500,
+     "info": "SOFT DOWN LOW, SCREAMS UP TOP",
+     "lo": -0.04,
+     "mid": 0.01,
+     "hi": 0.08,
+     "peakRpm": 250
+    }
+   ],
+   "excludes": []
+  },
+  {
+   "id": "heads",
+   "name": "CYLINDER HEADS",
+   "group": "ENGINE",
+   "options": [
+    {
+     "name": "STOCK",
+     "price": 0,
+     "info": "FACTORY PART"
+    },
+    {
+     "name": "PORTED HEADS",
+     "price": 4000,
+     "info": "BIGGER PORTS, BETTER FLOW",
+     "mid": 0.03,
+     "hi": 0.05,
+     "rev": 200
+    },
+    {
+     "name": "CNC RACE HEADS",
+     "price": 9000,
+     "info": "MACHINED PORTS, STIFF SPRINGS",
+     "mid": 0.05,
+     "hi": 0.09,
+     "rev": 500
+    }
+   ],
+   "excludes": []
+  },
+  {
+   "id": "cams",
+   "name": "CAMSHAFTS",
+   "group": "ENGINE",
+   "options": [
+    {
+     "name": "STOCK",
+     "price": 0,
+     "info": "FACTORY PART"
+    },
+    {
+     "name": "STREET CAM",
+     "price": 1500,
+     "info": "MILD. KEEPS THE IDLE SMOOTH",
+     "lo": -0.01,
+     "mid": 0.03,
+     "hi": 0.05,
+     "peakRpm": 150
+    },
+    {
+     "name": "HOT CAM",
+     "price": 3200,
+     "info": "LUMPY IDLE, PULLS HARD UP TOP",
+     "lo": -0.05,
+     "mid": 0.03,
+     "hi": 0.1,
+     "peakRpm": 350,
+     "rev": 200,
+     "idle": 100
+    },
+    {
+     "name": "RACE CAM",
+     "price": 6500,
+     "info": "NO LOW END. ALL TOP END",
+     "lo": -0.12,
+     "mid": 0.02,
+     "hi": 0.16,
+     "peakRpm": 650,
+     "rev": 400,
+     "idle": 250
+    }
+   ],
+   "excludes": []
+  },
+  {
+   "id": "internals",
+   "name": "BOTTOM END",
+   "group": "ENGINE",
+   "options": [
+    {
+     "name": "STOCK",
+     "price": 0,
+     "info": "CAST PISTONS. KNOCKS PAST ~7 PSI ON PUMP GAS",
+     "strength": 1.35
+    },
+    {
+     "name": "FORGED PISTONS",
+     "price": 5000,
+     "info": "TAKES REAL BOOST",
+     "strength": 1.7,
+     "rev": 200
+    },
+    {
+     "name": "FORGED ROTATING ASSEMBLY",
+     "price": 11000,
+     "info": "FORGED CRANK, RODS, PISTONS",
+     "strength": 2.2,
+     "rev": 500,
+     "inertia": 0.95
+    },
+    {
+     "name": "BILLET RACE BLOCK",
+     "price": 26000,
+     "info": "BUILT FOR BIG BOOST AND BIG SHOTS",
+     "strength": 3.0,
+     "rev": 800,
+     "inertia": 0.92
+    }
+   ],
+   "excludes": []
+  },
+  {
+   "id": "headers",
+   "name": "HEADERS",
+   "group": "ENGINE",
+   "options": [
+    {
+     "name": "STOCK",
+     "price": 0,
+     "info": "CAST MANIFOLD"
+    },
+    {
+     "name": "SHORTY HEADERS",
+     "price": 900,
+     "info": "EASY FIT, SMALL GAIN",
+     "mid": 0.02,
+     "hi": 0.02
+    },
+    {
+     "name": "LONG TUBE HEADERS",
+     "price": 2200,
+     "info": "BEST SCAVENGING",
+     "lo": 0.01,
+     "mid": 0.04,
+     "hi": 0.05
+    }
+   ],
+   "excludes": []
   },
   {
    "id": "exhaust",
    "name": "EXHAUST",
    "group": "ENGINE",
-   "tiers": [
+   "options": [
     {
-     "name": "STAGE 1",
-     "hp": 0.04,
-     "tq": 0.04
+     "name": "STOCK",
+     "price": 0,
+     "info": "FACTORY PART"
     },
     {
-     "name": "STAGE 2",
-     "hp": 0.07,
-     "tq": 0.06
+     "name": "CAT-BACK",
+     "price": 1200,
+     "info": "FREER AND LOUDER",
+     "hi": 0.02
     },
     {
-     "name": "STAGE 3",
-     "hp": 0.1,
-     "tq": 0.08
+     "name": "STRAIGHT PIPE",
+     "price": 1800,
+     "info": "NO CATS, NO MUFFLERS",
+     "mid": 0.01,
+     "hi": 0.04
     },
     {
-     "name": "RACE",
-     "hp": 0.15,
-     "tq": 0.1,
+     "name": "SIDE PIPES",
+     "price": 3000,
+     "info": "OUT THE ROCKERS. LIGHT AND LOUD",
+     "mid": 0.01,
+     "hi": 0.04,
+     "weight": -6,
      "visual": "sidepipe"
     }
-   ]
-  },
-  {
-   "id": "cams",
-   "name": "CAMS",
-   "group": "ENGINE",
-   "tiers": [
-    {
-     "name": "STAGE 1",
-     "hp": 0.05,
-     "tq": 0.0,
-     "hpRpm": 200
-    },
-    {
-     "name": "STAGE 2",
-     "hp": 0.1,
-     "tq": -0.01,
-     "hpRpm": 400,
-     "tqRpm": 200
-    },
-    {
-     "name": "STAGE 3",
-     "hp": 0.16,
-     "tq": -0.03,
-     "hpRpm": 650,
-     "tqRpm": 400
-    },
-    {
-     "name": "RACE",
-     "hp": 0.24,
-     "tq": -0.05,
-     "hpRpm": 900,
-     "tqRpm": 700
-    }
-   ]
-  },
-  {
-   "id": "ecu",
-   "name": "ECU TUNE",
-   "group": "ENGINE",
-   "tiers": [
-    {
-     "name": "STAGE 1",
-     "hp": 0.03,
-     "tq": 0.03,
-     "redline": 200
-    },
-    {
-     "name": "STAGE 2",
-     "hp": 0.06,
-     "tq": 0.05,
-     "redline": 400
-    },
-    {
-     "name": "STAGE 3",
-     "hp": 0.09,
-     "tq": 0.07,
-     "redline": 600
-    },
-    {
-     "name": "RACE",
-     "hp": 0.13,
-     "tq": 0.1,
-     "redline": 900
-    }
-   ]
+   ],
+   "excludes": []
   },
   {
    "id": "swap",
    "name": "ENGINE SWAP",
    "group": "ENGINE",
-   "priceMult": 3,
-   "tiers": [
+   "options": [
     {
-     "name": "STAGE 1",
-     "hp": 0.18,
-     "tq": 0.18,
-     "weight": 15
+     "name": "STOCK",
+     "price": 0,
+     "info": "ORIGINAL ENGINE"
     },
     {
-     "name": "STAGE 2",
-     "hp": 0.36,
-     "tq": 0.34,
-     "weight": 30
+     "name": "STROKER KIT",
+     "price": 8000,
+     "info": "MORE DISPLACEMENT, MORE TORQUE",
+     "tq": 0.16,
+     "weight": 5
     },
     {
-     "name": "STAGE 3",
-     "hp": 0.55,
-     "tq": 0.5,
-     "weight": 45,
-     "redline": 300
+     "name": "BIG CRATE ENGINE",
+     "price": 22000,
+     "info": "BIGGER MOTOR. HEAVY ON THE NOSE",
+     "tq": 0.38,
+     "hi": 0.04,
+     "weight": 40,
+     "rear": -0.01,
+     "rev": 200
     },
     {
-     "name": "RACE",
-     "hp": 0.78,
-     "tq": 0.7,
-     "weight": 60,
-     "redline": 600
+     "name": "RACE ENGINE",
+     "price": 55000,
+     "info": "PURPOSE-BUILT DRAG MOTOR",
+     "tq": 0.62,
+     "hi": 0.08,
+     "weight": 30,
+     "rev": 600,
+     "strength": 1.9
+    },
+    {
+     "name": "K-SERIES SWAP",
+     "price": 30000,
+     "info": "JOE'S SPECIAL: A HIGH-REVVING HONDA HEART. ONLY FITS HIS EF",
+     "tq": 0.85,
+     "hi": 0.2,
+     "rev": 1500,
+     "peakRpm": 600,
+     "strength": 2.0,
+     "weight": 8,
+     "carOnly": [
+      "kite_ef"
+     ]
     }
-   ]
+   ],
+   "excludes": []
+  },
+  {
+   "id": "fuel",
+   "name": "FUEL SYSTEM",
+   "group": "FUEL & ECU",
+   "options": [
+    {
+     "name": "STOCK",
+     "price": 0,
+     "info": "FEEDS ABOUT STOCK POWER PLUS A BIT"
+    },
+    {
+     "name": "UPGRADED PUMP",
+     "price": 800,
+     "info": "SUPPORTS ~450 HP",
+     "fuelHp": 450
+    },
+    {
+     "name": "BIG INJECTORS + PUMP",
+     "price": 2500,
+     "info": "SUPPORTS ~750 HP",
+     "fuelHp": 750
+    },
+    {
+     "name": "RACE FUEL SYSTEM",
+     "price": 6000,
+     "info": "TWIN PUMPS, HUGE INJECTORS. ~1400 HP",
+     "fuelHp": 1400
+    }
+   ],
+   "excludes": []
+  },
+  {
+   "id": "fueltype",
+   "name": "FUEL",
+   "group": "FUEL & ECU",
+   "options": [
+    {
+     "name": "PUMP 91",
+     "price": 0,
+     "info": "WHAT THE GAS STATION SELLS",
+     "octane": 1.0
+    },
+    {
+     "name": "PUMP 93",
+     "price": 300,
+     "info": "A LITTLE MORE KNOCK MARGIN",
+     "octane": 1.05
+    },
+    {
+     "name": "E85",
+     "price": 1500,
+     "info": "COOLS THE CHARGE, FIGHTS KNOCK. NEEDS 30% MORE FUEL",
+     "octane": 1.25,
+     "fuelFlow": 1.3,
+     "tq": 0.02
+    },
+    {
+     "name": "RACE GAS 110",
+     "price": 3000,
+     "info": "THE MOST KNOCK MARGIN THERE IS",
+     "octane": 1.35
+    }
+   ],
+   "excludes": []
+  },
+  {
+   "id": "ecu",
+   "name": "ENGINE COMPUTER",
+   "group": "FUEL & ECU",
+   "options": [
+    {
+     "name": "STOCK",
+     "price": 0,
+     "info": "LOCKED. NO TUNING"
+    },
+    {
+     "name": "PIGGYBACK",
+     "price": 1200,
+     "info": "TIMING +/-2 DEG",
+     "ecu": 1,
+     "tq": 0.02
+    },
+    {
+     "name": "REFLASH",
+     "price": 2500,
+     "info": "TIMING, AIR/FUEL, REV LIMIT, LAUNCH CONTROL",
+     "ecu": 2,
+     "tq": 0.04
+    },
+    {
+     "name": "STANDALONE",
+     "price": 6000,
+     "info": "EVERYTHING. ANTI-LAG ON THE TWO-STEP",
+     "ecu": 3,
+     "tq": 0.05
+    }
+   ],
+   "excludes": []
   },
   {
    "id": "turbo",
    "name": "TURBO",
-   "group": "POWER ADDER",
-   "excludes": [
-    "supercharger"
-   ],
-   "tiers": [
+   "group": "BOOST",
+   "options": [
     {
-     "name": "STAGE 1",
-     "boost": 0.15,
-     "spool": 3200,
-     "lag": 0.7
+     "name": "STOCK",
+     "price": 0,
+     "info": "NONE ADDED"
     },
     {
-     "name": "STAGE 2",
-     "boost": 0.27,
-     "spool": 3500,
-     "lag": 0.8,
+     "name": "SMALL TURBO",
+     "price": 3500,
+     "info": "SPOOLS EARLY, RUNS OUT UP TOP. MAX 15 PSI",
+     "psi": 15,
+     "spool": 2600,
+     "lag": 0.35
+    },
+    {
+     "name": "MEDIUM TURBO",
+     "price": 6000,
+     "info": "THE ALL-ROUNDER. MAX 22 PSI",
+     "psi": 22,
+     "spool": 3300,
+     "lag": 0.6,
      "visual": "intercooler"
     },
     {
-     "name": "STAGE 3",
-     "boost": 0.4,
-     "spool": 3800,
-     "lag": 0.9,
+     "name": "TWIN TURBOS",
+     "price": 11000,
+     "info": "EARLY SPOOL AND BIG POWER. MAX 28 PSI",
+     "psi": 28,
+     "spool": 3000,
+     "lag": 0.55,
      "visual": "intercooler"
     },
     {
-     "name": "RACE",
-     "boost": 0.58,
+     "name": "LARGE TURBO",
+     "price": 9000,
+     "info": "LAZY TO SPOOL, HUGE UP TOP. MAX 30 PSI",
+     "psi": 30,
      "spool": 4100,
-     "lag": 1.0,
+     "lag": 0.95,
+     "visual": "intercooler"
+    },
+    {
+     "name": "88MM PRO MOD",
+     "price": 18000,
+     "info": "ALL OR NOTHING. MAX 40 PSI",
+     "psi": 40,
+     "spool": 5000,
+     "lag": 1.4,
      "visual": "intercooler"
     }
+   ],
+   "excludes": [
+    "supercharger"
    ]
+  },
+  {
+   "id": "intercooler",
+   "name": "INTERCOOLER",
+   "group": "BOOST",
+   "options": [
+    {
+     "name": "NONE",
+     "price": 0,
+     "info": "HOT AIR: BOOST MAKES LESS POWER",
+     "icEff": 0.78
+    },
+    {
+     "name": "SIDE MOUNT",
+     "price": 900,
+     "info": "SMALL, TUCKED AWAY",
+     "icEff": 0.86
+    },
+    {
+     "name": "FRONT MOUNT",
+     "price": 1800,
+     "info": "BIG CORE IN THE BUMPER",
+     "icEff": 0.93,
+     "drag": 0.004
+    },
+    {
+     "name": "AIR-TO-WATER",
+     "price": 3500,
+     "info": "ICE TANK. COLDEST CHARGE",
+     "icEff": 0.97,
+     "weight": 12
+    }
+   ],
+   "excludes": []
+  },
+  {
+   "id": "boostctl",
+   "name": "BOOST CONTROL",
+   "group": "BOOST",
+   "options": [
+    {
+     "name": "WASTEGATE SPRING",
+     "price": 0,
+     "info": "BOOST FIXED AT 8 PSI",
+     "boostCtl": 0
+    },
+    {
+     "name": "MANUAL CONTROLLER",
+     "price": 400,
+     "info": "SET THE BOOST YOURSELF",
+     "boostCtl": 1
+    },
+    {
+     "name": "ELECTRONIC CONTROL",
+     "price": 1500,
+     "info": "BOOST BY GEAR (NEEDS STANDALONE ECU)",
+     "boostCtl": 2
+    }
+   ],
+   "excludes": []
+  },
+  {
+   "id": "bov",
+   "name": "BLOW-OFF VALVE",
+   "group": "BOOST",
+   "options": [
+    {
+     "name": "NONE",
+     "price": 0,
+     "info": "BOOST DIES ON EVERY SHIFT"
+    },
+    {
+     "name": "BLOW-OFF VALVE",
+     "price": 350,
+     "info": "KEEPS THE TURBO SPINNING THROUGH SHIFTS",
+     "bov": 1
+    }
+   ],
+   "excludes": []
   },
   {
    "id": "supercharger",
    "name": "SUPERCHARGER",
-   "group": "POWER ADDER",
-   "excludes": [
-    "turbo"
-   ],
-   "tiers": [
+   "group": "BOOST",
+   "options": [
     {
-     "name": "STAGE 1",
-     "blower": 0.12
+     "name": "STOCK",
+     "price": 0,
+     "info": "NONE ADDED"
     },
     {
-     "name": "STAGE 2",
-     "blower": 0.21
-    },
-    {
-     "name": "STAGE 3",
-     "blower": 0.32,
+     "name": "ROOTS BLOWER",
+     "price": 5000,
+     "info": "INSTANT TORQUE, FADES UP TOP. 12 PSI",
+     "scPsi": 12,
+     "scType": 1,
      "visual": "blower"
     },
     {
-     "name": "RACE",
-     "blower": 0.46,
+     "name": "TWIN-SCREW",
+     "price": 7500,
+     "info": "INSTANT AND EFFICIENT. 16 PSI",
+     "scPsi": 16,
+     "scType": 2,
+     "visual": "blower"
+    },
+    {
+     "name": "CENTRIFUGAL",
+     "price": 6500,
+     "info": "BUILDS WITH RPM. 20 PSI AT REDLINE",
+     "scPsi": 20,
+     "scType": 3
+    },
+    {
+     "name": "14-71 HIGH HELIX",
+     "price": 16000,
+     "info": "TALL BLOWER THROUGH THE HOOD. 24 PSI",
+     "scPsi": 24,
+     "scType": 1,
+     "weight": 25,
+     "drag": 0.02,
      "visual": "blower"
     }
+   ],
+   "excludes": [
+    "turbo"
    ]
   },
   {
    "id": "nitrous",
    "name": "NITROUS KIT",
-   "group": "POWER ADDER",
-   "tiers": [
+   "group": "NITROUS",
+   "options": [
     {
-     "name": "STAGE 1",
-     "nos": 50,
-     "charges": 1,
-     "seconds": 2.5
+     "name": "STOCK",
+     "price": 0,
+     "info": "NONE ADDED"
     },
     {
-     "name": "STAGE 2",
-     "nos": 100,
-     "charges": 2,
-     "seconds": 2.5
+     "name": "DRY 75 SHOT",
+     "price": 900,
+     "info": "UP TO 75 HP",
+     "nosHp": 75
     },
     {
-     "name": "STAGE 3",
-     "nos": 150,
-     "charges": 2,
-     "seconds": 3.0
+     "name": "WET 150 SHOT",
+     "price": 1800,
+     "info": "UP TO 150 HP",
+     "nosHp": 150
     },
     {
-     "name": "RACE",
-     "nos": 250,
-     "charges": 3,
-     "seconds": 3.0
+     "name": "DIRECT PORT 300",
+     "price": 5500,
+     "info": "A NOZZLE PER CYLINDER. UP TO 300 HP",
+     "nosHp": 300
+    },
+    {
+     "name": "DUAL STAGE 500",
+     "price": 12000,
+     "info": "UP TO 500 HP. BRING A BUILT MOTOR",
+     "nosHp": 500
     }
-   ]
+   ],
+   "excludes": []
+  },
+  {
+   "id": "bottle",
+   "name": "BOTTLE",
+   "group": "NITROUS",
+   "options": [
+    {
+     "name": "10 LB",
+     "price": 0,
+     "info": "ONE SPRAY",
+     "charges": 1
+    },
+    {
+     "name": "15 LB",
+     "price": 500,
+     "info": "TWO SPRAYS",
+     "charges": 2
+    },
+    {
+     "name": "TWIN 15 LB",
+     "price": 1200,
+     "info": "THREE SPRAYS",
+     "charges": 3,
+     "weight": 10
+    }
+   ],
+   "excludes": []
+  },
+  {
+   "id": "nosctl",
+   "name": "NITROUS CONTROLLER",
+   "group": "NITROUS",
+   "options": [
+    {
+     "name": "ON/OFF",
+     "price": 0,
+     "info": "THE WHOLE SHOT AT ONCE"
+    },
+    {
+     "name": "PROGRESSIVE",
+     "price": 1500,
+     "info": "RAMPS THE SHOT IN. SAVES THE TYRES",
+     "progressive": 1
+    }
+   ],
+   "excludes": []
   },
   {
    "id": "clutch",
    "name": "CLUTCH",
    "group": "DRIVETRAIN",
-   "tiers": [
+   "options": [
     {
-     "name": "STAGE 1",
-     "clutch": 0.3,
-     "shift": -0.05
+     "name": "STOCK",
+     "price": 0,
+     "info": "FACTORY PART"
     },
     {
-     "name": "STAGE 2",
-     "clutch": 0.6,
-     "shift": -0.1
+     "name": "STAGE 2 ORGANIC",
+     "price": 900,
+     "info": "HOLDS MORE, STILL SMOOTH",
+     "clutch": 0.4,
+     "clutchTime": 0.9
     },
     {
-     "name": "STAGE 3",
-     "clutch": 1.0,
-     "shift": -0.15
+     "name": "STAGE 3 PUCK",
+     "price": 1600,
+     "info": "GRABBY. HITS THE TYRES HARD",
+     "clutch": 0.9,
+     "clutchTime": 0.7
     },
     {
-     "name": "RACE",
-     "clutch": 1.6,
-     "shift": -0.2
+     "name": "TWIN DISC",
+     "price": 3200,
+     "info": "HOLDS BIG POWER",
+     "clutch": 1.5,
+     "clutchTime": 0.8
+    },
+    {
+     "name": "TRIPLE DISC SLIPPER",
+     "price": 6500,
+     "info": "BUILT TO SLIP ON PURPOSE",
+     "clutch": 2.4,
+     "clutchTime": 1.0
     }
-   ]
+   ],
+   "excludes": []
+  },
+  {
+   "id": "flywheel",
+   "name": "FLYWHEEL",
+   "group": "DRIVETRAIN",
+   "options": [
+    {
+     "name": "STOCK",
+     "price": 0,
+     "info": "FACTORY PART"
+    },
+    {
+     "name": "LIGHT CHROMOLY",
+     "price": 600,
+     "info": "REVS QUICKER",
+     "inertia": 0.82
+    },
+    {
+     "name": "ALUMINUM",
+     "price": 1100,
+     "info": "REVS FAST, BOGS EASY",
+     "inertia": 0.65
+    }
+   ],
+   "excludes": []
   },
   {
    "id": "gearbox",
-   "name": "TRANSMISSION",
+   "name": "GEARBOX",
    "group": "DRIVETRAIN",
-   "tiers": [
+   "options": [
     {
-     "name": "STAGE 1",
-     "shift": -0.15,
+     "name": "STOCK",
+     "price": 0,
+     "info": "FACTORY PART"
+    },
+    {
+     "name": "CLOSE-RATIO",
+     "price": 2500,
+     "info": "TIGHTER GEARS, TUNABLE",
+     "shift": 0.9,
      "tuneRange": 0.1
     },
     {
-     "name": "STAGE 2",
+     "name": "5-SPEED",
+     "price": 4500,
+     "info": "FIVE GEARS",
      "gears": 5,
-     "shift": -0.2,
+     "shift": 0.85,
      "tuneRange": 0.2
     },
     {
-     "name": "STAGE 3",
+     "name": "6-SPEED",
+     "price": 6500,
+     "info": "SIX GEARS",
      "gears": 6,
-     "shift": -0.25,
+     "shift": 0.8,
      "tuneRange": 0.3
     },
     {
-     "name": "RACE",
+     "name": "DOG BOX",
+     "price": 12000,
+     "info": "STRAIGHT-CUT. NO SYNCHROS, FAST SHIFTS",
      "gears": 6,
-     "shift": -0.5,
+     "shift": 0.5,
+     "tuneRange": 0.45
+    },
+    {
+     "name": "SEQUENTIAL",
+     "price": 18000,
+     "info": "PULL BACK, PULL BACK",
+     "gears": 6,
+     "shift": 0.35,
      "tuneRange": 0.5
     }
-   ]
+   ],
+   "excludes": []
   },
   {
-   "id": "lsd",
-   "name": "LIMITED SLIP",
+   "id": "shifter",
+   "name": "SHIFTER",
    "group": "DRIVETRAIN",
-   "tiers": [
+   "options": [
     {
-     "name": "STAGE 1",
-     "grip": 0.03
+     "name": "STOCK",
+     "price": 0,
+     "info": "FACTORY PART"
     },
     {
-     "name": "STAGE 2",
-     "grip": 0.06
-    },
-    {
-     "name": "STAGE 3",
-     "grip": 0.09
-    },
-    {
-     "name": "RACE",
-     "grip": 0.12
+     "name": "SHORT THROW",
+     "price": 350,
+     "info": "SHORTER THROWS",
+     "shift": 0.88
     }
-   ]
+   ],
+   "excludes": []
+  },
+  {
+   "id": "driveshaft",
+   "name": "DRIVESHAFT / AXLES",
+   "group": "DRIVETRAIN",
+   "options": [
+    {
+     "name": "STOCK",
+     "price": 0,
+     "info": "FACTORY PART"
+    },
+    {
+     "name": "ALUMINUM",
+     "price": 700,
+     "info": "LIGHTER TO SPIN UP",
+     "wheelInertia": 0.92,
+     "weight": -4
+    },
+    {
+     "name": "CARBON FIBRE",
+     "price": 1600,
+     "info": "LIGHTEST",
+     "wheelInertia": 0.85,
+     "weight": -7
+    }
+   ],
+   "excludes": []
+  },
+  {
+   "id": "diff",
+   "name": "DIFFERENTIAL",
+   "group": "DRIVETRAIN",
+   "options": [
+    {
+     "name": "STOCK",
+     "price": 0,
+     "info": "OPEN DIFF: ONE-WHEEL PEEL"
+    },
+    {
+     "name": "CLUTCH LSD",
+     "price": 1200,
+     "info": "BOTH WHEELS PUSH",
+     "grip": 0.04
+    },
+    {
+     "name": "TORSEN",
+     "price": 1800,
+     "info": "SMOOTH AND STRONG",
+     "grip": 0.05
+    },
+    {
+     "name": "SPOOL",
+     "price": 900,
+     "info": "LOCKED SOLID. PURE DRAG",
+     "grip": 0.07
+    }
+   ],
+   "excludes": []
+  },
+  {
+   "id": "drive",
+   "name": "DRIVE LAYOUT",
+   "group": "DRIVETRAIN",
+   "options": [
+    {
+     "name": "STOCK",
+     "price": 0,
+     "info": "AS BUILT"
+    },
+    {
+     "name": "AWD CONVERSION",
+     "price": 15000,
+     "info": "JOE'S SPECIAL: ALL FOUR WHEELS PULL. ONLY FITS HIS EF",
+     "awd": 1,
+     "weight": 55,
+     "carOnly": [
+      "kite_ef"
+     ]
+    }
+   ],
+   "excludes": []
   },
   {
    "id": "final",
-   "name": "FINAL DRIVE",
+   "name": "RING AND PINION",
    "group": "DRIVETRAIN",
-   "tiers": [
+   "options": [
     {
-     "name": "STAGE 1",
+     "name": "STOCK",
+     "price": 0,
+     "info": "FACTORY PART"
+    },
+    {
+     "name": "SHORTER (+8%)",
+     "price": 1000,
+     "info": "QUICKER OFF THE LINE",
+     "finalMult": 1.08,
      "finalRange": 0.08
     },
     {
-     "name": "STAGE 2",
-     "finalRange": 0.15
+     "name": "SHORTEST (+16%)",
+     "price": 1400,
+     "info": "ALL LAUNCH, LOW TOP SPEED",
+     "finalMult": 1.16,
+     "finalRange": 0.08
     },
     {
-     "name": "STAGE 3",
-     "finalRange": 0.25
+     "name": "TALLER (-8%)",
+     "price": 1000,
+     "info": "MORE TOP END",
+     "finalMult": 0.92,
+     "finalRange": 0.08
     },
     {
-     "name": "RACE",
-     "finalRange": 0.4
+     "name": "QUICK-CHANGE",
+     "price": 3000,
+     "info": "ANY RATIO YOU LIKE",
+     "finalRange": 0.35
     }
-   ]
+   ],
+   "excludes": []
+  },
+  {
+   "id": "springs",
+   "name": "SPRINGS",
+   "group": "SUSPENSION",
+   "options": [
+    {
+     "name": "STOCK",
+     "price": 0,
+     "info": "FACTORY PART"
+    },
+    {
+     "name": "DRAG SPRINGS",
+     "price": 700,
+     "info": "SOFT REAR, MORE SQUAT",
+     "transfer": 1.12
+    },
+    {
+     "name": "COILOVERS",
+     "price": 2800,
+     "info": "ADJUSTABLE RIDE HEIGHT",
+     "transfer": 1.08,
+     "adjustable": 1
+    }
+   ],
+   "excludes": []
+  },
+  {
+   "id": "shocks",
+   "name": "SHOCKS",
+   "group": "SUSPENSION",
+   "options": [
+    {
+     "name": "STOCK",
+     "price": 0,
+     "info": "FACTORY PART"
+    },
+    {
+     "name": "90/10 DRAG SHOCKS",
+     "price": 1100,
+     "info": "FRONT LIFTS FAST, WEIGHT HITS THE REAR",
+     "transferRate": 1.8
+    },
+    {
+     "name": "DOUBLE ADJUSTABLE",
+     "price": 2600,
+     "info": "TUNE HOW FAST IT TRANSFERS",
+     "transferRate": 1.6,
+     "adjustable": 2
+    }
+   ],
+   "excludes": []
+  },
+  {
+   "id": "bars",
+   "name": "TRACTION BARS",
+   "group": "SUSPENSION",
+   "options": [
+    {
+     "name": "STOCK",
+     "price": 0,
+     "info": "FACTORY PART"
+    },
+    {
+     "name": "TRACTION BARS",
+     "price": 500,
+     "info": "STOPS AXLE WRAP",
+     "grip": 0.02,
+     "rwdOnly": true
+    },
+    {
+     "name": "LADDER BARS",
+     "price": 1500,
+     "info": "PLANTS THE REAR AXLE",
+     "grip": 0.045,
+     "rwdOnly": true
+    }
+   ],
+   "excludes": []
+  },
+  {
+   "id": "wheeliebars",
+   "name": "WHEELIE BARS",
+   "group": "SUSPENSION",
+   "options": [
+    {
+     "name": "NONE",
+     "price": 0,
+     "info": "TOO MUCH WHEELIE AND YOU LIFT"
+    },
+    {
+     "name": "WHEELIE BARS",
+     "price": 900,
+     "info": "FRONT STAYS DOWN, NO LIFTING",
+     "wheelieBars": 1,
+     "weight": 8,
+     "rwdOnly": true,
+     "visual": "wheeliebar"
+    }
+   ],
+   "excludes": []
+  },
+  {
+   "id": "tubs",
+   "name": "WHEEL TUBS",
+   "group": "SUSPENSION",
+   "options": [
+    {
+     "name": "STOCK",
+     "price": 0,
+     "info": "FACTORY PART"
+    },
+    {
+     "name": "MINI-TUBS",
+     "price": 2500,
+     "info": "ROOM FOR WIDE TYRES",
+     "tubs": 1,
+     "weight": 6
+    }
+   ],
+   "excludes": []
+  },
+  {
+   "id": "cage",
+   "name": "ROLL CAGE",
+   "group": "SUSPENSION",
+   "options": [
+    {
+     "name": "NONE",
+     "price": 0,
+     "info": "FACTORY SHELL"
+    },
+    {
+     "name": "6-POINT BAR",
+     "price": 1500,
+     "info": "STIFFER CHASSIS",
+     "grip": 0.01,
+     "weight": 18,
+     "visual": "cage"
+    },
+    {
+     "name": "10-POINT CAGE",
+     "price": 3500,
+     "info": "STIFFEST. A RACE CAR",
+     "grip": 0.025,
+     "weight": 30,
+     "visual": "cage"
+    }
+   ],
+   "excludes": []
   },
   {
    "id": "tires",
-   "name": "TIRES",
-   "group": "GRIP",
-   "tiers": [
+   "name": "TYRES",
+   "group": "TYRES",
+   "options": [
     {
-     "name": "STAGE 1",
+     "name": "STREET",
+     "price": 0,
+     "info": "ALL-SEASON",
+     "warm": 0.7,
+     "sens": 1.0
+    },
+    {
+     "name": "SPORT",
+     "price": 1200,
+     "info": "STICKIER STREET TYRE",
      "grip": 0.06,
-     "pressureSens": 1.0
+     "warm": 0.72,
+     "sens": 1.0
     },
     {
-     "name": "STAGE 2",
+     "name": "275 DRAG RADIAL",
+     "price": 2400,
+     "info": "STREET-LEGAL DRAG TYRE",
      "grip": 0.16,
-     "pressureSens": 1.4,
-     "label": "DRAG RADIALS"
+     "warm": 0.8,
+     "sens": 1.3
     },
     {
-     "name": "STAGE 3",
-     "grip": 0.3,
-     "pressureSens": 1.8,
-     "label": "SLICKS"
+     "name": "315 DRAG RADIAL",
+     "price": 3600,
+     "info": "WIDER. NEEDS TUBS OR WIDEBODY",
+     "grip": 0.22,
+     "warm": 0.82,
+     "sens": 1.4,
+     "requires": [
+      [
+       "tubs",
+       1
+      ],
+      [
+       "fenders",
+       2
+      ]
+     ]
     },
     {
-     "name": "RACE",
-     "grip": 0.42,
-     "pressureSens": 2.0,
-     "label": "RACE SLICKS"
+     "name": "SLICKS",
+     "price": 4800,
+     "info": "HUGE GRIP WHEN HOT. DO A BURNOUT",
+     "grip": 0.32,
+     "warm": 0.9,
+     "sens": 1.8,
+     "requires": [
+      [
+       "tubs",
+       1
+      ],
+      [
+       "fenders",
+       2
+      ]
+     ]
     }
-   ]
+   ],
+   "excludes": []
   },
   {
-   "id": "weight",
-   "name": "WEIGHT REDUCTION",
-   "group": "GRIP",
-   "tiers": [
+   "id": "wheels",
+   "name": "WHEELS",
+   "group": "TYRES",
+   "options": [
     {
-     "name": "STAGE 1",
-     "weight": -40
+     "name": "STOCK",
+     "price": 0,
+     "info": "FACTORY PART"
     },
     {
-     "name": "STAGE 2",
-     "weight": -85
+     "name": "FORGED LIGHTWEIGHT",
+     "price": 2400,
+     "info": "LESS TO SPIN UP",
+     "wheelInertia": 0.85,
+     "weight": -8
     },
     {
-     "name": "STAGE 3",
-     "weight": -135
-    },
-    {
-     "name": "RACE",
-     "weight": -200,
-     "dragArea": -0.03
+     "name": "BEADLOCKS",
+     "price": 3200,
+     "info": "RUN THE PRESSURE LOW",
+     "wheelInertia": 0.82,
+     "weight": -6,
+     "sens": 1.25
     }
-   ]
+   ],
+   "excludes": []
+  },
+  {
+   "id": "interior",
+   "name": "INTERIOR",
+   "group": "WEIGHT",
+   "options": [
+    {
+     "name": "STOCK",
+     "price": 0,
+     "info": "FACTORY PART"
+    },
+    {
+     "name": "STRIP THE REAR",
+     "price": 500,
+     "info": "NO REAR SEATS, NO CARPET",
+     "weight": -35
+    },
+    {
+     "name": "FULL GUT",
+     "price": 1800,
+     "info": "ONE RACE SEAT. NOTHING ELSE",
+     "weight": -80
+    }
+   ],
+   "excludes": []
+  },
+  {
+   "id": "panels",
+   "name": "BODY PANELS",
+   "group": "WEIGHT",
+   "options": [
+    {
+     "name": "STOCK",
+     "price": 0,
+     "info": "FACTORY PART"
+    },
+    {
+     "name": "FIBERGLASS HOOD",
+     "price": 900,
+     "info": "LIGHT HOOD",
+     "weight": -12
+    },
+    {
+     "name": "CARBON HOOD + TRUNK",
+     "price": 3500,
+     "info": "BARE CARBON",
+     "weight": -28,
+     "visual": "carbon"
+    },
+    {
+     "name": "FULL CARBON PANELS",
+     "price": 9500,
+     "info": "EVERY PANEL",
+     "weight": -60,
+     "visual": "carbon"
+    }
+   ],
+   "excludes": []
+  },
+  {
+   "id": "glass",
+   "name": "GLASS",
+   "group": "WEIGHT",
+   "options": [
+    {
+     "name": "STOCK",
+     "price": 0,
+     "info": "FACTORY PART"
+    },
+    {
+     "name": "LEXAN REAR + SIDES",
+     "price": 800,
+     "info": "PLASTIC WINDOWS",
+     "weight": -14
+    },
+    {
+     "name": "FULL LEXAN",
+     "price": 1500,
+     "info": "EVEN THE WINDSHIELD",
+     "weight": -22
+    }
+   ],
+   "excludes": []
+  },
+  {
+   "id": "battery",
+   "name": "BATTERY",
+   "group": "WEIGHT",
+   "options": [
+    {
+     "name": "STOCK",
+     "price": 0,
+     "info": "UNDER THE HOOD"
+    },
+    {
+     "name": "TRUNK RELOCATION",
+     "price": 300,
+     "info": "MOVES WEIGHT TO THE REAR",
+     "rear": 0.012
+    },
+    {
+     "name": "LIGHT BATTERY IN TRUNK",
+     "price": 800,
+     "info": "LIGHTER AND REARWARD",
+     "rear": 0.012,
+     "weight": -11
+    }
+   ],
+   "excludes": []
+  },
+  {
+   "id": "bumper",
+   "name": "FRONT BUMPER",
+   "group": "BODY",
+   "options": [
+    {
+     "name": "STOCK",
+     "price": 0,
+     "info": "FACTORY PART"
+    },
+    {
+     "name": "LIP SPOILER",
+     "price": 600,
+     "info": "A LITTLE LOWER, A LITTLE SLIPPERIER",
+     "drag": -0.005,
+     "visual": "bumper1"
+    },
+    {
+     "name": "STREET BUMPER",
+     "price": 1500,
+     "info": "AGGRESSIVE INTAKES",
+     "drag": -0.008,
+     "weight": -2,
+     "visual": "bumper2"
+    },
+    {
+     "name": "RACE SPLITTER",
+     "price": 2800,
+     "info": "FLAT SPLITTER, CANARDS",
+     "drag": -0.012,
+     "weight": -3,
+     "visual": "bumper3"
+    }
+   ],
+   "excludes": []
+  },
+  {
+   "id": "skirts",
+   "name": "SIDE SKIRTS",
+   "group": "BODY",
+   "options": [
+    {
+     "name": "STOCK",
+     "price": 0,
+     "info": "FACTORY PART"
+    },
+    {
+     "name": "SIDE SKIRTS",
+     "price": 900,
+     "info": "CLEANS UP THE SIDES",
+     "drag": -0.006,
+     "visual": "skirts1"
+    },
+    {
+     "name": "RACE SKIRTS",
+     "price": 1800,
+     "info": "LOW AND FLAT",
+     "drag": -0.01,
+     "visual": "skirts2"
+    }
+   ],
+   "excludes": []
+  },
+  {
+   "id": "rear",
+   "name": "REAR BUMPER",
+   "group": "BODY",
+   "options": [
+    {
+     "name": "STOCK",
+     "price": 0,
+     "info": "FACTORY PART"
+    },
+    {
+     "name": "REAR DIFFUSER",
+     "price": 1200,
+     "info": "SMOOTHS THE WAKE",
+     "drag": -0.006,
+     "visual": "rear1"
+    },
+    {
+     "name": "RACE DIFFUSER",
+     "price": 2400,
+     "info": "BIG FINS",
+     "drag": -0.01,
+     "visual": "rear2"
+    }
+   ],
+   "excludes": []
+  },
+  {
+   "id": "hood",
+   "name": "HOOD",
+   "group": "BODY",
+   "options": [
+    {
+     "name": "STOCK",
+     "price": 0,
+     "info": "FACTORY PART"
+    },
+    {
+     "name": "VENTED HOOD",
+     "price": 1200,
+     "info": "LETS THE HEAT OUT",
+     "visual": "hood1"
+    },
+    {
+     "name": "COWL INDUCTION",
+     "price": 1600,
+     "info": "THE CLASSIC BULGE",
+     "hi": 0.01,
+     "visual": "hood2"
+    }
+   ],
+   "excludes": []
+  },
+  {
+   "id": "fenders",
+   "name": "FENDERS",
+   "group": "BODY",
+   "options": [
+    {
+     "name": "STOCK",
+     "price": 0,
+     "info": "FACTORY PART"
+    },
+    {
+     "name": "FENDER FLARES",
+     "price": 1500,
+     "info": "A LITTLE WIDER",
+     "drag": 0.004,
+     "visual": "flares"
+    },
+    {
+     "name": "WIDEBODY KIT",
+     "price": 6000,
+     "info": "ROOM FOR WIDE TYRES",
+     "drag": 0.012,
+     "weight": 8,
+     "visual": "widebody"
+    }
+   ],
+   "excludes": []
+  },
+  {
+   "id": "chute",
+   "name": "PARACHUTE",
+   "group": "BODY",
+   "options": [
+    {
+     "name": "NONE",
+     "price": 0,
+     "info": "BRAKES ONLY"
+    },
+    {
+     "name": "DRAG CHUTE",
+     "price": 1200,
+     "info": "POPS AFTER THE FINISH LINE",
+     "weight": 4,
+     "visual": "chute"
+    }
+   ],
+   "excludes": []
   }
  ],
  "cosmetic": [
@@ -452,23 +1505,24 @@
     "gt",
     "drag"
    ],
-   "price": 3000
-  },
-  {
-   "id": "kit",
-   "name": "BODY KIT",
-   "group": "LOOKS",
-   "styles": [
-    "stock",
-    "street",
-    "race"
-   ],
-   "price": 5000,
+   "price": 3000,
    "dragArea": [
     0,
-    -0.01,
-    -0.03
+    0.004,
+    0.012,
+    0.02
    ]
+  },
+  {
+   "id": "tint",
+   "name": "WINDOW TINT",
+   "group": "LOOKS",
+   "styles": [
+    "none",
+    "light",
+    "limo"
+   ],
+   "price": 400
   },
   {
    "id": "underglow",

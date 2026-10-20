@@ -37,7 +37,8 @@ test("shared ledger cases (same file as core LedgerTest)", () => {
 
 test("garbage entries are refused, not crashed on", () => {
   for (const raw of [null, 5, "x", {}, { type: "race" }, { type: "race", t: "1" }, { type: "paint", t: 1, uid: "c1", paint: [1, 2] },
-    { type: "buy", t: 1, car: "__proto__" }, { type: "part", t: 1, uid: "c1", slot: "constructor" }]) {
+    { type: "buy", t: 1, car: "__proto__" }, { type: "part", t: 1, uid: "c1", slot: "constructor", opt: 1 }, { type: "part", t: 1, uid: "c1", slot: "intake", opt: 1.5 },
+    { type: "part", t: 1, uid: "c1", slot: "intake", opt: 99 }, { type: "part", t: 1, uid: "c1", slot: "intake" }]) {
     const s = emptyState();
     apply(rules, s, { type: "start", t: 0, car: "kite" });
     const e = sanitize(raw);
@@ -51,7 +52,7 @@ test("legacy import keeps known things and caps cash", () => {
     cash: 9_999_999,
     beaten: ["dash", "nobody"],
     cars: [
-      { uid: "c3", car: "vandal", paint: 1, parts: { intake: 4, rocket: 9, exhaust: 99 }, cosmetics: { wing: 1, finish: 2, nope: 1 } },
+      { uid: "c3", car: "vandal", paint: 1, parts: { intake: 2, rocket: 9, exhaust: 99 }, cosmetics: { wing: 1, finish: 2, nope: 1 }, owned: { intake: 0b111, exhaust: 1 << 20 } },
       { uid: "c4", car: "spaceship" },
       { uid: "../x", car: "kite" },
     ],
@@ -59,7 +60,8 @@ test("legacy import keeps known things and caps cash", () => {
   assert.equal(s.cash, LEGACY_CASH_CAP);
   assert.deepEqual(s.beaten, ["dash"]);
   assert.equal(s.cars.length, 1);
-  assert.deepEqual(s.cars[0].parts, { intake: 4 });
+  assert.deepEqual(s.cars[0].parts, { intake: 2 });
+  assert.deepEqual(s.cars[0].owned, { intake: 0b110 }, "owned bits stay inside the slot's options, and the factory bit never counts");
   assert.deepEqual(s.cars[0].cosmetics, { wing: 1, finish: 2 });
   assert.equal(s.nextUid, 4);
 });

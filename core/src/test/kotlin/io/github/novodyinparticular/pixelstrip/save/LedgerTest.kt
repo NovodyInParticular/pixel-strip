@@ -78,10 +78,11 @@ class LedgerTest {
         save.cars[0].tunes.add(Tune("MINE"))
         val server = SaveGame(FileHandle(File.createTempFile("srv", ".json")))
         Ledger.apply(rules, server, Entry("start", 1, car = "kite"))
-        Ledger.apply(rules, server, Entry("part", 2, uid = "c1", slot = "intake"))
+        Ledger.apply(rules, server, Entry("part", 2, uid = "c1", slot = "intake", opt = 1))
         save.adopt(JsonReader().parse(server.economicState().toJson(JsonWriter.OutputType.json)), null)
         assertEquals(server.cash, save.cash)
         assertEquals(1, save.cars[0].parts["intake"])
+        assertTrue(save.cars[0].owns("intake", 1), "owned parts come across too")
         assertEquals("MINE", save.cars[0].tunes[0].name)
     }
 }

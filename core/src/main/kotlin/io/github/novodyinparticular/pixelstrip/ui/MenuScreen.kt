@@ -193,12 +193,30 @@ abstract class MenuScreen(protected val game: PixelStrip) : ScreenAdapter() {
         font.draw(batch, text, x + 4f, y, c, 1, null)
     }
 
-    /** Peak power as raced: rated power (net) with the supercharger and full turbo boost. */
-    protected fun peakHp(def: CarDef) = def.hp * def.ratingFactor * (1f + def.blowerGain) * (1f + def.boostGain)
+    /** Peak crank horsepower off the dyno curve (boost, blower, knock and fuel limits included). */
+    protected fun peakHp(def: CarDef): Float {
+        var best = 0f
+        var r = def.idleRpm
+        while (r <= def.redline) {
+            best = maxOf(best, DragMath.crankTorque(def, r) * r / 7127f)
+            r += 100f
+        }
+        return best
+    }
+
+    protected fun peakTorque(def: CarDef): Float {
+        var best = 0f
+        var r = def.idleRpm
+        while (r <= def.redline) {
+            best = maxOf(best, DragMath.crankTorque(def, r))
+            r += 100f
+        }
+        return best
+    }
 
     private fun statValues(def: CarDef): FloatArray = floatArrayOf(
         peakHp(def) / 900f,
-        def.torqueNm * def.ratingFactor * (1f + def.blowerGain) * (1f + def.boostGain) / 1300f,
+        peakTorque(def) / 1300f,
         1f - (def.weightKg - 950f) / 900f,
         (def.grip - 0.75f) / 0.6f + (if (def.drivetrain == "AWD") 0.15f else 0f),
     )

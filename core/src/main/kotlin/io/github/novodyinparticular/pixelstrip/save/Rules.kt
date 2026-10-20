@@ -32,8 +32,14 @@ class Rules(
     /** Two career races can't finish closer together than this (staging + the run itself). */
     val minRaceGapMs: Long,
 ) {
-    class CarRule(val price: Long, val sell: Long, val dealer: Boolean, val paint: Int, val parts: Map<String, List<Long>>)
-    class SlotRule(val tiers: Int, val excludes: List<String>)
+    /** [parts]: slot -> price of options 1..n on this car. */
+    class CarRule(val price: Long, val sell: Long, val dealer: Boolean, val paint: Int, val drivetrain: String, val parts: Map<String, List<Long>>)
+    /** [options] counts the factory part; [requires]: option -> any one of (slot, min option). */
+    class SlotRule(
+        val options: Int, val excludes: List<String>, val requires: Map<Int, List<Pair<String, Int>>>, val rwdOnly: List<Int>,
+        /** option -> the only cars it fits. */
+        val carOnly: Map<Int, List<String>>,
+    )
     class CosmeticRule(val price: Long, val styles: Int)
     class RivalRule(
         val id: String, val payout: Long, val boss: Boolean,
@@ -53,13 +59,19 @@ class Rules(
                 co.addChild("sell", JsonValue(c.sell))
                 co.addChild("dealer", JsonValue(c.dealer))
                 co.addChild("paint", JsonValue(c.paint.toLong()))
+                co.addChild("drivetrain", JsonValue(c.drivetrain))
                 co.addChild("parts", obj().also { po -> for ((s, p) in c.parts) po.addChild(s, arr(p.map { JsonValue(it) })) })
             })
         })
         root.addChild("slots", obj().also { o ->
             for ((id, s) in slots) o.addChild(id, obj().also { so ->
-                so.addChild("tiers", JsonValue(s.tiers.toLong()))
+                so.addChild("options", JsonValue(s.options.toLong()))
                 so.addChild("excludes", arr(s.excludes.map { JsonValue(it) }))
+                so.addChild("requires", obj().also { ro ->
+                    for ((opt, any) in s.requires.toSortedMap()) ro.addChild(opt.toString(), arr(any.map { (sl, min) -> arr(listOf(JsonValue(sl), JsonValue(min.toLong()))) }))
+                })
+                so.addChild("rwdOnly", arr(s.rwdOnly.map { JsonValue(it.toLong()) }))
+                so.addChild("carOnly", obj().also { co -> for ((opt, ids) in s.carOnly.toSortedMap()) co.addChild(opt.toString(), arr(ids.map { JsonValue(it) })) })
             })
         })
         root.addChild("cosmetics", obj().also { o ->
@@ -104,10 +116,17 @@ class Rules(
             resalePercent = partsResalePercent,
             cars = cars.associate { def ->
                 val cls = economy.classFor(DragMath.perfectPass(def).quarter)
-                def.id to CarRule(def.price.toLong(), economy.sellPrice(def.price), def.dealer, def.defaultPaint,
-                    catalog.slots.associate { s -> s.id to (1..s.tiers.size).map { t -> catalog.price(s, t, cls) } })
+                def.id to CarRule(def.price.toLong(), economy.sellPrice(def.price), def.dealer, def.defaultPaint, def.drivetrain,
+                    catalog.slots.associate { s -> s.id to (1 until s.options.size).map { o -> catalog.price(s, o, cls) } })
             },
-            slots = catalog.slots.associate { it.id to SlotRule(it.tiers.size, it.excludes) },
+            slots = catalog.slots.associate { s ->
+                s.id to SlotRule(
+                    s.options.size, s.excludes,
+                    s.options.withIndex().filter { it.value.requires.isNotEmpty() }.associate { it.index to it.value.requires },
+                    s.options.withIndex().filter { it.value.rwdOnly }.map { it.index },
+                    s.options.withIndex().filter { it.value.carOnly.isNotEmpty() }.associate { it.index to it.value.carOnly },
+                )
+            },
             cosmetics = catalog.cosmetics.associate { it.id to CosmeticRule(it.price.toLong(), it.styles.size) },
             colors = colors,
             colorPrice = catalog.colorPrice.toLong(),
@@ -128,10 +147,17 @@ class Rules(
                 starterCars = j.get("starterCars").asStringArray().toList(),
                 resalePercent = j.getLong("resalePercent"),
                 cars = j.get("cars").associate { c ->
-                    c.name to CarRule(c.getLong("price"), c.getLong("sell"), c.getBoolean("dealer"), c.getInt("paint"),
+                    c.name to CarRule(c.getLong("price"), c.getLong("sell"), c.getBoolean("dealer"), c.getInt("paint"), c.getString("drivetrain"),
                         c.get("parts").associate { p -> p.name to p.asLongArray().toList() })
                 },
-                slots = j.get("slots").associate { it.name to SlotRule(it.getInt("tiers"), it.get("excludes").asStringArray().toList()) },
+                slots = j.get("slots").associate { s ->
+                    s.name to SlotRule(
+                        s.getInt("options"), s.get("excludes").asStringArray().toList(),
+                        s.get("requires").associate { r -> r.name.toInt() to r.map { it.getString(0) to it.getInt(1) } },
+                        s.get("rwdOnly").asIntArray().toList(),
+                        s.get("carOnly").associate { c -> c.name.toInt() to c.asStringArray().toList() },
+                    )
+                },
                 cosmetics = j.get("cosmetics").associate { it.name to CosmeticRule(it.getLong("price"), it.getInt("styles")) },
                 colors = j.getInt("colors"),
                 colorPrice = j.getLong("colorPrice"),

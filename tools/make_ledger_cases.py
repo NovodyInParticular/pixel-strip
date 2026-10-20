@@ -23,8 +23,8 @@ def race(rival, t, won=True, pink=False, uid="c1"):
     return {"type": "race", "t": t, "uid": uid, "rival": rival, "won": won, "pink": pink}
 
 
-def part(slot, uid="c1", t=2000):
-    return {"type": "part", "t": t, "uid": uid, "slot": slot}
+def part(slot, opt, uid="c1", t=2000):
+    return {"type": "part", "t": t, "uid": uid, "slot": slot, "opt": opt}
 
 
 def kite(uid="c1", parts=None, car="kite", paint=None):
@@ -46,9 +46,12 @@ k = CARS["kite"]["parts"]
 case("starter car and starting cash", [start()], cash=START, cars=[kite(paint=CARS["kite"]["paint"])])
 case("only one starter", [start(), start("kestrel")], refused=[1], cash=START, cars=[kite()])
 case("starter must be a starter car", [start("vandal")], refused=[0], cash=0, cars=[])
-case("parts cost the per-car price and need the cash",
-     [start(), part("intake"), part("intake")], refused=[2] if START - k["intake"][0] < k["intake"][1] else [],
-     cash=START - k["intake"][0], cars=[kite(parts={"intake": 1})])
+case("parts cost the per-car price, any option can be bought directly",
+     [start(), part("intake", 2)], cash=START - k["intake"][1], cars=[kite(parts={"intake": 2})])
+case("swapping back to an owned part is free; refitting the fitted one is refused",
+     [start(), part("intake", 2), part("intake", 0), part("intake", 2), part("intake", 2)], refused=[4],
+     cash=START - k["intake"][1], cars=[kite(parts={"intake": 2})])
+case("a part needs the cash", [start(), part("swap", 3)], refused=[1], cash=START, cars=[kite()])
 case("locked rival is refused", [start(), race("kat", 10000)], refused=[1], cash=START, beaten=[])
 case("races too close together are refused",
      [start(), race("dash", 10000), race("kat", 10000 + GAP - 1)], refused=[2],
@@ -68,8 +71,9 @@ case("boss car only the first time", boss + [race("joe", 50000)], cash=boss_cash
 
 
 def sale(car, parts):
+    """Resale plus 30% of every option bought (a prize car owns just what it came with)."""
     c = CARS[car]
-    spent = sum(sum(c["parts"][s][:t]) for s, t in parts.items())
+    spent = sum(c["parts"][s][o - 1] for s, o in parts.items() if o > 0)
     return c["sell"] + spent * R["resalePercent"] // 100
 
 
@@ -96,13 +100,22 @@ case("dealer: not prize cars, not twice, not without cash",
       {"type": "buy", "t": 2000, "car": "vandal"}], refused=[1, 2, 3], cash=START, cars=[kite()])
 case("buying a car", [start(), race("dash", 10000), race("kat", 20000), {"type": "buy", "t": 21000, "car": "kestrel"}],
      cash=START + dash["payout"] + RIV["kat"]["payout"] - CARS["kestrel"]["price"], cars=[kite(), kite("c2", car="kestrel")])
-case("cosmetics cycle styles", [start(), {"type": "look", "t": 2000, "uid": "c1", "slot": "wing"}],
-     cash=START - R["cosmetics"]["wing"]["price"])
+case("cosmetics: next style, or pick one; the current style is refused",
+     [start(), race("dash", 1500), {"type": "look", "t": 2000, "uid": "c1", "slot": "wing"},
+      {"type": "look", "t": 2000, "uid": "c1", "slot": "wing", "opt": 3}, {"type": "look", "t": 2000, "uid": "c1", "slot": "wing", "opt": 3}],
+     refused=[4], cash=START + RIV["dash"]["payout"] - 2 * R["cosmetics"]["wing"]["price"])
 case("turbo and supercharger exclude each other",
-     [start(), race("dash", 10000), race("kat", 20000), part("turbo"), part("supercharger")],
+     [start(), race("dash", 10000), race("kat", 20000), part("turbo", 1), part("supercharger", 1)],
      cash=START + dash["payout"] + RIV["kat"]["payout"] - k["turbo"][0] - k["supercharger"][0], cars=[kite(parts={"supercharger": 1})])
+two = START + dash["payout"] + RIV["kat"]["payout"]
+case("wide tyres need tubs or a widebody, and the widebody can't come off under them",
+     [start(), race("dash", 10000), race("kat", 20000), part("tires", 4), part("fenders", 2), part("tires", 4), part("fenders", 0)],
+     refused=[3, 6], cash=two - k["fenders"][1] - k["tires"][3], cars=[kite(parts={"fenders": 2, "tires": 4})])
+case("RWD-only parts on a front-driver are refused", [start(), part("wheeliebars", 1)], refused=[1], cash=START)
+case("Joe's AWD conversion only fits his EF", boss + [part("drive", 1), part("drive", 1, uid="c2", t=41000)], refused=[5],
+     cash=boss_cash - CARS[joe["car"]]["parts"]["drive"][0])
 case("unknown things are refused",
-     [start(), {"type": "gift", "t": 2000}, part("rocket"), {"type": "part", "t": 2000, "uid": "c9", "slot": "intake"},
+     [start(), {"type": "gift", "t": 2000}, part("rocket", 1), {"type": "part", "t": 2000, "uid": "c9", "slot": "intake", "opt": 1},
       race("nobody", 10000)], refused=[1, 2, 3, 4], cash=START)
 
 (ROOT / "shared/ledger_cases.json").write_text(json.dumps(cases, indent=1) + "\n")

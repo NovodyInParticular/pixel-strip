@@ -15,41 +15,99 @@ import kotlin.math.floor
 import kotlin.math.min
 
 /**
- * Deep tuning: every gear, the final drive, launch control, nitrous timing and tyre pressure,
- * within the ranges the installed parts allow. The neon gear chart redraws on every change;
- * presets live per car and tunes travel as share codes through the clipboard.
+ * Deep tuning in five pages: gears and final drive; ignition timing, air/fuel, rev limit and launch
+ * control; turbo and blower boost and boost by gear; the nitrous shot, timing and ramp; tyre
+ * pressure, ride height and shocks. What the parts don't allow shows locked, with what's needed.
+ * The neon gear chart (or the power curve) redraws on every change; presets live per car and
+ * tunes travel as share codes through the clipboard.
  */
 class TuneScreen(game: PixelStrip) : MenuScreen(game) {
     private val save = game.save
     private val owned = save.selectedCar()!!
     private val stock = game.car(owned.carId)
     private val base = Upgrades.baseGears(stock, game.parts, owned.parts)
-    private val ranges = Upgrades.ranges(game.parts, owned.parts)
+    private val lim = Upgrades.limits(stock, game.parts, owned.parts)
+    private val built = game.effectiveWith(owned.carId, owned.parts, owned.cosmetics, null)
+    private val stockFinal = built.finalDrive
     private val bg = art.tex("scenes/garage.png")
 
     // the draft being edited
-    private val gears = (owned.tune?.gears?.takeIf { it.size == base.size } ?: base).copyOf()
-    private var finalDrive = owned.tune?.finalDrive ?: stock.finalDrive
-    private var launch = owned.tune?.launchRpm ?: 0f
-    private var nosGear = owned.tune?.nitrousGear ?: 0
-    private var psi = owned.tune?.tirePressure ?: CarDef.STOCK_PRESSURE
+    private val t0 = owned.tune
+    private val gears = (t0?.gears?.takeIf { it.size == base.size } ?: base).copyOf()
+    private var finalDrive = t0?.finalDrive ?: stockFinal
+    private var launch = t0?.launchRpm ?: 0f
+    private var nosGear = t0?.nitrousGear ?: 0
+    private var psi = t0?.tirePressure ?: CarDef.STOCK_PRESSURE
+    private var timing = t0?.timing ?: 0f
+    private var afr = t0?.afr ?: built.afr
+    private var limiter = t0?.limiter ?: lim.limiterMax
+    private var boost = t0?.boostPsi ?: built.boostPsi
+    private var scPsi = t0?.scPsi ?: (lim.scMax * 0.8f)
+    private val byGear = FloatArray(base.size) { t0?.boostByGear?.getOrNull(it) ?: 1f }
+    private var shot = t0?.nitrousShot ?: lim.nitrousMax
+    private var ramp = t0?.nitrousRamp ?: 0.6f
+    private var ride = t0?.rideHeight ?: 0f
+    private var shock = t0?.shockRate ?: 0.5f
 
     private var reveal = 0f
     private var toast = ""
     private var toastTime = 0f
     private val sparks = ArrayList<FloatArray>()   // x, y, vx, vy, life
 
-    private class Param(val label: String, val min: Float, val max: Float, val step: Float, val get: () -> Float, val set: (Float) -> Unit, val fmt: (Float) -> String)
+    /** [lock]: why it can't be changed on this build (shown instead of the slider). */
+    private class Param(
+        val label: String, val min: Float, val max: Float, val step: Float,
+        val get: () -> Float, val set: (Float) -> Unit, val fmt: (Float) -> String, val lock: String? = null,
+    )
 
-    private val params: List<Param> = buildList {
-        for (i in base.indices) add(Param(ordinal(i + 1), base[i] * (1 - ranges.gear), base[i] * (1 + ranges.gear), 0.01f, { gears[i] }, { gears[i] = it }, { "%.2f".format(it) }))
-        add(Param("FINAL", stock.finalDrive * (1 - ranges.finalDrive), stock.finalDrive * (1 + ranges.finalDrive), 0.01f, { finalDrive }, { finalDrive = it }, { "%.2f".format(it) }))
-        add(Param("LAUNCH", 0f, stock.redline, 100f, { launch }, { launch = it }, { if (it < 1f) "OFF" else "${it.toInt()}" }))
-        add(Param("NOS", 0f, base.size.toFloat(), 1f, { nosGear.toFloat() }, { nosGear = it.toInt() }, { if (it < 1f) "TAP" else "G${it.toInt()}" }))
-        add(Param("PSI", 12f, 40f, 0.5f, { psi }, { psi = it }, { "%.1f".format(it) }))
+    private val pages = listOf("GEARS", "ENGINE", "BOOST", "NITROUS", "CHASSIS")
+    private var page = 0
+
+    private fun paramsFor(p: String): List<Param> = buildList {
+        when (p) {
+            "GEARS" -> {
+                for (i in base.indices) add(Param(ordinal(i + 1), base[i] * (1 - lim.gearRange), base[i] * (1 + lim.gearRange), 0.01f, { gears[i] }, { gears[i] = it }, { "%.2f".format(it) }))
+                add(Param("FINAL", stockFinal * (1 - lim.finalRange), stockFinal * (1 + lim.finalRange), 0.01f, { finalDrive }, { finalDrive = it }, { "%.2f".format(it) }))
+            }
+            "ENGINE" -> {
+                add(Param("TIMING", -lim.timingRange, lim.timingRange, 0.5f, { timing }, { timing = it }, { "%+.1f".format(it) },
+                    if (lim.timingRange <= 0f) "NEEDS AN ECU" else null))
+                add(Param("AIR/FUEL", Upgrades.AFR_MIN, Upgrades.AFR_MAX, 0.1f, { afr }, { afr = it }, { "%.1f".format(it) },
+                    if (!lim.afr) "NEEDS ECU REFLASH" else null))
+                add(Param("REV LIMIT", built.peakHpRpm + 200f, lim.limiterMax, 100f, { limiter }, { limiter = it }, { "${it.toInt()}" },
+                    if (!lim.limiter) "NEEDS ECU REFLASH" else null))
+                add(Param("LAUNCH", 0f, lim.limiterMax, 100f, { launch }, { launch = it }, { if (it < 1f) "OFF" else "${it.toInt()}" },
+                    if (!lim.launchControl) "NEEDS ECU REFLASH" else null))
+            }
+            "BOOST" -> {
+                add(Param("TURBO", Upgrades.SPRING_PSI.coerceAtMost(lim.boostMax), lim.boostMax.coerceAtLeast(1f), 0.5f, { boost }, { boost = it }, { "%.1f PSI".format(it) },
+                    when { lim.boostMax <= 0f -> "NO TURBO"; !lim.boostAdjustable -> "NEEDS A BOOST CONTROLLER"; else -> null }))
+                add(Param("BLOWER", lim.scMax * 0.5f, lim.scMax.coerceAtLeast(1f), 0.5f, { scPsi }, { scPsi = it }, { "%.1f PSI".format(it) },
+                    if (lim.scMax <= 0f) "NO SUPERCHARGER" else null))
+                for (i in base.indices) add(Param("BOOST ${ordinal(i + 1)}", 0.2f, 1f, 0.05f, { byGear[i] }, { byGear[i] = it }, { "${(it * 100).toInt()}%" },
+                    if (!lim.boostByGear) "NEEDS ELECTRONIC CONTROL + STANDALONE" else null))
+            }
+            "NITROUS" -> {
+                val none = if (lim.nitrousMax <= 0f) "NO NITROUS KIT" else null
+                add(Param("SHOT", lim.nitrousMax * 0.25f, lim.nitrousMax.coerceAtLeast(1f), 25f, { shot }, { shot = it }, { "${it.toInt()} HP" }, none))
+                add(Param("AUTO", 0f, base.size.toFloat(), 1f, { nosGear.toFloat() }, { nosGear = it.toInt() }, { if (it < 1f) "TAP" else "G${it.toInt()}" },
+                    none ?: if (built.nitrous.hp <= 0f) "NO NITROUS KIT" else null))
+                add(Param("RAMP", 0.1f, 2f, 0.1f, { ramp }, { ramp = it }, { "%.1f S".format(it) }, none ?: if (!lim.progressive) "NEEDS PROGRESSIVE CONTROLLER" else null))
+            }
+            "CHASSIS" -> {
+                add(Param("TYRE PSI", 12f, 40f, 0.5f, { psi }, { psi = it }, { "%.1f".format(it) }))
+                add(Param("RIDE HT", -1f, 1f, 0.1f, { ride }, { ride = it }, { if (it < -0.05f) "LOW %.1f".format(-it) else if (it > 0.05f) "HIGH %.1f".format(it) else "STOCK" },
+                    if (!lim.rideHeight) "NEEDS COILOVERS" else null))
+                add(Param("SHOCKS", 0f, 1f, 0.05f, { shock }, { shock = it }, { "${(it * 100).toInt()}%" },
+                    if (!lim.shocks) "NEEDS DOUBLE ADJUSTABLES" else null))
+            }
+        }
     }
-    private val minus = params.map { p -> button("-", BTN_GREY) { nudge(p, -1) } }
-    private val plus = params.map { p -> button("+", BTN_GREY) { nudge(p, 1) } }
+
+    private var params: List<Param> = paramsFor(pages[0])
+    private val minus = List(MAX_ROWS) { i -> button("-", BTN_GREY) { params.getOrNull(i)?.let { nudge(it, -1) } } }
+    private val plus = List(MAX_ROWS) { i -> button("+", BTN_GREY) { params.getOrNull(i)?.let { nudge(it, 1) } } }
+    private val pageButtons = pages.mapIndexed { i, name -> button(name, Color(BTN_PURPLE)) { page = i; params = paramsFor(name); changed() } }
     private val slots = List(5) { i -> button(if (i == 0) "STOCK" else "$i", Color(BTN_PURPLE)) { loadSlot(i - 1) } }
     private val saveBtn = button("SAVE", BTN_RED, keys = intArrayOf(Input.Keys.S)) { saveSlot() }
     private val share = button("SHARE", BTN_TEAL) { shareCode() }
@@ -60,7 +118,19 @@ class TuneScreen(game: PixelStrip) : MenuScreen(game) {
 
     private fun ordinal(n: Int) = when (n) { 1 -> "1ST"; 2 -> "2ND"; 3 -> "3RD"; else -> "${n}TH" }
 
-    private fun draft() = Tune(owned.tune?.name ?: "TUNE", if (gears.contentEquals(base)) null else gears.copyOf(), finalDrive, launch, nosGear, psi)
+    private fun draft() = Tune(
+        t0?.name ?: "TUNE", if (gears.contentEquals(base)) null else gears.copyOf(), finalDrive, launch, nosGear, psi,
+        boostPsi = if (lim.boostAdjustable) boost else null,
+        boostByGear = if (lim.boostByGear && byGear.any { it < 1f }) byGear.copyOf() else null,
+        scPsi = if (lim.scMax > 0f) scPsi else null,
+        timing = timing,
+        afr = if (lim.afr) afr else null,
+        limiter = if (lim.limiter && limiter < lim.limiterMax) limiter else null,
+        nitrousShot = if (lim.nitrousMax > 0f) shot else null,
+        nitrousRamp = ramp,
+        rideHeight = ride,
+        shockRate = shock,
+    )
 
     private fun changed() {
         reveal = 0f
@@ -68,6 +138,7 @@ class TuneScreen(game: PixelStrip) : MenuScreen(game) {
     }
 
     private fun nudge(p: Param, d: Int) {
+        if (p.lock != null) return say(p.lock)
         p.set((p.get() + d * p.step).coerceIn(p.min, p.max))
         changed()
     }
@@ -93,10 +164,20 @@ class TuneScreen(game: PixelStrip) : MenuScreen(game) {
     private fun apply(t: Tune?) {
         val g = t?.gears?.takeIf { it.size == base.size } ?: base
         g.copyInto(gears)
-        finalDrive = t?.finalDrive ?: stock.finalDrive
+        finalDrive = t?.finalDrive ?: stockFinal
         launch = t?.launchRpm ?: 0f
         nosGear = t?.nitrousGear ?: 0
         psi = t?.tirePressure ?: CarDef.STOCK_PRESSURE
+        timing = t?.timing ?: 0f
+        afr = t?.afr ?: built.afr
+        limiter = t?.limiter ?: lim.limiterMax
+        boost = t?.boostPsi ?: built.boostPsi
+        scPsi = t?.scPsi ?: (lim.scMax * 0.8f)
+        for (i in byGear.indices) byGear[i] = t?.boostByGear?.getOrNull(i) ?: 1f
+        shot = t?.nitrousShot ?: lim.nitrousMax
+        ramp = t?.nitrousRamp ?: 0.6f
+        ride = t?.rideHeight ?: 0f
+        shock = t?.shockRate ?: 0.5f
         changed()
     }
 
@@ -117,7 +198,7 @@ class TuneScreen(game: PixelStrip) : MenuScreen(game) {
     }
 
     private fun shareCode() {
-        val code = TuneCode.encode(owned.carId, draft(), base.size, stock.finalDrive)
+        val code = TuneCode.encode(owned.carId, draft(), base.size, stockFinal)
         Gdx.app.clipboard.contents = code
         say(code)
     }
@@ -141,19 +222,26 @@ class TuneScreen(game: PixelStrip) : MenuScreen(game) {
 
     // --- Layout and input --------------------------------------------------------------------
 
-    private fun rowY(h: Int, i: Int) = h - 70f - i * 15f
+    private fun rowY(h: Int, i: Int) = h - 88f - i * 15f
     private fun trackX() = 128f
     private val trackW = 68f
 
     override fun layout(w: Int, h: Int) {
-        params.indices.forEach { i ->
-            minus[i].apply { x = 94f; y = rowY(h, i) - 3f; this.w = 14f; this.h = 12f }
-            plus[i].apply { x = 110f; y = rowY(h, i) - 3f; this.w = 14f; this.h = 12f }
+        minus.indices.forEach { i ->
+            val show = i < params.size && params[i].lock == null
+            minus[i].apply { visible = show; x = 94f; y = rowY(h, i) - 3f; this.w = 14f; this.h = 12f }
+            plus[i].apply { visible = show; x = 110f; y = rowY(h, i) - 3f; this.w = 14f; this.h = 12f }
         }
-        var x = 8f
+        var px = 8f
+        pageButtons.forEachIndexed { i, b ->
+            b.w = font.width(pages[i]) + 10f; b.h = 14f; b.x = px; b.y = h - 70f
+            px += b.w + 3f
+            b.face.set(if (i == page) PINK else BTN_PURPLE)
+        }
+        var sx = 8f
         slots.forEachIndexed { i, b ->
-            b.x = x; b.y = 36f; b.w = if (i == 0) 44f else 20f; b.h = 16f
-            x += b.w + 3f
+            b.x = sx; b.y = 36f; b.w = if (i == 0) 44f else 20f; b.h = 16f
+            sx += b.w + 3f
             val active = owned.activeTune == i - 1
             b.face.set(if (active) PINK else if (i > 0 && owned.tunes.getOrNull(i - 1) == null) BTN_GREY else BTN_PURPLE)
         }
@@ -174,6 +262,7 @@ class TuneScreen(game: PixelStrip) : MenuScreen(game) {
             val tx = post.toBufferX(Gdx.input.getX(p))
             val ty = post.toBufferY(Gdx.input.getY(p))
             params.forEachIndexed { i, prm ->
+                if (prm.lock != null) return@forEachIndexed
                 val y = rowY(post.height, i)
                 if (tx in trackX() - 3f..trackX() + trackW + 3f && ty in y - 4f..y + 9f) {
                     val t = ((tx - trackX()) / trackW).coerceIn(0f, 1f)
@@ -187,7 +276,7 @@ class TuneScreen(game: PixelStrip) : MenuScreen(game) {
             }
         }
         // sparks fly off each shift point once the chart has drawn in
-        if (reveal >= 1f && MathUtils.random() < 0.25f && shiftDrops.isNotEmpty()) {
+        if (reveal >= 1f && MathUtils.random() < 0.25f && shiftDrops.isNotEmpty() && pages[page] in GEAR_PAGES) {
             val (x, y) = shiftDrops[MathUtils.random(shiftDrops.size - 1)]
             repeat(3) { sparks.add(floatArrayOf(x, y, MathUtils.random(-40f, 40f), MathUtils.random(10f, 60f), 0.5f)) }
         }
@@ -199,7 +288,7 @@ class TuneScreen(game: PixelStrip) : MenuScreen(game) {
 
     private var shiftDrops: List<Pair<Float, Float>> = emptyList()
 
-    private fun chartRect(w: Int, h: Int) = floatArrayOf(206f, 62f, w - 214f, h - 120f)
+    private fun chartRect(w: Int, h: Int) = floatArrayOf(206f, 62f, w - 214f, h - 142f)
 
     private fun drawChart(w: Int, h: Int, glow: Boolean) {
         val def = game.effectiveWith(owned.carId, owned.parts, owned.cosmetics, draft())
@@ -282,6 +371,51 @@ class TuneScreen(game: PixelStrip) : MenuScreen(game) {
 
     private data class Quad(val a: Float, val b: Float, val c: Float, val d: Float)
 
+    // --- Power chart (engine, boost and nitrous pages) ------------------------------------------
+
+    /** Horsepower and torque across the rev range as tuned, knock- or fuel-limited stretches in red. */
+    private fun drawPower(w: Int, h: Int, glow: Boolean) {
+        val def = game.effectiveWith(owned.carId, owned.parts, owned.cosmetics, draft())
+        val (cx, cy, cw, ch) = chartRect(w, h).let { Quad(it[0], it[1], it[2], it[3]) }
+        val rMax = def.redline * 1.05f
+        val why = arrayOf(DragMath.Limit.NONE)
+        val n = cw.toInt()
+        val hp = FloatArray(n)
+        val tq = FloatArray(n)
+        val held = BooleanArray(n)
+        var top = 1f
+        for (i in 0 until n) {
+            val r = def.idleRpm + (rMax - def.idleRpm) * i / (n - 1)
+            if (r > def.redline) continue
+            var t = DragMath.crankTorque(def, r, why)
+            if (pages[page] == "NITROUS" && def.nitrous.hp > 0f) {
+                t = DragMath.limit(def, r, DragMath.torqueAt(def, r), t + def.nitrous.hp * 745.7f / (maxOf(r, 2800f) * 0.10471976f), why)
+            }
+            tq[i] = t
+            hp[i] = t * r / 7127f
+            held[i] = why[0] != DragMath.Limit.NONE
+            top = maxOf(top, hp[i], tq[i] * 0.74f)
+        }
+        if (!glow) panel(cx - 4f, cy - 14f, cw + 8f, ch + 22f, CYAN, 0.86f)
+        val shown = (n * reveal).toInt()
+        for (i in 0 until shown) {
+            if (hp[i] <= 0f) continue
+            val x = cx + i
+            batch.color = if (held[i]) RED else PINK
+            batch.draw(white, x, floor(cy + hp[i] / top * ch), 1f, 2f)
+            batch.color = ORANGE
+            batch.draw(white, x, floor(cy + tq[i] * 0.74f / top * ch), 1f, 1f)
+        }
+        batch.color = Color.WHITE
+        if (!glow) {
+            val peak = hp.max()
+            font.draw(batch, "${peak.toInt()} HP", cx + 4f, cy + ch - 2f, PINK, 1, null)
+            font.draw(batch, "${tq.max().toInt()} NM", cx + 4f, cy + ch - 12f, ORANGE, 1, null)
+            if (held.any { it }) font.draw(batch, if (why[0] == DragMath.Limit.FUEL) "LEAN: FUEL LIMIT" else "KNOCK: TIMING PULLED", cx + 4f, cy + ch - 22f, RED, 1, null)
+            font.draw(batch, "RPM", cx + cw - font.width("RPM"), cy - 11f, SOFT, 1, null)
+        }
+    }
+
     // --- Passes ------------------------------------------------------------------------------
 
     override fun drawScene(w: Int, h: Int) {
@@ -291,7 +425,7 @@ class TuneScreen(game: PixelStrip) : MenuScreen(game) {
         batch.color = Color.WHITE
     }
 
-    override fun drawGlow(w: Int, h: Int) = drawChart(w, h, glow = true)
+    override fun drawGlow(w: Int, h: Int) = if (pages[page] in GEAR_PAGES) drawChart(w, h, glow = true) else drawPower(w, h, glow = true)
 
     override fun drawUi(w: Int, h: Int) {
         font.draw(batch, "TUNING", 8f, h - 24f, PINK, 2)
@@ -299,17 +433,21 @@ class TuneScreen(game: PixelStrip) : MenuScreen(game) {
         cash(w - 8f, h - 20f)
         params.forEachIndexed { i, p ->
             val y = rowY(h, i)
-            font.draw(batch, p.label, 8f, y, SOFT, 1, null)
+            font.draw(batch, p.label, 8f, y, if (p.lock != null) DIM else SOFT, 1, null)
+            if (p.lock != null) {
+                font.draw(batch, p.lock, 60f, y, DIM, 1, null)
+                return@forEachIndexed
+            }
             font.draw(batch, p.fmt(p.get()), 52f, y, Color.WHITE, 1, null)
             // slider track and knob
             batch.setColor(0.15f, 0.12f, 0.25f, 1f)
             batch.draw(white, trackX(), y + 2f, trackW, 3f)
             val t = ((p.get() - p.min) / (p.max - p.min)).coerceIn(0f, 1f)
-            batch.color = if (i < base.size) GEAR_COLORS[i % GEAR_COLORS.size] else YELLOW
+            batch.color = if (pages[page] == "GEARS" && i < base.size) GEAR_COLORS[i % GEAR_COLORS.size] else YELLOW
             batch.draw(white, floor(trackX() + t * (trackW - 3f)), y, 3f, 7f)
             batch.color = Color.WHITE
         }
-        drawChart(w, h, glow = false)
+        if (pages[page] in GEAR_PAGES) drawChart(w, h, glow = false) else drawPower(w, h, glow = false)
         val def = game.effectiveWith(owned.carId, owned.parts, owned.cosmetics, draft())
         val now = DragMath.perfectPass(def)
         val stockPass = DragMath.perfectPass(game.effectiveWith(owned.carId, owned.parts, owned.cosmetics, null))
@@ -326,6 +464,9 @@ class TuneScreen(game: PixelStrip) : MenuScreen(game) {
 
     companion object {
         const val MAX_PRESETS = 4
+        const val MAX_ROWS = 8
+        val GEAR_PAGES = setOf("GEARS", "CHASSIS")
+        val DIM = Color(0.42f, 0.4f, 0.55f, 1f)
         val GEAR_COLORS = arrayOf(
             Color(1f, 0.37f, 0.68f, 1f), Color(1f, 0.6f, 0.24f, 1f), Color(1f, 0.91f, 0.56f, 1f),
             Color(0.58f, 0.84f, 0.42f, 1f), Color(0.49f, 0.95f, 0.86f, 1f), Color(0.45f, 0.6f, 1f, 1f),

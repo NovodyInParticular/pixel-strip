@@ -63,6 +63,25 @@ class PixelStrip(val platform: Platform, val shots: ShotPlan? = null, private va
 
     fun now() = System.currentTimeMillis()
 
+    /**
+     * Old four-tier builds become the new parts (data/parts_migration.json). Nothing old was ever
+     * checked by a server, so the converted save goes up once as a snapshot (legacy import).
+     */
+    private fun migrateParts() {
+        val m = io.github.novodyinparticular.pixelstrip.data.PartsMigration(com.badlogic.gdx.utils.JsonReader().parse(Gdx.files.internal("data/parts_migration.json")))
+        for (c in save.cars) {
+            val next = m.convert(c.parts, c.cosmetics.remove("kit") ?: 0, parts, car(c.carId).drivetrain, c.carId)
+            c.parts.clear()
+            c.parts.putAll(next)
+            c.owned.clear()
+            for ((k, v) in next) c.owned[k] = 1 shl v
+        }
+        save.pending.clear()
+        save.legacy = true
+        save.oldParts = false
+        save.write()
+    }
+
     private val carCache = HashMap<String, CarDef>()
 
     private val effectiveCache = HashMap<String, CarDef>()
@@ -74,7 +93,7 @@ class PixelStrip(val platform: Platform, val shots: ShotPlan? = null, private va
     fun effectiveWith(carId: String, parts: Map<String, Int>, cosmetics: Map<String, Int>, tune: Tune?): CarDef {
         val key = buildString {
             append(carId).append('|').append(parts.toSortedMap()).append('|').append(cosmetics.toSortedMap()).append('|')
-            tune?.let { append(it.gears?.contentToString()).append(it.finalDrive).append(it.launchRpm).append(it.nitrousGear).append(it.tirePressure) }
+            tune?.let { append(it.copy(name = "", gears = null, boostByGear = null)).append(it.gears?.contentToString()).append(it.boostByGear?.contentToString()) }
         }
         return effectiveCache.getOrPut(key) { Upgrades.apply(car(carId), this.parts, parts, cosmetics, tune) }
     }
@@ -101,13 +120,16 @@ class PixelStrip(val platform: Platform, val shots: ShotPlan? = null, private va
         rules = io.github.novodyinparticular.pixelstrip.save.Rules.parse(Gdx.files.internal(io.github.novodyinparticular.pixelstrip.save.Rules.PATH).readString())
         // Screenshot runs never touch the real save
         save = SaveGame.load(platform.saveFile(if (shots != null) "save-shots.json" else "save.json"))
+        if (save.oldParts) migrateParts()
         if (shots != null) {
             save.cars.clear()
             save.cash = 250_000
             val c = save.addCar(startCar ?: "vandal", car(startCar ?: "vandal").defaultPaint)
             if (shots.loaded) {
-                parts.slots.filter { it.id != "turbo" }.forEach { c.parts[it.id] = it.tiers.size }
-                c.cosmetics.putAll(mapOf("wing" to 3, "kit" to 2, "rims" to 4, "underglow" to 2, "finish" to 4, "decal" to 2, "decalColor" to 6))
+                // a pro-mod blower build: the top option everywhere except turbo, plus tubs for the slicks
+                for (s in parts.slots) if (s.id != "turbo" && s.id != "final") c.parts[s.id] = s.options.size - 1
+                if (car(c.carId).drivetrain != "RWD") { c.parts.remove("bars"); c.parts.remove("wheeliebars") }
+                c.cosmetics.putAll(mapOf("wing" to 3, "rims" to 4, "underglow" to 2, "finish" to 4, "decal" to 2, "decalColor" to 6, "tint" to 1))
             }
         }
         cloud = io.github.novodyinparticular.pixelstrip.net.Cloud(this, enabled = shots == null || System.getProperty("pixelstrip.emulator") != null)

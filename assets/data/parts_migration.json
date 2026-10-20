@@ -1,0 +1,20 @@
+{
+ "_doc": "Old (parts.json v1) slot -> tier 1..4 -> new parts. Used to convert saves (core PartsMigration) and career builds (tools/migrate_career.py). Cosmetic 'kit' moved to body parts.",
+ "intake":       [{"intake": 1}, {"intake": 1, "throttle": 1}, {"intake": 2, "throttle": 1, "manifold": 1}, {"intake": 2, "throttle": 2, "manifold": 3}],
+ "exhaust":      [{"exhaust": 1}, {"exhaust": 1, "headers": 1}, {"exhaust": 2, "headers": 2}, {"exhaust": 3, "headers": 2}],
+ "cams":         [{"cams": 1}, {"cams": 2}, {"cams": 2, "heads": 1}, {"cams": 3, "heads": 2}],
+ "ecu":          [{"ecu": 1}, {"ecu": 2}, {"ecu": 2, "fuel": 1}, {"ecu": 3, "fuel": 2}],
+ "swap":         [{"swap": 1}, {"swap": 1, "internals": 1}, {"swap": 2}, {"swap": 3}],
+ "turbo":        [{"turbo": 1}, {"turbo": 2, "intercooler": 2, "boostctl": 1}, {"turbo": 3, "intercooler": 2, "boostctl": 1, "internals": 1, "fuel": 2},
+                  {"turbo": 4, "intercooler": 3, "boostctl": 2, "internals": 2, "fuel": 3, "fueltype": 2, "bov": 1}],
+ "supercharger": [{"supercharger": 3}, {"supercharger": 2}, {"supercharger": 1, "fuel": 1}, {"supercharger": 4, "internals": 1, "fuel": 2}],
+ "nitrous":      [{"nitrous": 1}, {"nitrous": 2, "bottle": 1}, {"nitrous": 2, "bottle": 1, "nosctl": 1}, {"nitrous": 3, "bottle": 2, "nosctl": 1}],
+ "clutch":       [{"clutch": 1}, {"clutch": 2}, {"clutch": 3}, {"clutch": 4}],
+ "gearbox":      [{"gearbox": 1}, {"gearbox": 2}, {"gearbox": 3}, {"gearbox": 4}],
+ "lsd":          [{"diff": 1}, {"diff": 2}, {"diff": 2, "bars": 1}, {"diff": 3, "bars": 2}],
+ "final":        [{"final": 4}, {"final": 4}, {"final": 4}, {"final": 4}],
+ "tires":        [{"tires": 1}, {"tires": 2}, {"tires": 4, "tubs": 1}, {"tires": 4, "tubs": 1, "wheels": 2}],
+ "weight":       [{"interior": 1}, {"interior": 1, "panels": 1, "glass": 1}, {"interior": 2, "panels": 2, "glass": 1, "battery": 1},
+                  {"interior": 2, "panels": 3, "glass": 2, "battery": 2}],
+ "kit":          [{"bumper": 2, "skirts": 1, "rear": 1}, {"bumper": 3, "skirts": 2, "rear": 2}]
+}

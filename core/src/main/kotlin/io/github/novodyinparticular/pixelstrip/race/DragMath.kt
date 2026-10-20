@@ -7,15 +7,65 @@ import kotlin.math.PI
 object DragMath {
     private val launchCache = HashMap<Pair<CarDef, Float>, Float>()
 
-    /** Torque (Nm) at an RPM: rises to the peak, holds toward peak power, falls past it. */
-    fun torqueAt(def: CarDef, r: Float): Float = rawTorque(def, r) * def.ratingFactor
+    /** Naturally aspirated torque (Nm) at an RPM: the stock curve, reshaped by the parts' torque bands. */
+    fun torqueAt(def: CarDef, r: Float): Float = rawTorque(def, r) * def.ratingFactor * band(def, r) * def.powerMult
 
-    /** Full-throttle crank torque as the dyno sees it: supercharger, and the turbo at steady-state boost. */
-    fun crankTorque(def: CarDef, r: Float): Float {
-        var t = torqueAt(def, r)
-        if (def.blowerGain > 0f) t *= 1f + def.blowerGain * (0.75f + 0.25f * r / def.redline)
-        if (def.boostGain > 0f) t *= 1f + def.boostGain * ((r - def.boostSpoolRpm) / Vehicle.BOOST_RANGE_RPM).coerceIn(0f, 1f)
+    /** Torque share the parts add at [r]: idle -> torque peak -> power peak, flat past it. */
+    fun band(def: CarDef, r: Float): Float {
+        val add = when {
+            r <= def.idleRpm -> def.bandLo
+            r <= def.peakTorqueRpm -> def.bandLo + (def.bandMid - def.bandLo) * (r - def.idleRpm) / (def.peakTorqueRpm - def.idleRpm)
+            r <= def.peakHpRpm -> def.bandMid + (def.bandHi - def.bandMid) * (r - def.peakTorqueRpm) / (def.peakHpRpm - def.peakTorqueRpm)
+            else -> def.bandHi
+        }
+        return (1f + add).coerceAtLeast(0.3f)
+    }
+
+    /** Supercharger torque share at [r]: roots fades up top, twin-screw holds, centrifugal builds with rpm. */
+    fun blower(def: CarDef, r: Float): Float {
+        val t = (r / def.redline).coerceIn(0f, 1f)
+        return def.blowerGain * when (def.blowerType) {
+            1 -> 1.05f - 0.25f * t
+            2 -> 0.95f + 0.05f * t
+            3 -> t * t
+            else -> 0.75f + 0.25f * t
+        }
+    }
+
+    /** Why the last [limit] call held the engine back. */
+    enum class Limit { NONE, KNOCK, FUEL }
+
+    /**
+     * Caps [total] crank torque at [r] when the boost/nitrous on top of [na] (the engine on its
+     * own) is past the knock limit (the ECU pulls timing, costing a little extra), or when the fuel
+     * system can't feed the power.
+     */
+    fun limit(def: CarDef, r: Float, na: Float, total: Float, why: Array<Limit>? = null): Float {
+        var t = total
+        var reason = Limit.NONE
+        if (na > 0f && t > na * def.knockLimit) {
+            t = na * def.knockLimit * KNOCK_RETARD
+            reason = Limit.KNOCK
+        }
+        val fuelT = def.fuelHp * Vehicle.HP_TO_W / (maxOf(r, 1000f) * Vehicle.RPM_TO_RAD)
+        if (t > fuelT) {
+            t = fuelT * LEAN_CUT
+            reason = Limit.FUEL
+        }
+        why?.set(0, reason)
         return t
+    }
+
+    const val KNOCK_RETARD = 0.97f
+    const val LEAN_CUT = 0.97f
+
+    /** Full-throttle crank torque as the dyno sees it: blower, turbo at steady-state boost, knock and fuel limits. */
+    fun crankTorque(def: CarDef, r: Float, why: Array<Limit>? = null): Float {
+        val na = torqueAt(def, r)
+        var t = na
+        if (def.blowerGain > 0f) t *= 1f + blower(def, r)
+        if (def.boostGain > 0f) t *= 1f + def.boostGain * ((r - def.boostSpoolRpm) / Vehicle.BOOST_RANGE_RPM).coerceIn(0f, 1f)
+        return limit(def, r, na, t, why)
     }
 
     /** Wheel horsepower at an RPM. */

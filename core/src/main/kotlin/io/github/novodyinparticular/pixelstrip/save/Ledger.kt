@@ -7,7 +7,7 @@ import com.badlogic.gdx.utils.JsonValue
  * the server replays the queue with the same rules (server/functions/src/ledger.ts) and its
  * result wins. [t] is the client clock in ms.
  *
- * Types: start(car), buy(car), part(uid, slot), look(uid, slot = cosmetic id),
+ * Types: start(car), buy(car), part(uid, slot, opt), look(uid, slot = cosmetic id, opt = style or -1 for the next),
  * paint(uid, paint = [colour, finish, decal, decal colour]), sell(uid), race(uid, rival, won, pink).
  */
 class Entry(
@@ -20,6 +20,8 @@ class Entry(
     val won: Boolean = false,
     val pink: Boolean = false,
     val paint: List<Int>? = null,
+    /** part: the option to fit (bought first if this car doesn't own it). */
+    val opt: Int = -1,
 ) {
     fun toJson(): JsonValue {
         val o = JsonValue(JsonValue.ValueType.`object`)
@@ -33,6 +35,7 @@ class Entry(
             o.addChild("won", JsonValue(won))
             o.addChild("pink", JsonValue(pink))
         }
+        if (opt >= 0) o.addChild("opt", JsonValue(opt.toLong()))
         paint?.let { p -> o.addChild("paint", JsonValue(JsonValue.ValueType.array).also { a -> p.forEach { a.addChild(JsonValue(it.toLong())) } }) }
         return o
     }
@@ -41,22 +44,37 @@ class Entry(
         fun from(o: JsonValue) = Entry(
             o.getString("type"), o.getLong("t", 0),
             o.getString("car", null), o.getString("uid", null), o.getString("slot", null), o.getString("rival", null),
-            o.getBoolean("won", false), o.getBoolean("pink", false), o.get("paint")?.asIntArray()?.toList(),
+            o.getBoolean("won", false), o.getBoolean("pink", false), o.get("paint")?.asIntArray()?.toList(), o.getInt("opt", -1),
         )
     }
 }
 
 /** The rules every [Entry] is checked against. Mirrors server/functions/src/ledger.ts exactly. */
 object Ledger {
-    /** What the dealer pays for [car]: its resale price plus a share of every part tier fitted. */
+    /** What the dealer pays for [car]: its resale price plus a share of every part bought for it. */
     fun saleValue(r: Rules, car: OwnedCar): Long {
         val rule = r.cars[car.carId] ?: return 0
         var parts = 0L
-        for ((slot, tier) in car.parts) {
+        for ((slot, bits) in car.owned) {
             val prices = rule.parts[slot] ?: continue
-            for (i in 0 until tier.coerceAtMost(prices.size)) parts += prices[i]
+            for (i in prices.indices) if (bits and (1 shl (i + 1)) != 0) parts += prices[i]
         }
         return rule.sell + parts * r.resalePercent / 100
+    }
+
+    /** Every fitted option's requirements are met and it suits the drivetrain. */
+    fun buildValid(r: Rules, carId: String, parts: Map<String, Int>): Boolean {
+        val drivetrain = r.cars[carId]?.drivetrain ?: return false
+        for ((slot, opt) in parts) {
+            if (opt == 0) continue
+            val s = r.slots[slot] ?: return false
+            if (opt !in 1 until s.options) return false
+            if (opt in s.rwdOnly && drivetrain != "RWD") return false
+            s.carOnly[opt]?.let { if (carId !in it) return false }
+            val need = s.requires[opt] ?: continue
+            if (need.none { (ns, min) -> (parts[ns] ?: 0) >= min }) return false
+        }
+        return true
     }
 
     fun paintCost(r: Rules, car: OwnedCar, p: List<Int>): Long {
@@ -93,21 +111,28 @@ object Ledger {
             }
             "part" -> {
                 car ?: return false
-                val slot = r.slots[e.slot] ?: return false
-                val tier = (car.parts[e.slot] ?: 0) + 1
-                if (tier > slot.tiers) return false
-                val price = r.cars[car.carId]?.parts?.get(e.slot)?.getOrNull(tier - 1) ?: return false
+                val id = e.slot ?: return false
+                val slot = r.slots[id] ?: return false
+                if (e.opt !in 0 until slot.options || e.opt == (car.parts[id] ?: 0)) return false
+                val next = HashMap(car.parts)
+                if (e.opt == 0) next.remove(id) else next[id] = e.opt
+                if (e.opt > 0) slot.excludes.forEach { next.remove(it) }
+                if (!buildValid(r, car.carId, next)) return false
+                val price = if (car.owns(id, e.opt)) 0L else r.cars[car.carId]?.parts?.get(id)?.getOrNull(e.opt - 1) ?: return false
                 if (s.cash < price) return false
                 s.cash -= price
-                car.parts[e.slot!!] = tier
-                slot.excludes.forEach { car.parts.remove(it) }
+                if (e.opt > 0) car.owned[id] = (car.owned[id] ?: 0) or (1 shl e.opt)
+                car.parts.clear()
+                car.parts.putAll(next)
             }
             "look" -> {
                 car ?: return false
                 val cos = r.cosmetics[e.slot] ?: return false
+                val style = if (e.opt >= 0) e.opt else ((car.cosmetics[e.slot] ?: 0) + 1) % cos.styles
+                if (style >= cos.styles || style == (car.cosmetics[e.slot] ?: 0)) return false
                 if (s.cash < cos.price) return false
                 s.cash -= cos.price
-                car.cosmetics[e.slot!!] = ((car.cosmetics[e.slot] ?: 0) + 1) % cos.styles
+                car.cosmetics[e.slot!!] = style
             }
             "paint" -> {
                 car ?: return false
@@ -145,6 +170,7 @@ object Ledger {
                 if (rival.boss && first || e.pink) {
                     val prize = s.addCar(rival.car, rival.paint)
                     prize.parts.putAll(rival.parts)
+                    for ((k, v) in rival.parts) if (v > 0) prize.owned[k] = 1 shl v
                     prize.cosmetics.putAll(rival.cosmetics)
                 }
             }

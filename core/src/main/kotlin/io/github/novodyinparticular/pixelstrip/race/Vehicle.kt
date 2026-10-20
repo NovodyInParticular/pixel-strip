@@ -86,6 +86,11 @@ class Vehicle(val def: CarDef, private val powerScale: Float = 1f) {
     /** Turbo boost 0..1: spools up with RPM and time. */
     var boost = 0f
         private set
+    /** Why the engine is being held back right now (for the HUD and the dyno). */
+    val held = arrayOf(DragMath.Limit.NONE)
+    private var nitrousOn = 0f
+    /** Weight transfer arrives through the springs and shocks, not instantly. */
+    private var transferAccel = 0f
 
     private val mass get() = def.weightKg
     private val ratio get() = def.gears[gear] * def.finalDrive
@@ -187,7 +192,7 @@ class Vehicle(val def: CarDef, private val powerScale: Float = 1f) {
 
     private fun tempGrip(): Float {
         val t = tireTemp
-        val bell = 1f - ((t - 0.78f) / 0.4f).let { it * it }
+        val bell = 1f - ((t - def.tireWarm) / 0.4f).let { it * it }
         val hot = if (t > 1.1f) (t - 1.1f) * 0.6f else 0f
         return 1f + 0.12f * max(0f, bell) - hot
     }
@@ -210,13 +215,16 @@ class Vehicle(val def: CarDef, private val powerScale: Float = 1f) {
             limiterTimer -= dt
             return -friction(rpm)
         }
-        var t = torqueAt(rpm) * throttle * (if (bog) bogFactor() else 1f)
-        if (nitrousActive && throttle > 0f) {
-            val w = max(rpm, NITROUS_MIN_RPM) * RPM_TO_RAD
-            t += def.nitrous.hp * HP_TO_W / w
-        }
-        if (def.blowerGain > 0f) t *= 1f + def.blowerGain * (0.75f + 0.25f * rpm / def.redline)
+        val na = torqueAt(rpm) * (if (bog) bogFactor() else 1f)
+        var t = na
+        if (def.blowerGain > 0f) t *= 1f + DragMath.blower(def, rpm)
         if (def.boostGain > 0f) t *= 1f + def.boostGain * boost
+        if (nitrousActive) {
+            // a progressive controller brings the shot in over nitrousRamp seconds
+            nitrousOn = if (def.nitrousRamp > 0f) min(1f, nitrousOn + dt / def.nitrousRamp) else 1f
+            t += def.nitrous.hp * nitrousOn * HP_TO_W / (max(rpm, NITROUS_MIN_RPM) * RPM_TO_RAD)
+        } else nitrousOn = 0f
+        t = DragMath.limit(def, rpm, na, t, held) * throttle
         if (bonusTimer > 0f) t *= 1f + PERFECT_BONUS
         // Published torque is already net of friction; it only shows up as engine braking off-throttle
         return t - friction(rpm) * (1f - throttle)
@@ -224,9 +232,9 @@ class Vehicle(val def: CarDef, private val powerScale: Float = 1f) {
 
     private fun driveLoad(): Float {
         val g = mass * GRAVITY
-        val transfer = mass * accel * def.cgHeightM / def.wheelbaseM
+        val transfer = mass * transferAccel * def.cgHeightM / def.wheelbaseM * def.transferMult
         val front = g * (1f - def.rearWeight) - transfer
-        wheelie = if (front < 0f) min(1f, -front / g * 3f) else 0f
+        wheelie = if (front < 0f) min(if (def.wheelieBars) WHEELIE_BAR_LIFT else 1f, -front / g * 3f) else 0f
         return when (def.drivetrain) {
             "AWD" -> g
             "FWD" -> max(g * 0.15f, front)
@@ -245,13 +253,21 @@ class Vehicle(val def: CarDef, private val powerScale: Float = 1f) {
 
     private fun spool(dt: Float) {
         if (def.boostGain <= 0f) return
-        val target = ((rpm - def.boostSpoolRpm) / BOOST_RANGE_RPM).coerceIn(0f, 1f) * throttle
+        var target = ((rpm - def.boostSpoolRpm) / BOOST_RANGE_RPM).coerceIn(0f, 1f) * throttle
+        def.boostByGear?.getOrNull(gear)?.let { target *= it.coerceIn(0.2f, 1f) }
+        // anti-lag on the two-step builds boost on the line; without a blow-off valve a shift dumps it
+        if (mode == Mode.HELD && def.antiLag && throttle > 0f) target = max(target, ANTI_LAG_BOOST)
+        if (mode == Mode.SHIFT) {
+            boost *= if (def.blowOff) 1f - dt * 0.4f else 1f - min(1f, dt * 6f)
+            return
+        }
         val rate = if (target > boost) dt / def.boostLag else dt * 3f      // blow-off: boost drops fast
         boost += (target - boost) * minOf(1f, rate * 3f)
     }
 
     fun step(dt: Float) {
         clock += dt
+        transferAccel += (accel - transferAccel) * min(1f, dt * def.transferRate / TRANSFER_TAU)
         spool(dt)
         if (def.nitrousAutoGear > 0 && hasLeft && mode == Mode.DRIVE && gear + 1 >= def.nitrousAutoGear) nitrous()
         if (nitrousActive) {
@@ -337,6 +353,8 @@ class Vehicle(val def: CarDef, private val powerScale: Float = 1f) {
         val share = if (spinning) gripShare(slipRatio(max(0f, driveW * tireR - v))) else 1f
         feather = if (spinning) max(ideal * share * 0.85f, feather - dt * FEATHER_DROP)
         else min(min(1f, ideal * 1.04f), feather + dt * FEATHER_RISE)
+        // Without wheelie bars a big wheelie makes the driver lift
+        if (!def.wheelieBars && wheelie > WHEELIE_LIFT) feather = min(feather, 1f - (wheelie - WHEELIE_LIFT) * 1.2f)
         val axleT = fullT * feather
         val driveF = axleT / tireR
         val inertia = def.wheelInertia + def.engineInertia * ratio * ratio
@@ -433,5 +451,9 @@ class Vehicle(val def: CarDef, private val powerScale: Float = 1f) {
         const val NITROUS_MIN_RPM = 2800f
         const val PERFECT_BONUS = 0.06f
         const val PERFECT_BONUS_S = 0.6f
+        const val ANTI_LAG_BOOST = 0.6f
+        const val TRANSFER_TAU = 0.06f
+        const val WHEELIE_LIFT = 0.35f
+        const val WHEELIE_BAR_LIFT = 0.18f
     }
 }
