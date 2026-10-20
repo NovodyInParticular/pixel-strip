@@ -119,12 +119,24 @@ class CarRenderer(val def: CarDef, private val art: Art, private val paint: Shad
         paint.setUniformf("u_ghost", ghost)
         paint.setUniformf("u_time", time)
         paint.setUniformf("u_shine", shine)
+        paint.setUniformf("u_finish", if (ghost > 0f) 0f else looks.finish.toFloat())
         paint.setUniformf("u_ambient", ambient.r, ambient.g, ambient.b)
         paint.setUniformf("u_specPower", SPEC_POWER)
         paint.setUniformf("u_specStrength", SPEC_STRENGTH)
         if (lights != null) lights.apply(paint, shakeX, shakeY) else paint.setUniformi("u_lightCount", 0)
         batch.draw(bodyRegion, bx, by + lift, ox, oy, s.width.toFloat(), s.height.toFloat(), 1f, 1f, pitch)
         looks.kit?.let { batch.draw(layer("kit_$it"), bx, by + lift, ox, oy, s.width.toFloat(), s.height.toFloat(), 1f, 1f, pitch) }
+        if (ghost <= 0f) looks.decal?.let { d ->
+            batch.shader = tint
+            tint.setUniformf("u_ghost", 0f)
+            tint.setUniformf("u_lit", if (lights != null) 0.4f else 0f)
+            if (lights != null) lights.apply(tint, shakeX, shakeY)
+            val c = looks.decalColor
+            batch.setColor(c.r * ambient.r * 1.2f, c.g * ambient.g * 1.2f, c.b * ambient.b * 1.2f, 1f)
+            batch.draw(layer("decal_$d"), bx, by + lift, ox, oy, s.width.toFloat(), s.height.toFloat(), 1f, 1f, pitch)
+            batch.color = Color.WHITE
+            batch.shader = paint
+        }
         looks.wing?.let { batch.draw(layer("wing_$it"), bx, by + lift, ox, oy, s.width.toFloat(), s.height.toFloat(), 1f, 1f, pitch) }
         if (looks.scoop) batch.draw(layer("scoop"), bx, by + lift, ox, oy, s.width.toFloat(), s.height.toFloat(), 1f, 1f, pitch)
         if (lit && popupRegion != null) batch.draw(popupRegion, bx, by + lift, ox, oy, s.width.toFloat(), s.height.toFloat(), 1f, 1f, pitch)

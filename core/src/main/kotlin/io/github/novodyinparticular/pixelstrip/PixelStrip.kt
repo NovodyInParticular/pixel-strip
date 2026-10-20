@@ -83,7 +83,7 @@ class PixelStrip(val platform: Platform, val shots: ShotPlan? = null, private va
             val c = save.addCar(startCar ?: "vandal", car(startCar ?: "vandal").defaultPaint)
             if (shots.loaded) {
                 parts.slots.filter { it.id != "turbo" }.forEach { c.parts[it.id] = it.tiers.size }
-                c.cosmetics.putAll(mapOf("wing" to 3, "kit" to 2, "rims" to 4, "underglow" to 2))
+                c.cosmetics.putAll(mapOf("wing" to 3, "kit" to 2, "rims" to 4, "underglow" to 2, "finish" to 4, "decal" to 2, "decalColor" to 6))
             }
         }
         Gdx.input.setCatchKey(Input.Keys.BACK, true)
@@ -97,6 +97,7 @@ class PixelStrip(val platform: Platform, val shots: ShotPlan? = null, private va
         "settings" -> SettingsScreen(this)
         "starter" -> StarterScreen(this)
         "upgrades" -> io.github.novodyinparticular.pixelstrip.ui.UpgradeScreen(this)
+        "paint" -> io.github.novodyinparticular.pixelstrip.ui.PaintShopScreen(this)
         null -> if (shots != null) RaceScreen(this, "neon_city", save.selectedCar()!!) else TitleScreen(this)
         else -> TitleScreen(this)
     }

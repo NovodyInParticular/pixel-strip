@@ -776,6 +776,50 @@ def rim_sheets(radii):
             save(wheel_frames(prof), f"wheels/r{int(round(r * 10))}_{style}.png")
 
 
+def decal_layers(p, idx):
+    """White masks clipped to the body side; the game tints them. stripe, flames, number, checker."""
+    cw = width_of(p)
+    yr = p["rocker_y"] + PAD_Y
+    body = (idx >= 0)
+    gh = poly_mask(cw, CH, L(p["greenhouse"])) >= 0.5
+    out = {k: canvas(cw, CH) for k in ("stripe", "flames", "number", "checker")}
+    fx = p["front_wheel"][0] + PAD_X
+    rx = p["rear_wheel"][0] + PAD_X
+    num_cx = (p["glass"][0][0][0] + p["glass"][0][-1][0]) / 2 + PAD_X if p["glass"] else (rx + fx) / 2
+    num_cy = None
+    for y in range(CH):
+        for x in range(cw):
+            if not body[y, x] or (gh[y, x] and y < _interp_y(p["beltline"], x - PAD_X) + PAD_Y):
+                continue
+            lx = x - PAD_X + 0.5
+            yb = _interp_y(p["beltline"], lx) + PAD_Y
+            s_ = (y + 0.5 - yb) / max(1.0, yr - yb)
+            if 4 < lx < p["length"] - 4 and 0.3 < s_ < 0.42:
+                out["stripe"][y, x] = (255, 255, 255, 255)
+            # flames: tongues licking back from the front arch
+            back = fx + p["arch_r"] * 0.2 - x
+            if 0 < back < 42 and 0.28 < s_ < 0.92:
+                tongue = math.sin((s_ - 0.28) * 14.0) * 0.5 + 0.5
+                reach = 18 + 22 * tongue
+                if back < reach and (back < reach - 3 or bayer(x, y) > 0.5):
+                    out["flames"][y, x] = (255, 255, 255, 255)
+            if s_ > 0.82 and 3 < lx < p["length"] - 3 and ((x // 2) + (y // 2)) % 2 == 0:
+                out["checker"][y, x] = (255, 255, 255, 255)
+            if num_cy is None and abs(lx - (num_cx - PAD_X)) < 0.6 and 0.45 < s_:
+                num_cy = y + 3
+    if num_cy is not None:
+        cx = int(num_cx)
+        for y in range(num_cy - 4, num_cy + 5):
+            for x in range(cx - 4, cx + 5):
+                if 0 <= y < CH and 0 <= x < cw and body[y, x] and (x - cx) ** 2 + (y - num_cy) ** 2 <= 17:
+                    out["number"][y, x] = (255, 255, 255, 255)
+        # the number itself is cut out of the roundel: a chunky "7"
+        for dx, dy in ((-2, -2), (-1, -2), (0, -2), (1, -2), (1, -1), (0, 0), (0, 1), (-1, 2)):
+            if 0 <= num_cy + dy < CH:
+                out["number"][num_cy + dy, cx + dx] = TRANSPARENT
+    return out
+
+
 # --- Output ----------------------------------------------------------------------------------
 
 def sprite_json(p, side_exhaust=None):
@@ -823,6 +867,8 @@ def build(p):
     save(wells, f"{base}/wells.png")
     save(wheels, f"{base}/wheel.png")
     side_exhaust = looks_build(p)
+    for name, img in decal_layers(p, idx).items():
+        save(img, f"{base}/decal_{name}.png")
     with open(os.path.join(ASSETS, base, "sprite.json"), "w") as f:
         json.dump(sprite_json(p, side_exhaust), f, indent=2)
     return body, idx, trim, lights, wells, wheels, popup, pidx

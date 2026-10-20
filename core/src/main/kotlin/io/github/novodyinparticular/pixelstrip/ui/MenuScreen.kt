@@ -40,6 +40,10 @@ abstract class MenuScreen(protected val game: PixelStrip) : ScreenAdapter() {
         private set
     protected open val lut: Texture get() = art.tex("tracks/neon_city/lut.png")
     protected open val bloom = 1.4f
+    /** World zoom around (focusX, focusY) in buffer pixels; the UI layer is never zoomed. */
+    protected var zoom = 1f
+    protected var focusX = 0f
+    protected var focusY = 0f
     private var shotIndex = 0
 
     protected fun button(label: String, color: Color, big: Boolean = false, keys: IntArray = intArrayOf(), onClick: () -> Unit): Controls.Button {
@@ -116,7 +120,9 @@ abstract class MenuScreen(protected val game: PixelStrip) : ScreenAdapter() {
         post.flashColor.set(flashColor)
         post.chromatic = 0f
         post.radialBlur = 0f
-        post.zoom = 1f
+        post.zoom = zoom
+        post.focusX = if (zoom > 1f) focusX / w else 0.5f
+        post.focusY = if (zoom > 1f) focusY / h else 0.5f
         post.hazeAmp = 0f
         post.print = 0f
         post.time = time
@@ -239,7 +245,9 @@ abstract class MenuScreen(protected val game: PixelStrip) : ScreenAdapter() {
             v.paintRow = paintRow
             if (v.looks != looks) v.looks = looks
             v.update(1f / 60f, 0f, 0f)
-            v.draw(batch, floor(centerX - def.sprite.width / 2f), groundY, time, lit = lit, ambient = ambient, lights = lights)
+            // a slow shine sweep across the paint, so finishes show off in the menus
+            val sweep = (time * 0.22f) % 1f * 1.8f - 0.4f
+            v.draw(batch, floor(centerX - def.sprite.width / 2f), groundY, time, lit = lit, ambient = ambient, lights = lights, shine = sweep)
         }
 
         fun drawGlow(def: CarDef, centerX: Float, groundY: Float) =

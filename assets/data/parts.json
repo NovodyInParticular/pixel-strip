@@ -482,5 +482,94 @@
    ],
    "price": 1500
   }
- ]
+ ],
+ "paint": {
+  "colorPrice": 1500,
+  "finishes": [
+   {
+    "name": "GLOSS",
+    "price": 0
+   },
+   {
+    "name": "METALLIC",
+    "price": 2000
+   },
+   {
+    "name": "PEARL",
+    "price": 6000
+   },
+   {
+    "name": "MATTE",
+    "price": 8000
+   },
+   {
+    "name": "CANDY",
+    "price": 12000
+   }
+  ],
+  "decals": [
+   {
+    "name": "NONE",
+    "price": 0
+   },
+   {
+    "name": "STRIPE",
+    "price": 1000
+   },
+   {
+    "name": "FLAMES",
+    "price": 5000
+   },
+   {
+    "name": "NUMBER",
+    "price": 1500
+   },
+   {
+    "name": "CHECKER",
+    "price": 2500
+   }
+  ],
+  "decalColors": [
+   [
+    0.96,
+    0.95,
+    1.0
+   ],
+   [
+    0.08,
+    0.07,
+    0.12
+   ],
+   [
+    1.0,
+    0.79,
+    0.31
+   ],
+   [
+    0.94,
+    0.33,
+    0.25
+   ],
+   [
+    0.21,
+    0.78,
+    0.75
+   ],
+   [
+    0.94,
+    0.37,
+    0.68
+   ],
+   [
+    1.0,
+    0.6,
+    0.2
+   ],
+   [
+    0.58,
+    0.84,
+    0.42
+   ]
+  ]
+ }
 }

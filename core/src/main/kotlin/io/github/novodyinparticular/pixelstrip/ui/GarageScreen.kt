@@ -29,6 +29,7 @@ class GarageScreen(game: PixelStrip) : MenuScreen(game) {
     }
     private val dealer = button("DEALER", BTN_TEAL, keys = intArrayOf(Input.Keys.D)) { game.go(0) { DealerScreen(game) } }
     private val upgrades = button("UPGRADES", BTN_TEAL, keys = intArrayOf(Input.Keys.U)) { game.go(0) { UpgradeScreen(game) } }
+    private val paintShop = button("PAINT", BTN_TEAL, keys = intArrayOf(Input.Keys.P)) { game.go(0) { PaintShopScreen(game) } }
     private val settings = button("SETTINGS", BTN_PURPLE, keys = intArrayOf(Input.Keys.S)) { game.go(0) { SettingsScreen(game) } }
 
     private val owned get() = save.cars[index]
@@ -49,7 +50,8 @@ class GarageScreen(game: PixelStrip) : MenuScreen(game) {
         race.apply { x = w - 104f; y = 8f; this.w = 96f; this.h = 40f }
         dealer.apply { x = 8f; y = 8f; this.w = 70f; this.h = 22f }
         upgrades.apply { x = 84f; y = 8f; this.w = 78f; this.h = 22f; label = "UPGRADES"; visible = true }
-        settings.apply { x = 168f; y = 8f; this.w = 76f; this.h = 22f }
+        paintShop.apply { x = 168f; y = 8f; this.w = 54f; this.h = 22f }
+        settings.apply { x = 228f; y = 8f; this.w = 76f; this.h = 22f }
         prev.apply { x = w / 2f - 96f; y = 52f; this.w = 22f; this.h = 22f; visible = save.cars.size > 1 }
         next.apply { x = w / 2f + 74f; y = 52f; this.w = 22f; this.h = 22f; visible = save.cars.size > 1 }
     }

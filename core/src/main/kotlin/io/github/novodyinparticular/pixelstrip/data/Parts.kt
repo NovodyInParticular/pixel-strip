@@ -10,7 +10,14 @@ class PartCatalog(root: JsonValue) {
     class Slot(val id: String, val name: String, val group: String, val tiers: List<Tier>, val excludes: List<String>, val priceMult: Float)
     class Cosmetic(val id: String, val name: String, val styles: List<String>, val price: Int, val dragArea: FloatArray?)
 
+    class Option(val name: String, val price: Int)
+
     val tierPrices: IntArray = root.get("tierPrices").asIntArray()
+    private val paintJson = root.get("paint")
+    val colorPrice: Int = paintJson.getInt("colorPrice")
+    val finishes: List<Option> = paintJson.get("finishes").map { Option(it.getString("name"), it.getInt("price")) }
+    val decals: List<Option> = paintJson.get("decals").map { Option(it.getString("name"), it.getInt("price")) }
+    val decalColors: List<FloatArray> = paintJson.get("decalColors").map { it.asFloatArray() }
     private val classMult: Map<String, Float> = root.get("classMultiplier").associate { it.name to it.asFloat() }
     val slots: List<Slot> = root.get("slots").map { s ->
         Slot(

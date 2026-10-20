@@ -14,6 +14,9 @@ data class CarLooks(
     val sidepipe: Boolean = false,
     val rim: String? = null,           // null = the car's stock wheels
     val underglow: Color? = null,
+    val finish: Int = 0,               // 0 gloss, 1 metallic, 2 pearl, 3 matte, 4 candy
+    val decal: String? = null,         // stripe, flames, number, checker
+    val decalColor: Color = Color.WHITE,
 ) {
     companion object {
         val STOCK = CarLooks()
@@ -46,6 +49,9 @@ data class CarLooks(
                 sidepipe = "sidepipe" in visuals,
                 rim = style("rims"),
                 underglow = style("underglow")?.let { GLOW[it] },
+                finish = car.cosmetics["finish"] ?: 0,
+                decal = (car.cosmetics["decal"] ?: 0).takeIf { it > 0 }?.let { catalog.decals[it].name.lowercase() },
+                decalColor = catalog.decalColors.getOrNull(car.cosmetics["decalColor"] ?: 0)?.let { Color(it[0], it[1], it[2], 1f) } ?: Color.WHITE,
             )
         }
     }

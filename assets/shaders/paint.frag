@@ -19,11 +19,17 @@ uniform vec4 u_lightColor[8]; // rgb, a = radius in pixels
 uniform int u_lightCount;
 uniform float u_specPower;
 uniform float u_specStrength;
+uniform float u_finish;       // 0 gloss, 1 metallic, 2 pearl, 3 matte, 4 candy
+
+float hash(vec2 p) {
+    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+}
 
 void main() {
     vec4 src = texture2D(u_texture, v_uv);
     if (src.a < 0.5) discard;
     float idx = floor(src.r * 255.0 / 32.0);
+    if (u_finish > 2.5 && u_finish < 3.5) idx = floor(2.0 + idx * 0.55);   // matte: no deep shadows, no hot highlights
     vec3 paint = texture2D(u_ramps, vec2((idx + 0.5) / 8.0, u_row)).rgb;
 
     if (u_ghost > 0.0) {
@@ -53,10 +59,35 @@ void main() {
         vec3 h = normalize(l + vec3(0.0, 0.0, 1.0));
         spec += u_lightColor[i].rgb * pow(max(dot(n, h), 0.0), u_specPower) * atten;
     }
-    vec3 col = paint * (u_ambient + diffuse) + spec * u_specStrength * (0.25 + src.g);
-    if (u_shine >= 0.0) {
+    float specK = u_specStrength;
+    float sweepK = 0.55;
+    float sweepW = 0.06;
+    if (u_finish > 0.5 && u_finish < 1.5) {
+        // metallic: flakes that catch the light and twinkle
+        float flake = hash(floor(gl_FragCoord.xy) + floor(u_time * 6.0));
+        if (flake > 0.93 && idx >= 3.0) paint += vec3(0.18, 0.17, 0.15);
+        specK *= 1.3;
+        sweepK = 0.8;
+    } else if (u_finish > 1.5 && u_finish < 2.5) {
+        // pearl: the colour drifts toward a second hue in the light
+        float drift = 0.5 + 0.5 * sin(gl_FragCoord.x * 0.05 + u_time * 0.8);
+        paint = mix(paint, paint.gbr * 1.05, smoothstep(4.0, 7.0, idx) * 0.35 * drift);
+        sweepW = 0.12;
+    } else if (u_finish > 2.5 && u_finish < 3.5) {
+        specK = 0.0;
+        sweepK = 0.0;
+    } else if (u_finish > 3.5) {
+        // candy: deep, saturated colour under a hard clear-coat highlight
+        float lum = dot(paint, vec3(0.3, 0.59, 0.11));
+        paint = mix(vec3(lum), paint, 1.35) * (0.85 + 0.15 * idx / 7.0);
+        specK *= 1.8;
+        sweepK = 1.0;
+        sweepW = 0.035;
+    }
+    vec3 col = paint * (u_ambient + diffuse) + spec * specK * (0.25 + src.g);
+    if (u_shine >= 0.0 && sweepK > 0.0) {
         float sd = abs(v_uv.x - u_shine);
-        col += vec3(1.0, 0.95, 0.8) * src.g * smoothstep(0.06, 0.0, sd) * 0.55;
+        col += vec3(1.0, 0.95, 0.8) * src.g * smoothstep(sweepW, 0.0, sd) * sweepK;
     }
     gl_FragColor = vec4(col, 1.0) * v_color;
 }
