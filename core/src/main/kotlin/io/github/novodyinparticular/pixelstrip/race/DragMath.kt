@@ -60,4 +60,24 @@ object DragMath {
         while (rpm < def.peakTorqueRpm && torqueAt(def, rpm) * ratio * Vehicle.DRIVELINE_EFF / def.tireRadiusM < grip * 1.6f) rpm += 50f
         rpm.coerceIn(bogEdge, def.peakHpRpm * 0.85f)
     }
+
+    class Pass(val sixty: Float, val eighth: Float, val quarter: Float, val trapMph: Float)
+
+    private val passCache = HashMap<CarDef, Pass>()
+
+    /** A perfect driver's quarter mile on warm tyres: the basis for classes and the stat panels. */
+    fun perfectPass(def: CarDef): Pass = passCache.getOrPut(def) {
+        val car = Vehicle(def)
+        car.prime(launchRpm(def, Vehicle.DEFAULT_PREP), 0.78f)
+        car.launch(0f, rate = false)
+        car.throttle = 1f
+        var t = 0f
+        while (car.x < Vehicle.SPLITS_M[4] && t < 40f) {
+            if (car.mode == Vehicle.Mode.DRIVE && car.gear < def.gears.size - 1 && car.rpm >= car.shiftPoints[car.gear]) car.shift()
+            car.step(1f / 240f)
+            t += 1f / 240f
+        }
+        car.events.clear()
+        Pass(car.splits[0], car.splits[2], car.splits[4], car.splitSpeed[4] * 2.23694f)
+    }
 }

@@ -4,6 +4,7 @@
   "brand": "Regent",
   "year": 1987,
   "era": "80s",
+  "price": 60000,
   "hp": 300,
   "powerRating": "net",
   "peakHpRpm": 4400,

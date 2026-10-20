@@ -26,6 +26,17 @@ uniform float u_print;
 uniform float u_crt;
 uniform float u_flash;
 uniform vec3 u_flashColor;
+uniform float u_transition;    // 0 = clear, 1 = fully covered
+uniform float u_transKind;     // 0 pixel dissolve, 1 diagonal wipe, 2 garage door
+
+float bayer2(vec2 a) {
+    a = floor(a);
+    return fract(a.x / 2.0 + a.y * a.y * 0.75);
+}
+
+float bayer4(vec2 a) {
+    return bayer2(0.5 * a) * 0.25 + bayer2(a);
+}
 
 vec2 curve(vec2 uv) {
     uv = uv * 2.0 - 1.0;
@@ -111,6 +122,29 @@ void main() {
     vec4 ui = sharp(u_ui, uv);
     col = col * (1.0 - ui.a) + ui.rgb;
     col = mix(col, u_flashColor, u_flash);
+
+    if (u_transition > 0.0) {
+        vec2 px = floor(v_uv * u_src);
+        if (u_transKind < 0.5) {
+            // ordered dither, in 4x4 source-pixel blocks
+            vec2 b = floor(px / 4.0);
+            if (u_transition > bayer4(b)) col = vec3(0.03, 0.02, 0.07);
+        } else if (u_transKind < 1.5) {
+            float d = (px.x + px.y * 0.6) / (u_src.x + u_src.y * 0.6);
+            if (d < u_transition * 1.15 - 0.1) col = vec3(0.03, 0.02, 0.07);
+            else if (d < u_transition * 1.15 - 0.07) col = vec3(0.94, 0.37, 0.68);
+        } else {
+            // roll-up door coming down from the top: steel slats with a lit lip and a handle bar
+            float edge = (1.0 - u_transition) * u_src.y;
+            if (px.y >= edge) {
+                float slat = mod(px.y - edge, 7.0);
+                vec3 steel = slat < 1.0 ? vec3(0.64, 0.65, 0.75) : (slat > 5.0 ? vec3(0.21, 0.21, 0.31) : vec3(0.31, 0.31, 0.44));
+                if (px.y - edge < 3.0) steel = vec3(0.13, 0.12, 0.2);
+                if (abs(px.x - u_src.x * 0.5) < 6.0 && abs(px.y - edge - 4.0) < 1.0) steel = vec3(1.0, 0.79, 0.31);
+                col = steel;
+            }
+        }
+    }
 
     vec2 toCentre = uv - 0.5;
     if (u_crt > 0.5) {

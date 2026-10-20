@@ -4,6 +4,7 @@
   "brand": "Dominion",
   "year": 1969,
   "era": "classic",
+  "price": 55000,
   "hp": 375,
   "powerRating": "gross",
   "peakHpRpm": 4600,

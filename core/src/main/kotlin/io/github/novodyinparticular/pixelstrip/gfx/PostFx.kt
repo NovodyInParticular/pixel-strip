@@ -66,6 +66,8 @@ class PostFx(private val art: Art) : Disposable {
     var hazeAmp = 0f
     var time = 0f
     var print = 0f             // photo-finish print look 0..1
+    var transition = 0f        // screen transition cover 0..1 (set by the game, not the screens)
+    var transitionKind = 0     // 0 pixel dissolve, 1 wipe, 2 garage door
 
     fun resize(screenW: Int, screenH: Int, quality: Quality) {
         val aspect = screenW.toFloat() / screenH.coerceAtLeast(1)
@@ -139,6 +141,8 @@ class PostFx(private val art: Art) : Disposable {
         composite.setUniformf("u_distortAmp", if (quality == Quality.LOW) 0f else distortAmp)
         composite.setUniformf("u_haze", hazeY0, hazeY1, if (quality == Quality.LOW) 0f else hazeAmp, time)
         composite.setUniformf("u_print", print)
+        composite.setUniformf("u_transition", transition)
+        composite.setUniformf("u_transKind", transitionKind.toFloat())
         composite.setUniformf("u_src", width.toFloat(), height.toFloat())
         composite.setUniformf("u_dst", Gdx.graphics.backBufferWidth.toFloat(), Gdx.graphics.backBufferHeight.toFloat())
         composite.setUniformf("u_bloomGain", if (quality == Quality.LOW) bloomGain * 0.7f else bloomGain)

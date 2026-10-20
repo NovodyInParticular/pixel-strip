@@ -10,7 +10,8 @@ import com.badlogic.gdx.graphics.Pixmap
 import com.badlogic.gdx.graphics.PixmapIO
 import com.badlogic.gdx.math.MathUtils
 import io.github.novodyinparticular.pixelstrip.PixelStrip
-import io.github.novodyinparticular.pixelstrip.data.CarDef
+import io.github.novodyinparticular.pixelstrip.save.OwnedCar
+import io.github.novodyinparticular.pixelstrip.ui.GarageScreen
 import io.github.novodyinparticular.pixelstrip.data.TrackDef
 import io.github.novodyinparticular.pixelstrip.gfx.Lights
 import io.github.novodyinparticular.pixelstrip.world.TrackRenderer
@@ -26,7 +27,7 @@ import kotlin.math.min
  * burnout box -> creep into the beams -> tree countdown (rev to set launch RPM) -> launch on
  * green -> shift and spray -> finish (photo finish when it's close) -> timeslip.
  */
-class RaceScreen(private val game: PixelStrip, trackId: String, carId: String) : ScreenAdapter() {
+class RaceScreen(private val game: PixelStrip, trackId: String, private val owned: OwnedCar) : ScreenAdapter() {
     private enum class Phase { BURNOUT, STAGING, COUNTDOWN, RACING, PHOTO, FINISHED }
 
     private val art = game.art
@@ -37,7 +38,7 @@ class RaceScreen(private val game: PixelStrip, trackId: String, carId: String) :
 
     private val track = TrackDef.load(trackId)
     private val trackView = TrackRenderer(track, art)
-    private val carDef = CarDef.load(carId)
+    private val carDef = game.car(owned.carId)
     private val ramps = art.tex("paint/ramps.png")
     private val paint = art.shader("batch.vert", "paint.frag")
     private val tint = art.shader("batch.vert", "tint.frag")
@@ -57,12 +58,13 @@ class RaceScreen(private val game: PixelStrip, trackId: String, carId: String) :
     private val actionButton = controls.add(Controls.Button(intArrayOf(Input.Keys.SPACE, Input.Keys.ENTER), "STAGE", Color(0.13f, 0.6f, 0.62f, 1f), big = true))
     private val nosButton = controls.add(Controls.Button(intArrayOf(Input.Keys.N), "NOS", Color(0.25f, 0.4f, 0.9f, 1f)))
     private val distButton = controls.add(Controls.Button(intArrayOf(Input.Keys.T), "1/8 MILE", Color(0.45f, 0.2f, 0.55f, 1f)))
+    private val garageButton = controls.add(Controls.Button(intArrayOf(Input.Keys.G, Input.Keys.ESCAPE, Input.Keys.BACK), "GARAGE", Color(0.3f, 0.3f, 0.42f, 1f)))
 
     private lateinit var player: Vehicle
     private lateinit var ghost: Vehicle
     private lateinit var ghostDriver: AutoDriver
     private var autoPlayer: AutoDriver? = null
-    private val playerView = CarRenderer(carDef, art, paint, tint, ramps)
+    private val playerView = CarRenderer(carDef, art, paint, tint, ramps).apply { paintRow = owned.paint }
     private val ghostView = CarRenderer(carDef, art, paint, tint, ramps).apply { paintRow = 2 }
     private val playerMotion = CarMotion()
     private val ghostMotion = CarMotion()
@@ -160,6 +162,8 @@ class RaceScreen(private val game: PixelStrip, trackId: String, carId: String) :
         distButton.visible = phase == Phase.BURNOUT
         distButton.label = if (quarter) "1/4 MILE" else "1/8 MILE"
         gasButton.visible = phase != Phase.FINISHED && phase != Phase.PHOTO
+        garageButton.apply { x = w - 78f; y = 10f; this.w = 68f; this.h = 22f; visible = phase == Phase.FINISHED || phase == Phase.BURNOUT && !gasButton.down }
+        if (phase == Phase.BURNOUT) garageButton.apply { y = h - 72f }
     }
 
     /** Desktop screenshots: an AutoDriver presses the player's buttons. */
@@ -174,6 +178,10 @@ class RaceScreen(private val game: PixelStrip, trackId: String, carId: String) :
     private fun update(realDt: Float) {
         val dt = realDt * timeScale
         tree.update(dt)
+        if (garageButton.justPressed && !game.transitioning && shots == null) {
+            game.go(2) { GarageScreen(game) }
+            return
+        }
         if (distButton.justPressed) {
             quarter = !quarter
             trackView.finishPx = distanceM * PX_PER_M

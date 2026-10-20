@@ -4,6 +4,7 @@
   "brand": "Crestline",
   "year": 1970,
   "era": "classic",
+  "price": 70000,
   "hp": 450,
   "powerRating": "gross",
   "peakHpRpm": 5600,

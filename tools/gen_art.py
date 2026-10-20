@@ -13,6 +13,7 @@ import fx
 import icon
 import paint
 import roster
+import scenes
 import track_neon
 import tree
 import ui
@@ -37,6 +38,7 @@ def main():
         icon.build()
         tree.build()
         fx.build()
+        scenes.build()
 
     if preview_dir:
         # every car on one sheet, 3x, each in a different paint

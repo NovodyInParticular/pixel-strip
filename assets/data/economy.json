@@ -1,0 +1,27 @@
+{
+  "startingCash": 5000,
+  "sellRate": 0.6,
+  "starterCars": [
+    "kite",
+    "kestrel",
+    "ranger50"
+  ],
+  "classes": [
+    {
+      "name": "OUTLAW",
+      "maxEt": 12.5
+    },
+    {
+      "name": "PRO",
+      "maxEt": 13.5
+    },
+    {
+      "name": "SPORT",
+      "maxEt": 14.5
+    },
+    {
+      "name": "STREET",
+      "maxEt": 99
+    }
+  ]
+}

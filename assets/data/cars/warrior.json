@@ -4,6 +4,7 @@
   "brand": "Apache",
   "year": 1964,
   "era": "classic",
+  "price": 22000,
   "hp": 348,
   "powerRating": "gross",
   "peakHpRpm": 4900,

@@ -4,6 +4,7 @@
   "brand": "Hayate",
   "year": 1985,
   "era": "80s",
+  "price": 12000,
   "hp": 112,
   "powerRating": "net",
   "peakHpRpm": 6600,

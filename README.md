@@ -9,12 +9,16 @@ All art is generated in code by `tools/gen_art.py`: no external assets.
 
 ## Status
 
-Phases 1-3 of 8 done: Neon City, the Dominion Vandal R/T against a hologram ghost, with the
-full drag-racing model (clutch, wheelspin, weight transfer, tyre temperature, nitrous),
-Christmas tree, burnout box, launch RPM and manual shifting, and a timeslip at the end.
-Phase 3 added normal-mapped 2D lighting on the cars (streetlamps, tree, city glow, flames),
-backfire and nitrous flames, purges, lamp-tinted lingering smoke, sparks, heat haze, speed
-lines, camera zoom/punch/pull-back, and a slow-motion photo finish.
+The original 8-phase plan was folded into a bigger one (multiplayer, crews, purchases come later).
+Done so far:
+
+- Neon City, the race, physics, lighting and effects (original phases 1-3)
+- All 24 cars, each generated from a sprite profile, with stock stats checked against their real
+  quarter-mile times (`RosterCalibrationTest`)
+- Title screen, first-launch starter pick, garage, dealership, settings, local save, pixel
+  transitions (dissolve, wipe, garage door)
+
+Next: parts and upgrades, paint shop and decals, deep gear tuning, test-n-tune, dyno.
 
 ### How to race
 
@@ -55,10 +59,16 @@ adb install -r android/build/outputs/apk/debug/android-debug.apk
 Or copy the APK to the phone and open it (allow installs from that app when asked).
 Needs Android 8.0 (API 26) or newer.
 
+## Save files
+
+Android keeps `save.json` in the app's private storage. The desktop build uses
+`~/.local/share/pixel-strip/save.json` (screenshot runs use a separate throwaway save).
+
 ## Desktop screenshot mode
 
 The desktop build can autoplay a race and save frames, which is how the art gets checked
-(`--close` matches the ghost to the autoplay driver, for photo finishes):
+(`--close` matches the ghost to the autoplay driver, for photo finishes; `--car ID` picks the car;
+`--screen title|starter|garage|dealer|settings` captures a menu screen instead):
 
 ```sh
 ./gradlew desktop:installDist
@@ -73,6 +83,7 @@ cd assets && ../desktop/build/install/desktop/bin/desktop --size 1280x720 --shot
 | `assets/data/cars/*.json` | Car stats and sprite anchors |
 | `assets/data/tracks/*.json` | Track layers, parallax, props, lights, grade |
 | `assets/shaders/` | Paint (ramp lookup, normal-mapped point lights, hologram), tint (lit trim), blur, composite (zoom, heat haze, upscale, bloom, LUT, CA, photo print, UI layer, CRT) |
+| `assets/data/economy.json` | Starting cash, sell rate, starter cars, performance classes |
 | `core/` | The game: `gfx/` (post-processing, font), `world/` (track renderer), `race/` (race flow, `Vehicle` physics, `DragMath`, tree, HUD, particles, AI driver) |
 | `core/src/test/` | Physics tests: launch/bog/spin/shift/nitrous/burnout/red-light behaviour (`./gradlew core:test`) |
 | `android/`, `desktop/` | Launchers |
