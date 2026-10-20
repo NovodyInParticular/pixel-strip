@@ -6,6 +6,7 @@ import { HttpsError, onCall } from "firebase-functions/v2/https";
 import { apply, emptyState, Entry, importLegacy, Rules, sanitize, State } from "./ledger";
 
 export { cancelMatch, confirmWager, matchmake, raceResult, submitRun } from "./race";
+export { createCrew, crewHome, editCrew, joinCrew, leaveCrew, manageMember, setName } from "./crews";
 
 initializeApp();
 const db = getFirestore();

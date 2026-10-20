@@ -86,6 +86,7 @@ async function main() {
 
   await onlineRace();
   await wagers();
+  await crews();
   console.log("e2e: all checks passed");
 }
 
@@ -228,6 +229,60 @@ async function wagers() {
   assert.equal((await call("matchmake", { car: "c1", wager: { kind: "cash", amount: 100 } }, broke.token)).status, 400);
   assert.equal((await call("matchmake", { car: "c1" }, broke.token)).status, 200, "fun races still open");
   await call("cancelMatch", {}, broke.token);
+}
+
+/** Crews: names, founding, roles, war points from online wins, leadership passing on, the tag freed. */
+async function crews() {
+  const { readFileSync } = await import("node:fs");
+  const { join } = await import("node:path");
+  const cases = JSON.parse(readFileSync(join(__dirname, "../../../../shared/physics_cases.json"), "utf8"));
+  const clean = cases.find((c: any) => c.name === "vandal stock").events;
+  const red = cases.find((c: any) => c.name === "red light").events;
+  const player = async () => {
+    const s = await json(`${auth}/identitytoolkit.googleapis.com/v1/accounts:signUp?key=emulator`, { returnSecureToken: true });
+    const token: string = s.body.idToken;
+    await call("sync", { base: 0, entries: [], legacy: { cash: 0, beaten: [], cars: [{ uid: "c1", car: "vandal", paint: 0, parts: {}, cosmetics: {} }] } }, token);
+    return { token, uid: s.body.localId as string };
+  };
+  const emblem = { shape: 1, colors: [2, 5, 0], icon: 3 };
+  const home = async (p: { token: string }) => (await call("crewHome", {}, p.token)).body.result;
+  const [a, b, c, d, x] = [await player(), await player(), await player(), await player(), await player()];
+
+  assert.equal((await call("setName", { name: "night owl" }, a.token)).body.result.name, "NIGHT OWL");
+  assert.equal((await call("setName", { name: "<b>" }, a.token)).status, 400);
+  assert.equal((await call("createCrew", { name: "Night Riders", tag: "nr", emblem }, a.token)).status, 200);
+  assert.equal((await call("createCrew", { name: "Copycats", tag: "NR", emblem }, b.token)).status, 409, "tags are unique");
+  const crewId = (await home(a)).crew.id;
+  assert.equal((await home(a)).crew.members[a.uid].role, "leader");
+  assert.ok((await home(b)).list.some((cr: any) => cr.id === crewId), "open crews are listed");
+  for (const p of [b, c]) assert.equal((await call("joinCrew", { crewId }, p.token)).status, 200);
+  assert.equal((await call("joinCrew", { crewId }, b.token)).status, 400, "one crew at a time");
+  assert.equal((await call("manageMember", { action: "promote", uid: b.uid }, a.token)).status, 200);
+  assert.equal((await call("manageMember", { action: "kick", uid: a.uid }, b.token)).status, 403, "officers can't kick the leader");
+  assert.equal((await call("editCrew", { open: false }, b.token)).status, 403, "only the leader edits");
+  assert.equal((await call("manageMember", { action: "kick", uid: c.uid }, b.token)).status, 200, "officers kick members");
+  assert.equal((await home(c)).crew, null);
+  assert.equal((await call("editCrew", { open: false }, a.token)).status, 200);
+  assert.equal((await call("joinCrew", { crewId }, d.token)).status, 403, "closed crews take no one");
+
+  // an online win scores for the crew in that track's district
+  assert.equal((await call("matchmake", { car: "c1" }, a.token)).body.result.waiting, true);
+  const m = (await call("matchmake", { car: "c1" }, x.token)).body.result;
+  assert.equal(m.room.players[a.uid].crew.tag, "NR", "the crew tag rides along to the race");
+  assert.equal(m.room.players[a.uid].name, "NIGHT OWL");
+  await call("submitRun", { raceId: m.raceId, events: clean }, a.token);
+  await call("submitRun", { raceId: m.raceId, events: red }, x.token);
+  const after = await home(a);
+  assert.equal(after.crew.score, 1, "a point for the week");
+  assert.equal(after.crew.districts[m.room.track], 1, "in the district raced in");
+  assert.equal(after.map[m.room.track].tag, "NR", "they hold it on the war map");
+  assert.ok(after.crew.members[a.uid].best?.et > 0, "and the winner's car goes up in the HQ");
+
+  // the leader leaves: the officer leads; the last one out frees the tag
+  await call("leaveCrew", {}, a.token);
+  assert.equal((await home(b)).crew.members[b.uid].role, "leader");
+  await call("leaveCrew", {}, b.token);
+  assert.equal((await call("createCrew", { name: "New Riders", tag: "NR", emblem }, c.token)).status, 200, "the tag is free again");
 }
 
 main().catch((e) => {

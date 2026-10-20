@@ -18,6 +18,7 @@ import { tuneFrom } from "./physics/tune";
 import { MAX_STEPS, perfectPass, replay, RunEvent } from "./physics/vehicle";
 import { Car, State } from "./ledger";
 import { cannotStake, escrow, parseWager, payout, refund, Wager, wagerKey } from "./wager";
+import { badgeOf, recordWin } from "./crews";
 
 const data = join(__dirname, "data");
 const catalog: Catalog = parseCatalog(JSON.parse(readFileSync(join(data, "parts.json"), "utf8")));
@@ -81,7 +82,7 @@ export function effective(car: Car, tune: unknown): CarDef {
   return apply(base, catalog, car.parts, car.cosmetics, tuneFrom(tune));
 }
 
-const handle = (uid: string) => "RACER " + uid.slice(0, 4).toUpperCase();
+const handle = (uid: string) => "RACER " + uid.slice(0, 4).toUpperCase();   // in call-off reasons
 
 /**
  * Join the queue with a car (and its tune), or get paired with someone already waiting whose
@@ -129,8 +130,9 @@ export const matchmake = onCall({ maxInstances: 10 }, async (req) => {
 
   const raceId = randomBytes(9).toString("base64url");
   const track = TRACKS[Math.floor(Math.random() * TRACKS.length)];
+  const badges = { [paired.uid]: await badgeOf(paired.uid), [uid]: await badgeOf(uid) };
   const player = (e: Entry) => ({
-    name: handle(e.uid), car: e.car.car, paint: e.car.paint, parts: e.car.parts, cosmetics: e.car.cosmetics, rating: e.rating,
+    name: badges[e.uid].name, crew: badges[e.uid].crew, car: e.car.car, paint: e.car.paint, parts: e.car.parts, cosmetics: e.car.cosmetics, rating: e.rating,
   });
   const room = {
     players: { [paired.uid]: player(paired), [uid]: player(me) },
@@ -281,6 +283,10 @@ async function settle(raceId: string): Promise<unknown | null> {
       return callOff(tx, raceId, race, "nobody finished", staked ? states : null);
     } else return null;
     const loser = winner === ua ? ub : ua;
+    // the crew war: read the winner's crew before anything is written
+    const winnerDoc = (snaps.length ? snaps[uids.indexOf(winner)] : await tx.get(playerRef(winner))).data();
+    const crewId = winnerDoc?.crew as string | undefined;
+    const crewDoc = crewId ? (await tx.get(fs.collection("crews").doc(crewId))).data() ?? null : null;
     let prize: Record<string, unknown> | null = null;
     if (staked) {
       const won = payout(states[winner], states[loser], race.wager, race.entries[winner].carUid, race.entries[loser].carUid);
@@ -289,6 +295,9 @@ async function settle(raceId: string): Promise<unknown | null> {
       tx.update(playerRef(loser), { state: states[loser] });
       log(tx, raceId, "paid out", { winner, forfeit, ...prize });
     }
+    const won = race.entries[winner].car as Car;
+    const et = runs[winner]?.et;
+    await recordWin(tx, winner, race.track, et ? { car: won.car, paint: won.paint, parts: won.parts, cosmetics: won.cosmetics, et } : null, winnerDoc, crewDoc);
     const result = { winner, runs, forfeit, wager: race.wager ?? { kind: "none" }, prize };
     tx.update(ref, { result, state: "done", settled: now });
     await getDatabase().ref(`races/${raceId}`).update({ result, state: "done" });
