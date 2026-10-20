@@ -34,9 +34,24 @@ android {
         jvmTarget = "17"
     }
 
+    // Release signing: the keystore lives outside the repo; ~/.gradle/gradle.properties names it with
+    // pixelstripKeystore=/path/to/pixel-strip-release.keystore, and its password sits beside it in <keystore>.pass.
+    // Every update must be signed with this same key, or phones won't install it over the old version.
+    val releaseKeystore = providers.gradleProperty("pixelstripKeystore").orNull?.let { file(it) }?.takeIf { it.exists() }
+    signingConfigs {
+        if (releaseKeystore != null) create("release") {
+            val pass = file("${releaseKeystore.path}.pass").readText().trim()
+            storeFile = releaseKeystore
+            storePassword = pass
+            keyAlias = "pixelstrip"
+            keyPassword = pass
+        }
+    }
+
     buildTypes {
         getByName("release") {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.findByName("release")
         }
     }
 }
