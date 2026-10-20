@@ -51,7 +51,15 @@ class SaveGame(private val file: FileHandle) {
     var selected: String? = null
     /** Career rivals beaten at least once (ids from career.json). */
     val beaten = LinkedHashSet<String>()
-    private var nextUid = 1
+    var nextUid = 1
+    /** Client time of the last career race (the ledger spaces them out). */
+    var lastRaceT = 0L
+    /** Ledger entries applied here but not yet confirmed by the server. */
+    val pending = ArrayList<Entry>()
+    /** How many entries the server has accepted for this account (0 = never synced). */
+    var serverSeq = 0L
+    /** A save from before the ledger existed: its first sync imports it as a snapshot. */
+    var legacy = false
 
     val isNew get() = cars.isEmpty()
     fun selectedCar(): OwnedCar? = cars.firstOrNull { it.uid == selected } ?: cars.firstOrNull()
@@ -71,7 +79,11 @@ class SaveGame(private val file: FileHandle) {
 
     fun write() {
         val root = JsonValue(JsonValue.ValueType.`object`)
-        root.addChild("version", JsonValue(1L))
+        root.addChild("version", JsonValue(VERSION))
+        root.addChild("lastRaceT", JsonValue(lastRaceT))
+        root.addChild("serverSeq", JsonValue(serverSeq))
+        root.addChild("legacy", JsonValue(legacy))
+        root.addChild("pending", JsonValue(JsonValue.ValueType.array).also { a -> pending.forEach { a.addChild(it.toJson()) } })
         root.addChild("cash", JsonValue(cash))
         root.addChild("nextUid", JsonValue(nextUid.toLong()))
         selected?.let { root.addChild("selected", JsonValue(it)) }
@@ -117,6 +129,57 @@ class SaveGame(private val file: FileHandle) {
         val tmp = file.sibling(file.name() + ".tmp")
         tmp.writeString(root.toJson(JsonWriter.OutputType.json), false)
         tmp.moveTo(file)
+        lastJson = root
+    }
+
+    /** The JSON of the last write (the cloud keeps it as the profile: tunes, runs, dyno). */
+    var lastJson: JsonValue? = null
+        private set
+
+    /** Only cash, cars, beaten and counters: what the ledger decides. */
+    fun economicState(): JsonValue {
+        val o = JsonValue(JsonValue.ValueType.`object`)
+        o.addChild("cash", JsonValue(cash))
+        o.addChild("nextUid", JsonValue(nextUid.toLong()))
+        o.addChild("lastRaceT", JsonValue(lastRaceT))
+        o.addChild("beaten", JsonValue(JsonValue.ValueType.array).also { a -> beaten.forEach { a.addChild(JsonValue(it)) } })
+        o.addChild("cars", JsonValue(JsonValue.ValueType.array).also { a ->
+            for (c in cars) a.addChild(JsonValue(JsonValue.ValueType.`object`).also { co ->
+                co.addChild("uid", JsonValue(c.uid))
+                co.addChild("car", JsonValue(c.carId))
+                co.addChild("paint", JsonValue(c.paint.toLong()))
+                co.addChild("parts", JsonValue(JsonValue.ValueType.`object`).also { po -> for ((k, v) in c.parts.toSortedMap()) po.addChild(k, JsonValue(v.toLong())) })
+                co.addChild("cosmetics", JsonValue(JsonValue.ValueType.`object`).also { po -> for ((k, v) in c.cosmetics.toSortedMap()) po.addChild(k, JsonValue(v.toLong())) })
+            })
+        })
+        return o
+    }
+
+    /**
+     * Takes the server's word for cash, cars and progress. Cars keep their local tunes, runs and
+     * dyno sheet when the uid still exists here, or take them from [profile] (another device's
+     * save) when it doesn't.
+     */
+    fun adopt(state: JsonValue, profile: JsonValue?) {
+        val old = cars.associateBy { it.uid }
+        val fromProfile = profile?.let { load(file, it).cars.associateBy { c -> c.uid } } ?: emptyMap()
+        cash = state.getLong("cash")
+        nextUid = state.getInt("nextUid")
+        lastRaceT = state.getLong("lastRaceT", 0)
+        beaten.clear()
+        state.get("beaten")?.asStringArray()?.let { beaten.addAll(it) }
+        cars.clear()
+        state.get("cars")?.forEach { o ->
+            val uid = o.getString("uid")
+            val keep = old[uid] ?: fromProfile[uid]
+            val parts = mutableMapOf<String, Int>()
+            o.get("parts")?.forEach { parts[it.name] = it.asInt() }
+            val cos = mutableMapOf<String, Int>()
+            o.get("cosmetics")?.forEach { cos[it.name] = it.asInt() }
+            cars.add(OwnedCar(uid, o.getString("car"), o.getInt("paint"), parts, cos,
+                keep?.tunes ?: mutableListOf(), keep?.activeTune ?: -1, keep?.runs ?: mutableListOf(), keep?.dyno))
+        }
+        if (cars.none { it.uid == selected }) selected = fromProfile.keys.firstOrNull { k -> cars.any { it.uid == k } } ?: cars.firstOrNull()?.uid
     }
 
     companion object {
@@ -144,11 +207,20 @@ class SaveGame(private val file: FileHandle) {
             tirePressure = o.getFloat("psi", 32f),
         )
 
+        const val VERSION = 2L
+
         fun load(file: FileHandle): SaveGame {
+            if (!file.exists()) return SaveGame(file)
+            val root = runCatching { JsonReader().parse(file) }.getOrNull() ?: return SaveGame(file)
+            return load(file, root)
+        }
+
+        fun load(file: FileHandle, root: JsonValue): SaveGame {
             val save = SaveGame(file)
-            if (!file.exists()) return save
-            val root = runCatching { JsonReader().parse(file) }.getOrNull() ?: return save
             save.cash = root.getLong("cash", 0)
+            save.lastRaceT = root.getLong("lastRaceT", 0)
+            save.serverSeq = root.getLong("serverSeq", 0)
+            root.get("pending")?.forEach { save.pending.add(Entry.from(it)) }
             save.nextUid = root.getInt("nextUid", 1)
             save.selected = root.getString("selected", null)
             root.get("beaten")?.asStringArray()?.let { save.beaten.addAll(it) }
@@ -164,6 +236,8 @@ class SaveGame(private val file: FileHandle) {
                 save.cars.add(OwnedCar(o.getString("uid"), o.getString("car"), o.getInt("paint", 0), parts, cos, tunes,
                     o.getInt("activeTune", -1), runs, o.get("dyno")?.asFloatArray()))
             }
+            // version 1 saves predate the ledger; nothing in them was ever checked by a server
+            save.legacy = root.getBoolean("legacy", root.getLong("version", 1) < VERSION && save.cars.isNotEmpty())
             return save
         }
     }

@@ -1,5 +1,6 @@
 package io.github.novodyinparticular.pixelstrip.ui
 
+import io.github.novodyinparticular.pixelstrip.save.Entry
 import com.badlogic.gdx.Input
 import com.badlogic.gdx.graphics.Color
 import io.github.novodyinparticular.pixelstrip.PixelStrip
@@ -70,19 +71,16 @@ class UpgradeScreen(game: PixelStrip) : MenuScreen(game) {
     }
 
     private fun purchase() {
-        val cost = price() ?: return
-        val (parts, cos) = nextParts() ?: return
-        if (save.cash < cost) {
+        val e = when (val r = row()) {
+            is Row.Perf -> Entry("part", game.now(), uid = owned.uid, slot = r.slot.id)
+            is Row.Look -> Entry("look", game.now(), uid = owned.uid, slot = r.c.id)
+            null -> return
+        }
+        if (!game.commit(e)) {
             flash = 0.3f
             flashColor.set(RED)
             return
         }
-        save.cash -= cost
-        owned.parts.clear()
-        owned.parts.putAll(parts)
-        owned.cosmetics.clear()
-        owned.cosmetics.putAll(cos)
-        save.write()
         installed = 1.4f
         flash = 0.5f
         flashColor.set(GREEN)

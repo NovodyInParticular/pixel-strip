@@ -1,5 +1,6 @@
 package io.github.novodyinparticular.pixelstrip.ui
 
+import io.github.novodyinparticular.pixelstrip.save.Entry
 import com.badlogic.gdx.Input
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.GL20
@@ -40,16 +41,11 @@ open class DealerScreen(game: PixelStrip, private val starterMode: Boolean = fal
     private fun purchase() {
         val save = game.save
         if (starterMode) {
-            save.cash = game.economy.startingCash
-            save.addCar(def.id, def.defaultPaint)
-            save.write()
-            game.go(2) { GarageScreen(game) }
+            if (game.commit(Entry("start", game.now(), car = def.id))) game.go(2) { GarageScreen(game) }
             return
         }
-        if (save.owns(def.id) || save.cash < def.price) return
-        save.cash -= def.price
-        val car = save.addCar(def.id, def.defaultPaint)
-        save.selected = car.uid
+        if (!game.commit(Entry("buy", game.now(), car = def.id))) return
+        save.selected = save.cars.last().uid
         save.write()
         soldTimer = 1.6f
         flash = 0.6f

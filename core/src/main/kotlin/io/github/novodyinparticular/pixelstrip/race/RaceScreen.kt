@@ -1,5 +1,6 @@
 package io.github.novodyinparticular.pixelstrip.race
 
+import io.github.novodyinparticular.pixelstrip.save.Entry
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Input
 import com.badlogic.gdx.ScreenAdapter
@@ -106,26 +107,13 @@ class RaceScreen(
         val r = rival ?: return
         settled = true
         val save = game.save
-        if (!playerWon()) {
-            if (pinkSlip && save.cars.size > 1) {
-                save.removeCar(owned.uid)
-                lostCar = true
-            }
-            save.write()
-            return
-        }
-        val firstWin = r.id !in save.beaten
-        payout = if (pinkSlip) 0L else if (firstWin) r.payout else r.payout / 2
-        save.cash += payout
-        save.beaten.add(r.id)
-        if (r.boss && firstWin || pinkSlip) {
-            val prize = r.asCar()
-            val car = save.addCar(prize.carId, prize.paint)
-            car.parts.putAll(prize.parts)
-            car.cosmetics.putAll(prize.cosmetics)
-            wonPrize = true
-        }
-        save.write()
+        val won = playerWon()
+        val cash = save.cash
+        val cars = save.cars.size
+        if (!game.commit(Entry("race", game.now(), uid = owned.uid, rival = r.id, won = won, pink = pinkSlip))) return
+        payout = save.cash - cash
+        lostCar = save.cars.size < cars
+        wonPrize = save.cars.size > cars
     }
     private val playerMotion = CarMotion()
     private val ghostMotion = CarMotion()

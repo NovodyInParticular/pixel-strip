@@ -1,0 +1,845 @@
+[
+ {
+  "name": "starter car and starting cash",
+  "entries": [
+   {
+    "type": "start",
+    "t": 1000,
+    "car": "kite"
+   }
+  ],
+  "expect": {
+   "cash": 5000,
+   "cars": [
+    {
+     "uid": "c1",
+     "car": "kite",
+     "parts": {},
+     "paint": 2
+    }
+   ],
+   "refused": []
+  }
+ },
+ {
+  "name": "only one starter",
+  "entries": [
+   {
+    "type": "start",
+    "t": 1000,
+    "car": "kite"
+   },
+   {
+    "type": "start",
+    "t": 1000,
+    "car": "kestrel"
+   }
+  ],
+  "expect": {
+   "cash": 5000,
+   "cars": [
+    {
+     "uid": "c1",
+     "car": "kite",
+     "parts": {}
+    }
+   ],
+   "refused": [
+    1
+   ]
+  }
+ },
+ {
+  "name": "starter must be a starter car",
+  "entries": [
+   {
+    "type": "start",
+    "t": 1000,
+    "car": "vandal"
+   }
+  ],
+  "expect": {
+   "cash": 0,
+   "cars": [],
+   "refused": [
+    0
+   ]
+  }
+ },
+ {
+  "name": "parts cost the per-car price and need the cash",
+  "entries": [
+   {
+    "type": "start",
+    "t": 1000,
+    "car": "kite"
+   },
+   {
+    "type": "part",
+    "t": 2000,
+    "uid": "c1",
+    "slot": "intake"
+   },
+   {
+    "type": "part",
+    "t": 2000,
+    "uid": "c1",
+    "slot": "intake"
+   }
+  ],
+  "expect": {
+   "cash": 3500,
+   "cars": [
+    {
+     "uid": "c1",
+     "car": "kite",
+     "parts": {
+      "intake": 1
+     }
+    }
+   ],
+   "refused": [
+    2
+   ]
+  }
+ },
+ {
+  "name": "locked rival is refused",
+  "entries": [
+   {
+    "type": "start",
+    "t": 1000,
+    "car": "kite"
+   },
+   {
+    "type": "race",
+    "t": 10000,
+    "uid": "c1",
+    "rival": "kat",
+    "won": true,
+    "pink": false
+   }
+  ],
+  "expect": {
+   "cash": 5000,
+   "beaten": [],
+   "refused": [
+    1
+   ]
+  }
+ },
+ {
+  "name": "races too close together are refused",
+  "entries": [
+   {
+    "type": "start",
+    "t": 1000,
+    "car": "kite"
+   },
+   {
+    "type": "race",
+    "t": 10000,
+    "uid": "c1",
+    "rival": "dash",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "race",
+    "t": 15999,
+    "uid": "c1",
+    "rival": "kat",
+    "won": true,
+    "pink": false
+   }
+  ],
+  "expect": {
+   "cash": 8000,
+   "beaten": [
+    "dash"
+   ],
+   "refused": [
+    2
+   ]
+  }
+ },
+ {
+  "name": "rematch pays half",
+  "entries": [
+   {
+    "type": "start",
+    "t": 1000,
+    "car": "kite"
+   },
+   {
+    "type": "race",
+    "t": 10000,
+    "uid": "c1",
+    "rival": "dash",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "race",
+    "t": 16000,
+    "uid": "c1",
+    "rival": "dash",
+    "won": true,
+    "pink": false
+   }
+  ],
+  "expect": {
+   "cash": 9500,
+   "beaten": [
+    "dash"
+   ],
+   "refused": []
+  }
+ },
+ {
+  "name": "a loss pays nothing but still counts for spacing",
+  "entries": [
+   {
+    "type": "start",
+    "t": 1000,
+    "car": "kite"
+   },
+   {
+    "type": "race",
+    "t": 10000,
+    "uid": "c1",
+    "rival": "dash",
+    "won": false,
+    "pink": false
+   },
+   {
+    "type": "race",
+    "t": 11000,
+    "uid": "c1",
+    "rival": "dash",
+    "won": true,
+    "pink": false
+   }
+  ],
+  "expect": {
+   "cash": 5000,
+   "beaten": [],
+   "refused": [
+    2
+   ]
+  }
+ },
+ {
+  "name": "first boss win gives the boss car with its parts",
+  "entries": [
+   {
+    "type": "start",
+    "t": 1000,
+    "car": "kite"
+   },
+   {
+    "type": "race",
+    "t": 10000,
+    "uid": "c1",
+    "rival": "dash",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "race",
+    "t": 20000,
+    "uid": "c1",
+    "rival": "kat",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "race",
+    "t": 30000,
+    "uid": "c1",
+    "rival": "tiny",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "race",
+    "t": 40000,
+    "uid": "c1",
+    "rival": "joe",
+    "won": true,
+    "pink": false
+   }
+  ],
+  "expect": {
+   "cash": 29000,
+   "beaten": [
+    "dash",
+    "kat",
+    "tiny",
+    "joe"
+   ],
+   "cars": [
+    {
+     "uid": "c1",
+     "car": "kite",
+     "parts": {}
+    },
+    {
+     "uid": "c2",
+     "car": "kite_ef",
+     "parts": {
+      "cams": 1,
+      "clutch": 1,
+      "ecu": 2,
+      "exhaust": 2,
+      "gearbox": 1,
+      "intake": 2,
+      "lsd": 2,
+      "swap": 3,
+      "tires": 2,
+      "weight": 1
+     },
+     "paint": 12
+    }
+   ],
+   "refused": []
+  }
+ },
+ {
+  "name": "boss car only the first time",
+  "entries": [
+   {
+    "type": "start",
+    "t": 1000,
+    "car": "kite"
+   },
+   {
+    "type": "race",
+    "t": 10000,
+    "uid": "c1",
+    "rival": "dash",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "race",
+    "t": 20000,
+    "uid": "c1",
+    "rival": "kat",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "race",
+    "t": 30000,
+    "uid": "c1",
+    "rival": "tiny",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "race",
+    "t": 40000,
+    "uid": "c1",
+    "rival": "joe",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "race",
+    "t": 50000,
+    "uid": "c1",
+    "rival": "joe",
+    "won": true,
+    "pink": false
+   }
+  ],
+  "expect": {
+   "cash": 35000,
+   "cars": [
+    {
+     "uid": "c1",
+     "car": "kite",
+     "parts": {}
+    },
+    {
+     "uid": "c2",
+     "car": "kite_ef",
+     "parts": {
+      "cams": 1,
+      "clutch": 1,
+      "ecu": 2,
+      "exhaust": 2,
+      "gearbox": 1,
+      "intake": 2,
+      "lsd": 2,
+      "swap": 3,
+      "tires": 2,
+      "weight": 1
+     }
+    }
+   ],
+   "refused": []
+  }
+ },
+ {
+  "name": "selling pays resale plus 30% of parts",
+  "entries": [
+   {
+    "type": "start",
+    "t": 1000,
+    "car": "kite"
+   },
+   {
+    "type": "race",
+    "t": 10000,
+    "uid": "c1",
+    "rival": "dash",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "race",
+    "t": 20000,
+    "uid": "c1",
+    "rival": "kat",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "race",
+    "t": 30000,
+    "uid": "c1",
+    "rival": "tiny",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "race",
+    "t": 40000,
+    "uid": "c1",
+    "rival": "joe",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "sell",
+    "t": 50000,
+    "uid": "c2"
+   }
+  ],
+  "expect": {
+   "cash": 58700,
+   "cars": [
+    {
+     "uid": "c1",
+     "car": "kite",
+     "parts": {}
+    }
+   ],
+   "refused": []
+  }
+ },
+ {
+  "name": "never sell the last car",
+  "entries": [
+   {
+    "type": "start",
+    "t": 1000,
+    "car": "kite"
+   },
+   {
+    "type": "sell",
+    "t": 2000,
+    "uid": "c1"
+   }
+  ],
+  "expect": {
+   "cash": 5000,
+   "cars": [
+    {
+     "uid": "c1",
+     "car": "kite",
+     "parts": {}
+    }
+   ],
+   "refused": [
+    1
+   ]
+  }
+ },
+ {
+  "name": "pink slip needs a beaten rival, wins their car, loses yours",
+  "entries": [
+   {
+    "type": "start",
+    "t": 1000,
+    "car": "kite"
+   },
+   {
+    "type": "race",
+    "t": 10000,
+    "uid": "c1",
+    "rival": "dash",
+    "won": true,
+    "pink": true
+   },
+   {
+    "type": "race",
+    "t": 20000,
+    "uid": "c1",
+    "rival": "dash",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "race",
+    "t": 30000,
+    "uid": "c1",
+    "rival": "dash",
+    "won": true,
+    "pink": true
+   },
+   {
+    "type": "race",
+    "t": 40000,
+    "uid": "c2",
+    "rival": "dash",
+    "won": false,
+    "pink": true
+   }
+  ],
+  "expect": {
+   "cash": 8000,
+   "cars": [
+    {
+     "uid": "c1",
+     "car": "kite",
+     "parts": {}
+    }
+   ],
+   "refused": [
+    1
+   ]
+  }
+ },
+ {
+  "name": "pink slip loss never takes the last car",
+  "entries": [
+   {
+    "type": "start",
+    "t": 1000,
+    "car": "kite"
+   },
+   {
+    "type": "race",
+    "t": 10000,
+    "uid": "c1",
+    "rival": "dash",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "race",
+    "t": 20000,
+    "uid": "c1",
+    "rival": "dash",
+    "won": false,
+    "pink": true
+   }
+  ],
+  "expect": {
+   "cash": 8000,
+   "cars": [
+    {
+     "uid": "c1",
+     "car": "kite",
+     "parts": {}
+    }
+   ],
+   "refused": []
+  }
+ },
+ {
+  "name": "paint charges each change once",
+  "entries": [
+   {
+    "type": "start",
+    "t": 1000,
+    "car": "kite"
+   },
+   {
+    "type": "race",
+    "t": 10000,
+    "uid": "c1",
+    "rival": "dash",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "paint",
+    "t": 11000,
+    "uid": "c1",
+    "paint": [
+     3,
+     1,
+     1,
+     2
+    ]
+   },
+   {
+    "type": "paint",
+    "t": 12000,
+    "uid": "c1",
+    "paint": [
+     3,
+     1,
+     1,
+     2
+    ]
+   }
+  ],
+  "expect": {
+   "cash": 3000,
+   "cars": [
+    {
+     "uid": "c1",
+     "car": "kite",
+     "parts": {},
+     "paint": 3
+    }
+   ],
+   "refused": [
+    3
+   ]
+  }
+ },
+ {
+  "name": "paint out of range",
+  "entries": [
+   {
+    "type": "start",
+    "t": 1000,
+    "car": "kite"
+   },
+   {
+    "type": "paint",
+    "t": 2000,
+    "uid": "c1",
+    "paint": [
+     14,
+     0,
+     0,
+     0
+    ]
+   }
+  ],
+  "expect": {
+   "cash": 5000,
+   "refused": [
+    1
+   ]
+  }
+ },
+ {
+  "name": "dealer: not prize cars, not twice, not without cash",
+  "entries": [
+   {
+    "type": "start",
+    "t": 1000,
+    "car": "kite"
+   },
+   {
+    "type": "buy",
+    "t": 2000,
+    "car": "kite_ef"
+   },
+   {
+    "type": "buy",
+    "t": 2000,
+    "car": "kite"
+   },
+   {
+    "type": "buy",
+    "t": 2000,
+    "car": "vandal"
+   }
+  ],
+  "expect": {
+   "cash": 5000,
+   "cars": [
+    {
+     "uid": "c1",
+     "car": "kite",
+     "parts": {}
+    }
+   ],
+   "refused": [
+    1,
+    2,
+    3
+   ]
+  }
+ },
+ {
+  "name": "buying a car",
+  "entries": [
+   {
+    "type": "start",
+    "t": 1000,
+    "car": "kite"
+   },
+   {
+    "type": "race",
+    "t": 10000,
+    "uid": "c1",
+    "rival": "dash",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "race",
+    "t": 20000,
+    "uid": "c1",
+    "rival": "kat",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "buy",
+    "t": 21000,
+    "car": "kestrel"
+   }
+  ],
+  "expect": {
+   "cash": 0,
+   "cars": [
+    {
+     "uid": "c1",
+     "car": "kite",
+     "parts": {}
+    },
+    {
+     "uid": "c2",
+     "car": "kestrel",
+     "parts": {}
+    }
+   ],
+   "refused": []
+  }
+ },
+ {
+  "name": "cosmetics cycle styles",
+  "entries": [
+   {
+    "type": "start",
+    "t": 1000,
+    "car": "kite"
+   },
+   {
+    "type": "look",
+    "t": 2000,
+    "uid": "c1",
+    "slot": "wing"
+   }
+  ],
+  "expect": {
+   "cash": 2000,
+   "refused": []
+  }
+ },
+ {
+  "name": "turbo and supercharger exclude each other",
+  "entries": [
+   {
+    "type": "start",
+    "t": 1000,
+    "car": "kite"
+   },
+   {
+    "type": "race",
+    "t": 10000,
+    "uid": "c1",
+    "rival": "dash",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "race",
+    "t": 20000,
+    "uid": "c1",
+    "rival": "kat",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "part",
+    "t": 2000,
+    "uid": "c1",
+    "slot": "turbo"
+   },
+   {
+    "type": "part",
+    "t": 2000,
+    "uid": "c1",
+    "slot": "supercharger"
+   }
+  ],
+  "expect": {
+   "cash": 9000,
+   "cars": [
+    {
+     "uid": "c1",
+     "car": "kite",
+     "parts": {
+      "supercharger": 1
+     }
+    }
+   ],
+   "refused": []
+  }
+ },
+ {
+  "name": "unknown things are refused",
+  "entries": [
+   {
+    "type": "start",
+    "t": 1000,
+    "car": "kite"
+   },
+   {
+    "type": "gift",
+    "t": 2000
+   },
+   {
+    "type": "part",
+    "t": 2000,
+    "uid": "c1",
+    "slot": "rocket"
+   },
+   {
+    "type": "part",
+    "t": 2000,
+    "uid": "c9",
+    "slot": "intake"
+   },
+   {
+    "type": "race",
+    "t": 10000,
+    "uid": "c1",
+    "rival": "nobody",
+    "won": true,
+    "pink": false
+   }
+  ],
+  "expect": {
+   "cash": 5000,
+   "refused": [
+    1,
+    2,
+    3,
+    4
+   ]
+  }
+ }
+]

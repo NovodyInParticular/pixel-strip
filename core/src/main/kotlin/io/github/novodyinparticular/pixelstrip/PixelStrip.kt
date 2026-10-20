@@ -44,6 +44,24 @@ class PixelStrip(val platform: Platform, val shots: ShotPlan? = null, private va
         private set
     lateinit var career: io.github.novodyinparticular.pixelstrip.data.Career
         private set
+    lateinit var rules: io.github.novodyinparticular.pixelstrip.save.Rules
+        private set
+    lateinit var cloud: io.github.novodyinparticular.pixelstrip.net.Cloud
+        private set
+
+    /**
+     * Every change to cash or the garage goes through here: checked by the ledger rules, applied,
+     * saved, and queued for the server. Returns false (nothing changed) if the rules say no.
+     */
+    fun commit(e: io.github.novodyinparticular.pixelstrip.save.Entry): Boolean {
+        if (!io.github.novodyinparticular.pixelstrip.save.Ledger.apply(rules, save, e)) return false
+        save.pending.add(e)
+        save.write()
+        cloud.requestSync()
+        return true
+    }
+
+    fun now() = System.currentTimeMillis()
 
     private val carCache = HashMap<String, CarDef>()
 
@@ -80,6 +98,7 @@ class PixelStrip(val platform: Platform, val shots: ShotPlan? = null, private va
         economy = Economy.load()
         parts = PartCatalog.load()
         career = io.github.novodyinparticular.pixelstrip.data.Career.load()
+        rules = io.github.novodyinparticular.pixelstrip.save.Rules.parse(Gdx.files.internal(io.github.novodyinparticular.pixelstrip.save.Rules.PATH).readString())
         // Screenshot runs never touch the real save
         save = SaveGame.load(platform.saveFile(if (shots != null) "save-shots.json" else "save.json"))
         if (shots != null) {
@@ -91,6 +110,21 @@ class PixelStrip(val platform: Platform, val shots: ShotPlan? = null, private va
                 c.cosmetics.putAll(mapOf("wing" to 3, "kit" to 2, "rims" to 4, "underglow" to 2, "finish" to 4, "decal" to 2, "decalColor" to 6))
             }
         }
+        cloud = io.github.novodyinparticular.pixelstrip.net.Cloud(this, enabled = shots == null || System.getProperty("pixelstrip.emulator") != null)
+        if (shots != null && cloud.configured) {
+            // emulator check: a fresh garage, then a starter and a win through the real ledger path
+            save.cars.clear()
+            save.beaten.clear()
+            save.pending.clear()
+            save.cash = 0
+            save.nextUid = 1
+            save.lastRaceT = 0
+            save.serverSeq = 0
+            save.legacy = false
+            commit(io.github.novodyinparticular.pixelstrip.save.Entry("start", now(), car = "kite"))
+            commit(io.github.novodyinparticular.pixelstrip.save.Entry("race", now() + 10_000, uid = "c1", rival = "dash", won = true))
+        }
+        cloud.requestSync()
         Gdx.input.setCatchKey(Input.Keys.BACK, true)
         audio = io.github.novodyinparticular.pixelstrip.audio.AudioEngine(settings)
         audio.start()
@@ -116,13 +150,7 @@ class PixelStrip(val platform: Platform, val shots: ShotPlan? = null, private va
     }
 
     /** What the dealer pays: 60% of the car, 30% of what its parts cost. */
-    fun saleValue(car: OwnedCar): Long {
-        val def = car(car.carId)
-        val stockClass = economy.classFor(io.github.novodyinparticular.pixelstrip.race.DragMath.perfectPass(def).quarter)
-        var parts = 0L
-        for (slot in this.parts.slots) for (t in 1..(car.parts[slot.id] ?: 0)) parts += this.parts.price(slot, t, stockClass)
-        return economy.sellPrice(def.price) + (parts * PARTS_RESALE).toLong()
-    }
+    fun saleValue(car: OwnedCar): Long = io.github.novodyinparticular.pixelstrip.save.Ledger.saleValue(rules, car)
 
     /** Where "start" goes: first launch picks a starter car, otherwise the garage. */
     fun home(): Screen = if (save.isNew) StarterScreen(this) else GarageScreen(this)
@@ -138,6 +166,7 @@ class PixelStrip(val platform: Platform, val shots: ShotPlan? = null, private va
     }
 
     override fun render() {
+        cloud.update()
         val dt = Gdx.graphics.deltaTime.coerceAtMost(1f / 20f)
         when (trans) {
             Trans.OUT -> {
@@ -172,6 +201,7 @@ class PixelStrip(val platform: Platform, val shots: ShotPlan? = null, private va
     }
 
     override fun pause() {
+        cloud.requestSync()                 // tunes and run logs ride along with the profile
         audio.stop()
         super.pause()
     }
@@ -191,6 +221,6 @@ class PixelStrip(val platform: Platform, val shots: ShotPlan? = null, private va
 
     companion object {
         const val TRANSITION_S = 0.38f
-        const val PARTS_RESALE = 0.3f
+        const val PARTS_RESALE_PERCENT = 30L
     }
 }

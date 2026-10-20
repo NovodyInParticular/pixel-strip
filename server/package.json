@@ -1,0 +1,11 @@
+{
+  "name": "pixel-strip-server",
+  "private": true,
+  "scripts": {
+    "emulators": "firebase emulators:start --project demo-pixel-strip",
+    "e2e": "npm --prefix functions run build && firebase emulators:exec --project demo-pixel-strip \"node functions/lib/test/e2e.js\""
+  },
+  "devDependencies": {
+    "firebase-tools": "15.34.0"
+  }
+}

@@ -11,11 +11,14 @@ class Economy(val startingCash: Long, val sellRate: Float, val starterCars: List
     /** Matchmaking rating: higher is quicker. 13.0 s -> 500, every tenth of a second is 10 points. */
     fun rating(et: Float): Int = ((18f - et) * 100f).toInt().coerceAtLeast(0)
 
-    fun sellPrice(price: Int) = (price * sellRate).toLong()
+    /** Integer maths, so the server (JavaScript doubles) gets the same number. */
+    fun sellPrice(price: Int) = price.toLong() * sellPercent / 100
+    val sellPercent get() = Math.round(sellRate * 100f)
 
     companion object {
-        fun load(): Economy {
-            val j = JsonReader().parse(Gdx.files.internal("data/economy.json"))
+        fun load(): Economy = parse(JsonReader().parse(Gdx.files.internal("data/economy.json")))
+
+        fun parse(j: com.badlogic.gdx.utils.JsonValue): Economy {
             return Economy(
                 j.getLong("startingCash"),
                 j.getFloat("sellRate"),

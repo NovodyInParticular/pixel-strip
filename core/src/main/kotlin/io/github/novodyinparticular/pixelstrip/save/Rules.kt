@@ -1,0 +1,150 @@
+package io.github.novodyinparticular.pixelstrip.save
+
+import com.badlogic.gdx.utils.JsonReader
+import com.badlogic.gdx.utils.JsonValue
+import com.badlogic.gdx.utils.JsonWriter
+import io.github.novodyinparticular.pixelstrip.data.CarDef
+import io.github.novodyinparticular.pixelstrip.data.Career
+import io.github.novodyinparticular.pixelstrip.data.Economy
+import io.github.novodyinparticular.pixelstrip.data.PartCatalog
+import io.github.novodyinparticular.pixelstrip.race.DragMath
+
+/**
+ * Every number the [Ledger] needs, flattened to integers: car and part prices per car, resale,
+ * paint, payouts and prize cars. Generated from the game data into assets/data/rules.json
+ * (RulesTest keeps it current) and read by both the game and the server, so a price can never
+ * round differently on the two sides.
+ */
+class Rules(
+    val startingCash: Long,
+    val starterCars: List<String>,
+    val resalePercent: Long,
+    val cars: Map<String, CarRule>,
+    val slots: Map<String, SlotRule>,
+    val cosmetics: Map<String, CosmeticRule>,
+    val colors: Int,
+    val colorPrice: Long,
+    val finishes: List<Long>,
+    val decals: List<Long>,
+    val decalColors: Int,
+    val decalColorPrice: Long,
+    val rivals: List<RivalRule>,
+    /** Two career races can't finish closer together than this (staging + the run itself). */
+    val minRaceGapMs: Long,
+) {
+    class CarRule(val price: Long, val sell: Long, val dealer: Boolean, val paint: Int, val parts: Map<String, List<Long>>)
+    class SlotRule(val tiers: Int, val excludes: List<String>)
+    class CosmeticRule(val price: Long, val styles: Int)
+    class RivalRule(
+        val id: String, val payout: Long, val boss: Boolean,
+        val car: String, val paint: Int, val parts: Map<String, Int>, val cosmetics: Map<String, Int>,
+    )
+
+    fun rivalIndex(id: String) = rivals.indexOfFirst { it.id == id }
+
+    fun toJson(): String {
+        val root = obj()
+        root.addChild("startingCash", JsonValue(startingCash))
+        root.addChild("starterCars", arr(starterCars.map { JsonValue(it) }))
+        root.addChild("resalePercent", JsonValue(resalePercent))
+        root.addChild("cars", obj().also { o ->
+            for ((id, c) in cars.toSortedMap()) o.addChild(id, obj().also { co ->
+                co.addChild("price", JsonValue(c.price))
+                co.addChild("sell", JsonValue(c.sell))
+                co.addChild("dealer", JsonValue(c.dealer))
+                co.addChild("paint", JsonValue(c.paint.toLong()))
+                co.addChild("parts", obj().also { po -> for ((s, p) in c.parts) po.addChild(s, arr(p.map { JsonValue(it) })) })
+            })
+        })
+        root.addChild("slots", obj().also { o ->
+            for ((id, s) in slots) o.addChild(id, obj().also { so ->
+                so.addChild("tiers", JsonValue(s.tiers.toLong()))
+                so.addChild("excludes", arr(s.excludes.map { JsonValue(it) }))
+            })
+        })
+        root.addChild("cosmetics", obj().also { o ->
+            for ((id, c) in cosmetics) o.addChild(id, obj().also { co ->
+                co.addChild("price", JsonValue(c.price))
+                co.addChild("styles", JsonValue(c.styles.toLong()))
+            })
+        })
+        root.addChild("colors", JsonValue(colors.toLong()))
+        root.addChild("colorPrice", JsonValue(colorPrice))
+        root.addChild("finishes", arr(finishes.map { JsonValue(it) }))
+        root.addChild("decals", arr(decals.map { JsonValue(it) }))
+        root.addChild("decalColors", JsonValue(decalColors.toLong()))
+        root.addChild("decalColorPrice", JsonValue(decalColorPrice))
+        root.addChild("rivals", arr(rivals.map { r ->
+            obj().also { o ->
+                o.addChild("id", JsonValue(r.id))
+                o.addChild("payout", JsonValue(r.payout))
+                o.addChild("boss", JsonValue(r.boss))
+                o.addChild("car", JsonValue(r.car))
+                o.addChild("paint", JsonValue(r.paint.toLong()))
+                o.addChild("parts", intMap(r.parts))
+                o.addChild("cosmetics", intMap(r.cosmetics))
+            }
+        }))
+        root.addChild("minRaceGapMs", JsonValue(minRaceGapMs))
+        return root.prettyPrint(JsonWriter.OutputType.json, 120) + "\n"
+    }
+
+    companion object {
+        const val PATH = "data/rules.json"
+
+        private fun obj() = JsonValue(JsonValue.ValueType.`object`)
+        private fun arr(items: List<JsonValue>) = JsonValue(JsonValue.ValueType.array).also { a -> items.forEach { a.addChild(it) } }
+        private fun intMap(m: Map<String, Int>) = obj().also { o -> for ((k, v) in m.toSortedMap()) o.addChild(k, JsonValue(v.toLong())) }
+        private fun ints(j: JsonValue?) = j?.associate { it.name to it.asInt() } ?: emptyMap()
+
+        /** From the game data; the stock class (which scales part prices) comes from a perfect-pass simulation. */
+        fun build(cars: List<CarDef>, catalog: PartCatalog, economy: Economy, career: Career, colors: Int, partsResalePercent: Long) = Rules(
+            startingCash = economy.startingCash,
+            starterCars = economy.starterCars,
+            resalePercent = partsResalePercent,
+            cars = cars.associate { def ->
+                val cls = economy.classFor(DragMath.perfectPass(def).quarter)
+                def.id to CarRule(def.price.toLong(), economy.sellPrice(def.price), def.dealer, def.defaultPaint,
+                    catalog.slots.associate { s -> s.id to (1..s.tiers.size).map { t -> catalog.price(s, t, cls) } })
+            },
+            slots = catalog.slots.associate { it.id to SlotRule(it.tiers.size, it.excludes) },
+            cosmetics = catalog.cosmetics.associate { it.id to CosmeticRule(it.price.toLong(), it.styles.size) },
+            colors = colors,
+            colorPrice = catalog.colorPrice.toLong(),
+            finishes = catalog.finishes.map { it.price.toLong() },
+            decals = catalog.decals.map { it.price.toLong() },
+            decalColors = catalog.decalColors.size,
+            decalColorPrice = DECAL_COLOR_PRICE,
+            rivals = career.rivals.map { r -> RivalRule(r.id, r.payout, r.boss, r.carId, r.paint, r.parts, r.cosmetics) },
+            minRaceGapMs = 6000L,
+        )
+
+        const val DECAL_COLOR_PRICE = 500L
+
+        fun parse(text: String): Rules {
+            val j = JsonReader().parse(text)
+            return Rules(
+                startingCash = j.getLong("startingCash"),
+                starterCars = j.get("starterCars").asStringArray().toList(),
+                resalePercent = j.getLong("resalePercent"),
+                cars = j.get("cars").associate { c ->
+                    c.name to CarRule(c.getLong("price"), c.getLong("sell"), c.getBoolean("dealer"), c.getInt("paint"),
+                        c.get("parts").associate { p -> p.name to p.asLongArray().toList() })
+                },
+                slots = j.get("slots").associate { it.name to SlotRule(it.getInt("tiers"), it.get("excludes").asStringArray().toList()) },
+                cosmetics = j.get("cosmetics").associate { it.name to CosmeticRule(it.getLong("price"), it.getInt("styles")) },
+                colors = j.getInt("colors"),
+                colorPrice = j.getLong("colorPrice"),
+                finishes = j.get("finishes").asLongArray().toList(),
+                decals = j.get("decals").asLongArray().toList(),
+                decalColors = j.getInt("decalColors"),
+                decalColorPrice = j.getLong("decalColorPrice"),
+                rivals = j.get("rivals").map { r ->
+                    RivalRule(r.getString("id"), r.getLong("payout"), r.getBoolean("boss"), r.getString("car"), r.getInt("paint"),
+                        ints(r.get("parts")), ints(r.get("cosmetics")))
+                },
+                minRaceGapMs = j.getLong("minRaceGapMs"),
+            )
+        }
+    }
+}

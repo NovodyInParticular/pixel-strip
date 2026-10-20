@@ -82,5 +82,16 @@ class SettingsScreen(game: PixelStrip) : MenuScreen(game) {
             Quality.HIGH -> "HIGH: EVERY EFFECT"
         }
         font.drawCentered(batch, hint, w / 2f, 40f, SOFT)
+        val cloud = game.cloud
+        val pending = game.save.pending.size
+        val line = when (cloud.status) {
+            io.github.novodyinparticular.pixelstrip.net.Cloud.Status.OFFLINE -> "CLOUD: OFFLINE" + if (pending > 0) " ($pending QUEUED)" else ""
+            io.github.novodyinparticular.pixelstrip.net.Cloud.Status.SIGNING_IN -> "CLOUD: SIGNING IN..."
+            io.github.novodyinparticular.pixelstrip.net.Cloud.Status.SYNCING -> "CLOUD: SYNCING..."
+            io.github.novodyinparticular.pixelstrip.net.Cloud.Status.SYNCED -> "CLOUD: SAVED  ID ${cloud.playerId?.uppercase() ?: "?"}"
+            io.github.novodyinparticular.pixelstrip.net.Cloud.Status.ERROR -> "CLOUD: RETRYING" + if (pending > 0) " ($pending QUEUED)" else ""
+        }
+        font.drawCentered(batch, line, w / 2f, 24f, if (cloud.status == io.github.novodyinparticular.pixelstrip.net.Cloud.Status.ERROR) PINK else CYAN)
+        if (cloud.rejected > 0) font.drawCentered(batch, "${cloud.rejected} RESULT(S) REFUSED BY THE SERVER", w / 2f, 12f, PINK)
     }
 }

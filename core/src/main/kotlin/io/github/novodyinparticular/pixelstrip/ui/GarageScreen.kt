@@ -1,5 +1,6 @@
 package io.github.novodyinparticular.pixelstrip.ui
 
+import io.github.novodyinparticular.pixelstrip.save.Entry
 import com.badlogic.gdx.Input
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.GL20
@@ -49,9 +50,7 @@ class GarageScreen(game: PixelStrip) : MenuScreen(game) {
             confirmSell = 3f
             return
         }
-        val car = owned
-        save.cash += game.saleValue(car)
-        save.removeCar(car.uid)
+        if (!game.commit(Entry("sell", game.now(), uid = owned.uid))) return
         index = index.coerceAtMost(save.cars.size - 1)
         save.selected = save.cars[index].uid
         save.write()

@@ -49,8 +49,9 @@ class Career(val tiers: List<Tier>) {
     }
 
     companion object {
-        fun load(): Career {
-            val root = JsonReader().parse(Gdx.files.internal("data/career.json"))
+        fun load(): Career = parse(JsonReader().parse(Gdx.files.internal("data/career.json")))
+
+        fun parse(root: com.badlogic.gdx.utils.JsonValue): Career {
             var n = 0
             return Career(root.get("tiers").map { t ->
                 val tid = t.getString("id")

@@ -1,5 +1,7 @@
 package io.github.novodyinparticular.pixelstrip.ui
 
+import io.github.novodyinparticular.pixelstrip.save.Entry
+import io.github.novodyinparticular.pixelstrip.save.Ledger
 import com.badlogic.gdx.Input
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.Pixmap
@@ -37,24 +39,10 @@ class PaintShopScreen(game: PixelStrip) : MenuScreen(game) {
     private val apply = button("APPLY", BTN_RED, big = true, keys = intArrayOf(Input.Keys.ENTER)) { commit() }
     private val back = button("BACK", BTN_GREY, keys = intArrayOf(Input.Keys.B)) { onBack() }
 
-    private fun cost(): Long {
-        var c = 0L
-        if (color != owned.paint) c += cat.colorPrice
-        if (finish != (owned.cosmetics["finish"] ?: 0)) c += cat.finishes[finish].price
-        if (decal != (owned.cosmetics["decal"] ?: 0)) c += cat.decals[decal].price
-        if (decalColor != (owned.cosmetics["decalColor"] ?: 0) && decal > 0) c += 500
-        return c
-    }
+    private fun cost(): Long = Ledger.paintCost(game.rules, owned, listOf(color, finish, decal, decalColor))
 
     private fun commit() {
-        val c = cost()
-        if (c == 0L || save.cash < c) return
-        save.cash -= c
-        owned.paint = color
-        owned.cosmetics["finish"] = finish
-        owned.cosmetics["decal"] = decal
-        owned.cosmetics["decalColor"] = decalColor
-        save.write()
+        if (!game.commit(Entry("paint", game.now(), uid = owned.uid, paint = listOf(color, finish, decal, decalColor)))) return
         applied = 1.4f
         flash = 0.5f
         flashColor.set(rampColor(color))

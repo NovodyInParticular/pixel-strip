@@ -29,7 +29,15 @@ Done so far:
   VS cards, boss intro scenes, purses, and the boss's car as a pink-slip prize. Street boss is Joe
   "Ground Control" in his EF Civic hatch, Sport boss is Rotor in a black FC RX-7.
 
-Next: the remaining tracks, weather and audio.
+- Six tracks: Neon City, Sundown Strip (desert), Dockside (rain, wet reflections, lightning),
+  Sunset Coast, Summit Airfield (snow), Dusk Speedway '77; each with its own grip, weather and
+  song. Joe's boss race has a seventh, San Antonio, which is his alone.
+- Audio, all synthesized: engines from the live physics (per-cylinder firing, turbo, blower,
+  limiter, nitrous, tyre squeal), effects, crowd, and chiptune music per screen and track
+- Cloud save (Firebase): anonymous accounts, and every cash or garage change checked by the
+  server (see below)
+
+Next: real-time multiplayer with server-checked races.
 
 ### How to race
 
@@ -74,6 +82,57 @@ Needs Android 8.0 (API 26) or newer.
 
 Android keeps `save.json` in the app's private storage. The desktop build uses
 `~/.local/share/pixel-strip/save.json` (screenshot runs use a separate throwaway save).
+
+## Cloud save (Firebase)
+
+Every change to cash or the garage (buying, upgrading, painting, selling, career races) is a
+ledger entry (`core/.../save/Ledger.kt`). The game applies it at once and queues it. The `sync`
+Cloud Function (`server/functions/src`) replays the queue with the same rules, refuses anything
+that breaks them (wrong prices, locked rivals, races closer than 6 s apart, timestamps from the
+future) and returns the state the game must adopt. Firestore rules deny every direct client
+read and write; only the function writes, through the Admin SDK.
+
+Both sides read the same price table, `assets/data/rules.json`, generated from the game data
+(`LedgerTest` fails if it's stale: `REGEN=1 ./gradlew core:test --tests '*LedgerTest*'`). Both
+run the same cases, `shared/ledger_cases.json` (written by `tools/make_ledger_cases.py`).
+
+Career races are checked for order and timing only; full re-simulation of each run on the
+server comes with multiplayer. A save from before cloud sync is imported once, when its account
+is created, with cash capped at $250,000.
+
+With `assets/data/firebase.json` left empty the game plays offline and just queues entries.
+
+### Setting up the Firebase project
+
+1. At https://console.firebase.google.com, add a project (Google Analytics isn't needed).
+2. Switch it to the **Blaze** plan (Cloud Functions need it), then in the Google Cloud console
+   under **Billing > Budgets & alerts** create a budget (for example $5 with alerts at 50%,
+   90% and 100%). A budget only emails you; it doesn't stop spending.
+3. **Build > Authentication > Get started > Sign-in method**: enable **Anonymous**.
+4. **Build > Firestore Database > Create database**, in production mode.
+5. **Project settings > General**: copy the Project ID and the Web API Key into
+   `assets/data/firebase.json`. The key identifies the project; it isn't a secret.
+6. Deploy the function and the rules:
+
+   ```sh
+   cd server
+   npm install && npm --prefix functions install
+   npx firebase login
+   npx firebase use --add <project-id>
+   npx firebase deploy --only functions,firestore:rules
+   ```
+
+Anonymous accounts live on the device: clearing the app's data starts a new account.
+
+### Testing against the emulators
+
+```sh
+cd server
+npm --prefix functions test     # ledger unit tests + the shared cases
+npm run e2e                     # sign-in, sync, refused cheats, closed Firestore (needs Java 21+)
+npx firebase emulators:start --project demo-pixel-strip    # then run the desktop build with
+# JAVA_OPTS=-Dpixelstrip.emulator=127.0.0.1 to use the emulators instead of the real project
+```
 
 ## Desktop screenshot mode
 
