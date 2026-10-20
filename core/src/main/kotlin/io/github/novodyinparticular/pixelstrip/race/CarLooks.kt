@@ -7,7 +7,6 @@ import io.github.novodyinparticular.pixelstrip.save.OwnedCar
 /** What a car visibly has fitted: from performance parts (scoops, blowers, pipes) and cosmetics. */
 data class CarLooks(
     val wing: String? = null,          // ducktail, gt, drag
-    val kit: String? = null,           // street, race
     val scoop: Boolean = false,
     val blower: Boolean = false,
     val intercooler: Boolean = false,
@@ -43,12 +42,6 @@ data class CarLooks(
             }
             return CarLooks(
                 wing = style("wing"),
-                // the generated kit layers until every body part has its own (street = any piece, race = splitter or race skirts)
-                kit = when {
-                    "bumper3" in visuals || "skirts2" in visuals || "rear2" in visuals -> "race"
-                    visuals.any { it.startsWith("bumper") || it.startsWith("skirts") || it.startsWith("rear") } -> "street"
-                    else -> null
-                },
                 scoop = "scoop" in visuals && "blower" !in visuals,
                 blower = "blower" in visuals,
                 intercooler = "intercooler" in visuals,

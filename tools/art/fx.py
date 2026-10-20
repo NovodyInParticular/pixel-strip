@@ -129,6 +129,40 @@ def drivers():
     return np.concatenate([gen, joe], axis=1)
 
 
+def wheelie_bar():
+    """40x8: chromoly bar from the rear axle back past the bumper to a little wheel; anchored at the right end (axle)."""
+    out = canvas(40, 8)
+    for x in range(3, 40):
+        y = 5 - (x - 3) * 3 // 37                       # rises gently toward the axle
+        out[y, x] = P("steel", 5)
+        out[y + 1, x] = P("steel", 2)
+    for x in range(3, 22, 5):                             # cross bracing on the part that shows
+        out[max(0, 5 - (x - 3) * 3 // 37 - 2), x] = P("steel", 3)
+    for dy in range(-2, 2):                               # the little wheel
+        for dx in range(-2, 2):
+            if dx * dx + dy * dy <= 3:
+                out[6 + dy, 3 + dx] = P("night", 0) if dx * dx + dy * dy > 1 else P("steel", 4)
+    return out
+
+
+def parachute():
+    """30x18: the canopy open behind the car, tether on the right edge (bumper)."""
+    out = canvas(30, 18)
+    cx, cy, r = 8.5, 9.0, 8.0
+    for y in range(18):
+        for x in range(18):
+            dx, dy = (x + 0.5 - cx) / 0.75, y + 0.5 - cy
+            d = math.hypot(dx, dy)
+            if d <= r and dx <= 1.5:
+                stripe = int((math.atan2(dy, dx) + math.pi) / (math.pi / 4)) % 2
+                out[y, x] = (P("red", 2) if stripe else P("steel", 6)) if d < r - 1 else P("night", 1)
+    for x in range(12, 30):                               # shroud lines and tether
+        for y0 in (2, 9, 16):
+            y = round(y0 + (9 - y0) * (x - 12) / 17)
+            out[y, x] = P("steel", 3)
+    return out
+
+
 def build():
     strip = np.concatenate([puff(s, i * 17) for i, s in enumerate(PUFF_SIZES)], axis=1)
     save(strip, "fx/smoke.png")
@@ -136,3 +170,5 @@ def build():
     save(nitrous_jet(), "fx/purge.png")
     save(haze(), "fx/haze.png")
     save(drivers(), "fx/drivers.png")
+    save(wheelie_bar(), "fx/wheeliebar.png")
+    save(parachute(), "fx/chute.png")

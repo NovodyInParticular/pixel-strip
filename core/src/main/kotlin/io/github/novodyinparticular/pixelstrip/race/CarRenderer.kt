@@ -33,6 +33,10 @@ class CarRenderer(val def: CarDef, private val art: Art, private val paint: Shad
     companion object {
         const val SPEC_POWER = 22f
         const val SPEC_STRENGTH = 0.8f
+        /** Painted body kit layers, back to front. */
+        val PAINTED_BODY = listOf("flares", "widebody", "skirts1", "skirts2", "rear1", "rear2", "bumper1", "bumper2", "bumper3", "hood2")
+        /** True-colour details on top of the trim. */
+        val TRIM_BODY = listOf("bumper2", "bumper3", "skirts2", "rear2", "hood1", "carbon", "cage", "chute")
     }
 
     var paintRow = def.defaultPaint
@@ -48,6 +52,10 @@ class CarRenderer(val def: CarDef, private val art: Art, private val paint: Shad
     private fun layer(name: String) = layerCache.getOrPut(name) { TextureRegion(art.tex("${s.dir}/$name.png")) }
     private var rimFrames: Array<TextureRegion>? = null
     private val glowTex = art.tex("fx/light_soft.png")
+    private val wheelieBarTex = art.tex("fx/wheeliebar.png")
+    private val chuteTex = art.tex("fx/chute.png")
+    /** 0 packed .. 1 fully open: the race opens it after the finish line. */
+    var chute = 0f
 
     private fun rimFramesFor(style: String): Array<TextureRegion> {
         val tex = art.tex("wheels/r${s.wheelRadius10}_$style.png")
@@ -105,6 +113,16 @@ class CarRenderer(val def: CarDef, private val art: Art, private val paint: Shad
             }
             batch.draw(wells, bx, by + lift)
         }
+        if (ghost <= 0f && "wheeliebar" in looks.body) {
+            // behind the car, from under the rear axle back to its little wheel on the ground
+            batch.draw(wheelieBarTex, floor(bx + s.rearWheel.first - wheelieBarTex.width + 3f), groundY - 1f)
+        }
+        if (ghost <= 0f && chute > 0f && "chute" in looks.body) {
+            val cw = chuteTex.width * chute
+            val ch = chuteTex.height * (0.4f + 0.6f * chute)
+            val ty = by + lift + s.height - s.groundY + 4f
+            batch.draw(chuteTex, floor(bx - cw + 1f), floor(ty - ch / 2f + 9f), cw, ch)
+        }
         for ((i, wheel) in listOf(s.rearWheel, s.frontWheel).withIndex()) {
             val (wx, wy) = wheel
             // a wheelstanding car's front wheel leaves the ground with the body
@@ -128,7 +146,7 @@ class CarRenderer(val def: CarDef, private val art: Art, private val paint: Shad
         paint.setUniformf("u_specStrength", SPEC_STRENGTH)
         if (lights != null) lights.apply(paint, shakeX, shakeY) else paint.setUniformi("u_lightCount", 0)
         batch.draw(bodyRegion, bx, by + lift, ox, oy, s.width.toFloat(), s.height.toFloat(), 1f, 1f, pitch)
-        looks.kit?.let { batch.draw(layer("kit_$it"), bx, by + lift, ox, oy, s.width.toFloat(), s.height.toFloat(), 1f, 1f, pitch) }
+        for (v in PAINTED_BODY) if (v in looks.body) batch.draw(layer("body_$v"), bx, by + lift, ox, oy, s.width.toFloat(), s.height.toFloat(), 1f, 1f, pitch)
         if (ghost <= 0f) looks.decal?.let { d ->
             batch.shader = tint
             tint.setUniformf("u_ghost", 0f)
@@ -157,6 +175,12 @@ class CarRenderer(val def: CarDef, private val art: Art, private val paint: Shad
             batch.color = Color.WHITE
         }
         if (ghost <= 0f) {
+            for (v in TRIM_BODY) if (v in looks.body) batch.draw(layer("body_${v}_t"), bx, by + lift, ox, oy, s.width.toFloat(), s.height.toFloat(), 1f, 1f, pitch)
+            if (looks.tint > 0) {
+                batch.setColor(1f, 1f, 1f, if (looks.tint == 1) 0.35f else 0.7f)
+                batch.draw(layer("body_tint_t"), bx, by + lift, ox, oy, s.width.toFloat(), s.height.toFloat(), 1f, 1f, pitch)
+                batch.color = Color.WHITE
+            }
             if (looks.blower) batch.draw(layer("blower"), bx, by + lift, ox, oy, s.width.toFloat(), s.height.toFloat(), 1f, 1f, pitch)
             if (looks.intercooler) batch.draw(layer("intercooler"), bx, by + lift, ox, oy, s.width.toFloat(), s.height.toFloat(), 1f, 1f, pitch)
             if (looks.sidepipe) batch.draw(layer("sidepipe"), bx, by + lift, ox, oy, s.width.toFloat(), s.height.toFloat(), 1f, 1f, pitch)

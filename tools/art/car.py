@@ -717,18 +717,95 @@ def scoop_layer(p):
     return _paint_shape(p, [[(cx - 5, y + 0.3), (cx - 4, y - 2.4), (cx + 4, y - 2.6), (cx + 4.4, y + 0.3)]])[0]
 
 
-def kit_layers(p):
-    """Street: side skirts and a front lip. Race: deeper splitter, skirts and a rear diffuser."""
+def _arch_ring(cx, cy, r0, r1, lift=0.0, steps=14):
+    """Upper half-ring around a wheel arch, from r0 to r1 (a flare's lip)."""
+    outer = [(cx + r1 * math.cos(math.pi - math.pi * i / steps), cy - r1 * math.sin(math.pi * i / steps) - lift) for i in range(steps + 1)]
+    inner = [(cx + r0 * math.cos(math.pi * i / steps), cy - r0 * math.sin(math.pi - math.pi * i / steps)) for i in range(steps + 1)]
+    return outer + inner
+
+
+def _fill(cw, polys, col_fn):
+    out = canvas(cw, CH)
+    for poly in polys:
+        for y, x in zip(*_poly_pixels(cw, poly)):
+            c = col_fn(x, y)
+            if c is not None:
+                out[y, x] = c
+    return out
+
+
+def body_part_layers(p):
+    """Body kit pieces, one layer each. Painted parts go through the paint shader (body colour);
+    the *_t layers are true-colour details (intakes, splitters, fins, vents, carbon, cage, tint).
+
+    Visual ids match parts.json: bumper1-3, skirts1-2, rear1-2, hood1-2, flares, widebody,
+    carbon, cage, chute; tint (window film) is a cosmetic.
+    """
+    cw = width_of(p)
     rx0 = p["rear_wheel"][0] + p["arch_r"] - 0.5
     rx1 = p["front_wheel"][0] - p["arch_r"] + 0.5
     ry = p["rocker_y"]
     L_ = p["length"]
-    street = [[(rx0, ry - 0.6), (rx1, ry - 0.6), (rx1, ry + 1.4), (rx0, ry + 1.4)],
-              [(L_ - 9, ry - 0.2), (L_ + 0.4, ry - 0.2), (L_ + 0.2, ry + 1.4), (L_ - 9, ry + 1.2)]]
-    race = [[(rx0, ry - 0.6), (rx1, ry - 0.6), (rx1, ry + 2.0), (rx0, ry + 2.0)],
-            [(L_ - 11, ry - 0.4), (L_ + 1.6, ry - 0.4), (L_ + 1.6, ry + 1.0), (L_ - 11, ry + 2.2)],
-            [(-1.0, ry - 1.0), (8, ry - 1.0), (8, ry + 1.4), (-1.0, ry + 2.0)]]
-    return {"kit_street": _paint_shape(p, street, 5)[0], "kit_race": _paint_shape(p, race, 4)[0]}
+    paint, trim = {}, {}
+    black = lambda x, y: P("night", 0) if (x + y) % 2 else P("night", 1)
+
+    # front bumpers: a lip; a deeper street bumper with an intake; a race splitter with canards
+    paint["bumper1"] = [[(L_ - 8, ry - 0.2), (L_ + 0.4, ry - 0.2), (L_ + 0.2, ry + 0.9), (L_ - 8, ry + 0.8)]]
+    paint["bumper2"] = [[(L_ - 10, ry - 2.6), (L_ + 1.0, ry - 2.4), (L_ + 1.0, ry + 1.4), (L_ - 10, ry + 1.4)]]
+    trim["bumper2"] = _fill(cw, [[(L_ - 5.5, ry - 1.4), (L_ + 0.4, ry - 1.4), (L_ + 0.4, ry + 0.2), (L_ - 5.5, ry + 0.2)]], black)
+    paint["bumper3"] = [[(L_ - 11, ry - 2.6), (L_ + 1.2, ry - 2.4), (L_ + 1.2, ry + 1.0), (L_ - 11, ry + 1.0)]]
+    trim["bumper3"] = _fill(cw, [[(L_ - 11, ry + 1.0), (L_ + 2.8, ry + 1.0), (L_ + 2.8, ry + 1.9), (L_ - 11, ry + 1.9)],   # splitter
+                                 [(L_ - 3.5, ry - 4.4), (L_ + 0.8, ry - 4.0), (L_ + 0.8, ry - 3.3), (L_ - 3.5, ry - 3.6)],  # canard
+                                 [(L_ - 5.5, ry - 1.2), (L_ + 0.6, ry - 1.2), (L_ + 0.6, ry + 0.3), (L_ - 5.5, ry + 0.3)]],
+                             lambda x, y: P("steel", 1) if (x * 3 + y) % 5 == 0 else P("night", 0))
+    # side skirts
+    paint["skirts1"] = [[(rx0, ry - 0.6), (rx1, ry - 0.6), (rx1, ry + 1.4), (rx0, ry + 1.4)]]
+    paint["skirts2"] = [[(rx0, ry - 0.6), (rx1, ry - 0.6), (rx1, ry + 2.0), (rx0, ry + 2.0)]]
+    trim["skirts2"] = _fill(cw, [[(rx0 + 1, ry + 1.4), (rx1 - 1, ry + 1.4), (rx1 - 1, ry + 2.0), (rx0 + 1, ry + 2.0)]], lambda x, y: P("night", 0))
+    # rear: a diffuser lip, then a race diffuser with fins
+    paint["rear1"] = [[(-0.6, ry - 0.8), (8, ry - 0.8), (8, ry + 1.2), (-0.6, ry + 1.6)]]
+    paint["rear2"] = [[(-1.0, ry - 1.0), (8, ry - 1.0), (8, ry + 1.4), (-1.0, ry + 2.0)]]
+    trim["rear2"] = _fill(cw, [[(-0.6, ry + 0.8), (7, ry + 0.8), (7, ry + 2.6), (-0.6, ry + 2.6)]],
+                          lambda x, y: P("steel", 2) if x % 2 == 0 else P("night", 0))
+    # hoods: vented (louvres near the windshield), cowl induction (a bulge facing the glass)
+    hx0, hx1, hy = _hood(p)
+    vx = hx0 + (hx1 - hx0) * 0.25
+    trim["hood1"] = _fill(cw, [[(vx + k * 2.2, hy(vx) - 0.2), (vx + k * 2.2 + 1.2, hy(vx) - 0.2), (vx + k * 2.2 + 1.2, hy(vx) + 0.8), (vx + k * 2.2, hy(vx) + 0.8)]
+                               for k in range(3)], lambda x, y: P("night", 0))
+    cx = hx0 + 1.5
+    paint["hood2"] = [[(cx, hy(cx) - 2.2), (cx + 10, hy(cx + 10) - 0.4), (cx + 12, hy(cx + 12) + 0.3), (cx, hy(cx) + 0.3)]]
+    # fenders: a flare lip around each arch; the widebody is thicker and runs a bulge along the side
+    rw, fw, ar = p["rear_wheel"], p["front_wheel"], p["arch_r"]
+    paint["flares"] = [_arch_ring(rw[0], rw[1], ar - 0.4, ar + 1.4), _arch_ring(fw[0], fw[1], ar - 0.4, ar + 1.4)]
+    paint["widebody"] = [_arch_ring(rw[0], rw[1], ar - 0.6, ar + 2.6, lift=0.3), _arch_ring(fw[0], fw[1], ar - 0.6, ar + 2.6, lift=0.3),
+                         [(rx0 - 1.5, ry - 2.6), (rx1 + 1.5, ry - 2.6), (rx1 + 1.5, ry + 0.8), (rx0 - 1.5, ry + 0.8)]]
+    # carbon: a woven dark sheen over the hood and the deck
+    weave = lambda x, y: P("night", 2) if (x // 2 + y // 2) % 2 else P("steel", 1)
+    deck = _deck(p)
+    trim["carbon"] = _fill(cw, [[(hx0, hy(hx0) - 0.2), (hx1, hy(hx1) - 0.2), (hx1, hy(hx1) + 1.2), (hx0, hy(hx0) + 1.2)],
+                                [(deck[0], deck[2] - 0.2), (deck[1], deck[2] - 0.2), (deck[1], deck[2] + 1.2), (deck[0], deck[2] + 1.2)]], weave)
+    # roll cage: tubes seen through the glass
+    cage = canvas(cw, CH)
+    for poly in p["glass"]:
+        ys, xs = _poly_pixels(cw, poly)
+        if len(xs) == 0:
+            continue
+        x0, x1, y0, y1 = xs.min(), xs.max(), ys.min(), ys.max()
+        for y, x in zip(ys, xs):
+            diag = abs((x - x0) - (y - y0) * (x1 - x0) / max(1, y1 - y0)) < 0.8
+            if x in (x0 + 1, x1 - 1) or diag or y == y0 + 1:
+                cage[y, x] = P("steel", 4)
+    trim["cage"] = cage
+    # window film: a mask the game darkens to taste
+    tint = canvas(cw, CH)
+    for poly in p["glass"]:
+        for y, x in zip(*_poly_pixels(cw, poly)):
+            tint[y, x] = P("night", 0)
+    trim["tint"] = tint
+    # parachute pack on the rear bumper
+    trim["chute"] = _fill(cw, [[(-1.6, ry - 6.5), (2.0, ry - 6.5), (2.0, ry - 3.2), (-1.6, ry - 3.2)]],
+                          lambda x, y: P("red", 1) if y % 3 else P("night", 0))
+    return {k: _paint_shape(p, v, 5)[0] for k, v in paint.items()}, trim
 
 
 def trim_extra_layers(p):
@@ -757,8 +834,11 @@ def looks_build(p):
     base = f"cars/{p['id']}"
     for name, img in wing_layers(p).items():
         save(img, f"{base}/{name}.png")
-    for name, img in kit_layers(p).items():
-        save(img, f"{base}/{name}.png")
+    painted, trims = body_part_layers(p)
+    for name, img in painted.items():
+        save(img, f"{base}/body_{name}.png")
+    for name, img in trims.items():
+        save(img, f"{base}/body_{name}_t.png")
     save(scoop_layer(p), f"{base}/scoop.png")
     trims, side_exhaust = trim_extra_layers(p)
     for name, img in trims.items():

@@ -362,6 +362,9 @@ class RaceScreen(
             slowMo = true
         }
         timeScale += ((if (slowMo) 0.22f else 1f) - timeScale) * 0.25f
+        // drag chutes pop a moment after the line
+        if (playerDone) playerView.chute = min(1f, playerView.chute + com.badlogic.gdx.Gdx.graphics.deltaTime * 1.5f)
+        if (ghost.splits[finishSplit] >= 0f) ghostView.chute = min(1f, ghostView.chute + com.badlogic.gdx.Gdx.graphics.deltaTime * 1.5f)
         if (playerDone && !cheered) {
             cheered = true
             game.audio.play(Sfx.Kind.CHEER, 0.8f)
