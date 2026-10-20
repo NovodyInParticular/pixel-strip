@@ -17,7 +17,7 @@ import kotlin.math.min
  * Before a career race: the rival slides in under a spotlight with both cars. Bosses talk first,
  * their lines typed out one at a time; tap to move on.
  */
-class VsScreen(game: PixelStrip, private val rival: Career.Rival) : MenuScreen(game) {
+class VsScreen(game: PixelStrip, private val rival: Career.Rival, private val pinkSlip: Boolean = false) : MenuScreen(game) {
     private val bg = art.tex("scenes/showroom.png")
     private val cone = TextureRegion(art.tex("fx/light_cone.png"))
     private val stage = CarStage()
@@ -27,14 +27,14 @@ class VsScreen(game: PixelStrip, private val rival: Career.Rival) : MenuScreen(g
     private val theirs = rival.asCar()
     private var line = 0
     private var typed = 0f
-    private val talking get() = rival.boss && line < rival.intro.size
+    private val talking get() = rival.boss && !pinkSlip && rival.id !in game.save.beaten && line < rival.intro.size
 
     private val race = button("RACE", BTN_RED, big = true, keys = intArrayOf(Input.Keys.ENTER)) { go() }
     private val back = button("BACK", BTN_GREY, keys = intArrayOf(Input.Keys.B)) { onBack() }
 
     private fun go() {
         if (talking) return advance()
-        game.go(1) { RaceScreen(game, "neon_city", mine, rival = rival) }
+        game.go(1) { RaceScreen(game, "neon_city", mine, rival = rival, pinkSlip = pinkSlip) }
     }
 
     private fun advance() {
@@ -99,7 +99,8 @@ class VsScreen(game: PixelStrip, private val rival: Career.Rival) : MenuScreen(g
         font.draw(batch, rival.name, px - 4f, h - 132f, Color.WHITE, 2)
         rival.handle?.let { font.draw(batch, "\"$it\"", px - 4f - font.width(it) / 2f, h - 144f, if (rival.boss) RED else SOFT) }
         font.drawCentered(batch, "VS", w / 2f, h / 2f + 10f, YELLOW, 4)
-        if (rival.boss) font.drawCentered(batch, "BOSS RACE - PINK SLIPS", w / 2f, h / 2f - 10f, RED)
+        if (pinkSlip) font.drawCentered(batch, "PINK SLIPS - LOSER WALKS", w / 2f, h / 2f - 10f, RED)
+        else if (rival.boss && rival.id !in game.save.beaten) font.drawCentered(batch, "BOSS RACE - PINK SLIPS", w / 2f, h / 2f - 10f, RED)
         // the two cars' numbers
         val mineDef = game.effective(mine)
         val theirDef = game.effective(theirs)

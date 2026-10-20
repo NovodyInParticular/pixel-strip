@@ -36,6 +36,8 @@ class RaceScreen(
     private val test: Boolean = false,
     /** A career rival in the far lane (a real car), instead of the hologram ghost. */
     private val rival: Career.Rival? = null,
+    /** Cars on the line: win theirs, lose yours (never offered with your last car). */
+    private val pinkSlip: Boolean = false,
 ) : ScreenAdapter() {
     private enum class Phase { BURNOUT, STAGING, COUNTDOWN, RACING, PHOTO, FINISHED }
 
@@ -87,6 +89,7 @@ class RaceScreen(
     private var payout = 0L
     private var wonPrize = false
     private var settled = false
+    private var lostCar = false
 
     private fun playerWon(): Boolean {
         if (playerFoul || player.splits[finishSplit] < 0f) return false
@@ -101,14 +104,18 @@ class RaceScreen(
         settled = true
         val save = game.save
         if (!playerWon()) {
+            if (pinkSlip && save.cars.size > 1) {
+                save.removeCar(owned.uid)
+                lostCar = true
+            }
             save.write()
             return
         }
         val firstWin = r.id !in save.beaten
-        payout = if (firstWin) r.payout else r.payout / 2
+        payout = if (pinkSlip) 0L else if (firstWin) r.payout else r.payout / 2
         save.cash += payout
         save.beaten.add(r.id)
-        if (r.boss && firstWin) {
+        if (r.boss && firstWin || pinkSlip) {
             val prize = r.asCar()
             val car = save.addCar(prize.carId, prize.paint)
             car.parts.putAll(prize.parts)
@@ -728,6 +735,7 @@ class RaceScreen(
         if (slowMo && !playerFoul) notes.add("MARGIN %.4f S".format(abs(playerFinish - ghostFinish)))
         if (payout > 0) notes.add("PURSE  $" + "%,d".format(payout))
         if (wonPrize) notes.add("PINK SLIP: ${game.car(rival!!.carId).name.uppercase()}")
+        if (lostCar) notes.add("LOST: ${carDef.name.uppercase()}")
         hud.drawTimeslip(batch, w, h, "${track.name.uppercase()} DRAGWAY", lines, notes, stamp, color, phaseTime / 1.2f,
             them = rival?.name?.take(6) ?: "GHOST")
     }

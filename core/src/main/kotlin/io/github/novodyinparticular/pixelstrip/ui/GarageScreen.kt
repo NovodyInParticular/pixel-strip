@@ -38,6 +38,27 @@ class GarageScreen(game: PixelStrip) : MenuScreen(game) {
     private val paintShop = button("PAINT", BTN_TEAL, keys = intArrayOf(Input.Keys.P)) { game.go(0) { PaintShopScreen(game) } }
     private val settings = button("SETTINGS", BTN_PURPLE, keys = intArrayOf(Input.Keys.S)) { game.go(0) { SettingsScreen(game) } }
 
+    private val sell = button("SELL", Color(0.35f, 0.3f, 0.2f, 1f)) { sellTapped() }
+    private var confirmSell = 0f
+
+    /** First tap asks, a second tap within 3 s sells. Your last car stays. */
+    private fun sellTapped() {
+        if (save.cars.size < 2) return
+        if (confirmSell <= 0f) {
+            confirmSell = 3f
+            return
+        }
+        val car = owned
+        save.cash += game.saleValue(car)
+        save.removeCar(car.uid)
+        index = index.coerceAtMost(save.cars.size - 1)
+        save.selected = save.cars[index].uid
+        save.write()
+        confirmSell = 0f
+        flash = 0.5f
+        flashColor.set(YELLOW)
+    }
+
     private val owned get() = save.cars[index]
     private val def get() = game.car(owned.carId)
 
@@ -64,6 +85,10 @@ class GarageScreen(game: PixelStrip) : MenuScreen(game) {
         }
         settings.label = "SETUP"
         prev.apply { x = w / 2f - 96f; y = 52f; this.w = 22f; this.h = 22f; visible = save.cars.size > 1 }
+        sell.apply {
+            x = w - 52f; y = h - 58f; this.w = 44f; this.h = 14f; visible = save.cars.size > 1
+            label = if (confirmSell > 0f) "SURE?" else "SELL"
+        }
         next.apply { x = w / 2f + 74f; y = 52f; this.w = 22f; this.h = 22f; visible = save.cars.size > 1 }
     }
 
@@ -72,6 +97,7 @@ class GarageScreen(game: PixelStrip) : MenuScreen(game) {
     private fun lampX(w: Int, i: Int) = bgX(w) + LAMPS[i]
 
     override fun update(dt: Float) {
+        confirmSell = (confirmSell - dt).coerceAtLeast(0f)
         lights.clear()
         val w = post.width
         for (i in LAMPS.indices) lights.add(lampX(w, i), LAMP_Y, 60f, 1f, 0.82f, 0.55f, 210f)
@@ -119,6 +145,11 @@ class GarageScreen(game: PixelStrip) : MenuScreen(game) {
         cash(w - 8f, h - 20f)
         font.draw(batch, "${index + 1}/${save.cars.size}", w - 8f - font.width("${index + 1}/${save.cars.size}"), h - 32f, SOFT)
         carStats(game.effective(owned), w - 144f, 98f)
+        if (confirmSell > 0f) {
+            val text = "SELL FOR $" + "%,d".format(game.saleValue(owned)) + "? TAP AGAIN"
+            panel(w / 2f - font.width(text) / 2f - 6f, h / 2f + 40f, font.width(text) + 12f, 16f, YELLOW, 0.92f)
+            font.drawCentered(batch, text, w / 2f, h / 2f + 45f, YELLOW, 1, null)
+        }
     }
 
     companion object {

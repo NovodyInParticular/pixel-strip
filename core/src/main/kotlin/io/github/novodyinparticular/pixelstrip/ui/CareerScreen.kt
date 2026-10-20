@@ -21,6 +21,20 @@ class CareerScreen(game: PixelStrip) : MenuScreen(game) {
 
     private val race = button("RACE", BTN_RED, big = true, keys = intArrayOf(Input.Keys.ENTER)) { start() }
     private val back = button("GARAGE", BTN_GREY, keys = intArrayOf(Input.Keys.B)) { onBack() }
+    private val slips = button("PINK SLIP", Color(0.75f, 0.15f, 0.4f, 1f), keys = intArrayOf(Input.Keys.P)) { pinkSlip() }
+    private var confirmSlip = 0f
+
+    /** A rematch for cars: only against beaten rivals, never with your last car. Tap twice. */
+    private fun pinkSlip() {
+        if (rival.id !in save.beaten || save.cars.size < 2) return
+        if (confirmSlip <= 0f) {
+            confirmSlip = 3f
+            return
+        }
+        val r = rival
+        game.go(1) { VsScreen(game, r, pinkSlip = true) }
+    }
+
     private val prev = button("<", BTN_GREY, keys = intArrayOf(Input.Keys.LEFT)) { selected = (selected - 1 + all.size) % all.size }
     private val next = button(">", BTN_GREY, keys = intArrayOf(Input.Keys.RIGHT)) { selected = (selected + 1) % all.size }
 
@@ -45,11 +59,17 @@ class CareerScreen(game: PixelStrip) : MenuScreen(game) {
     override fun layout(w: Int, h: Int) {
         race.apply { x = w - 96f; y = 8f; this.w = 88f; this.h = 34f; label = if (career.unlocked(save, rival)) "RACE" else "LOCKED" }
         back.apply { x = 8f; y = 8f; this.w = 64f; this.h = 20f }
+        slips.apply {
+            x = w - 96f; y = 46f; this.w = 88f; this.h = 16f
+            visible = rival.id in save.beaten && save.cars.size >= 2
+            label = if (confirmSlip > 0f) "RISK IT?" else "PINK SLIP"
+        }
         prev.apply { x = 78f; y = 8f; this.w = 20f; this.h = 20f }
         next.apply { x = 102f; y = 8f; this.w = 20f; this.h = 20f }
     }
 
     override fun update(dt: Float) {
+        confirmSlip = (confirmSlip - dt).coerceAtLeast(0f)
         if (Gdx.input.justTouched() && !game.transitioning) {
             val tx = post.toBufferX(Gdx.input.x)
             val ty = post.toBufferY(Gdx.input.y)
@@ -146,6 +166,11 @@ class CareerScreen(game: PixelStrip) : MenuScreen(game) {
         val purse = if (r.id in save.beaten) "REMATCH $" + "%,d".format(r.payout / 2) else "PURSE $" + "%,d".format(r.payout)
         font.draw(batch, if (r.boss && r.id !in save.beaten) "PINK SLIPS" else purse, w - 110f - font.width(purse), 36f, if (r.boss) RED else GREEN, 1, null)
         font.draw(batch, "CAREER", 8f, h - 20f, PINK, 2)
+        if (confirmSlip > 0f) {
+            val text = "YOUR ${game.car(save.selectedCar()!!.carId).name.uppercase()} FOR THEIR ${game.car(rival.carId).name.uppercase()}. TAP AGAIN"
+            panel(w / 2f - font.width(text) / 2f - 6f, h / 2f, font.width(text) + 12f, 16f, RED, 0.94f)
+            font.drawCentered(batch, text, w / 2f, h / 2f + 5f, RED, 1, null)
+        }
         cash(w - 8f, h - 20f)
     }
 }

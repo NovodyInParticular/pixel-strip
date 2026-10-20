@@ -111,6 +111,15 @@ class PixelStrip(val platform: Platform, val shots: ShotPlan? = null, private va
         else -> TitleScreen(this)
     }
 
+    /** What the dealer pays: 60% of the car, 30% of what its parts cost. */
+    fun saleValue(car: OwnedCar): Long {
+        val def = car(car.carId)
+        val stockClass = economy.classFor(io.github.novodyinparticular.pixelstrip.race.DragMath.perfectPass(def).quarter)
+        var parts = 0L
+        for (slot in this.parts.slots) for (t in 1..(car.parts[slot.id] ?: 0)) parts += this.parts.price(slot, t, stockClass)
+        return economy.sellPrice(def.price) + (parts * PARTS_RESALE).toLong()
+    }
+
     /** Where "start" goes: first launch picks a starter car, otherwise the garage. */
     fun home(): Screen = if (save.isNew) StarterScreen(this) else GarageScreen(this)
 
@@ -164,5 +173,6 @@ class PixelStrip(val platform: Platform, val shots: ShotPlan? = null, private va
 
     companion object {
         const val TRANSITION_S = 0.38f
+        const val PARTS_RESALE = 0.3f
     }
 }
