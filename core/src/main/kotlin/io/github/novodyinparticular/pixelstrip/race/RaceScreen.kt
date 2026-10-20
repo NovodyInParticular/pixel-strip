@@ -569,8 +569,6 @@ class RaceScreen(
             }
             lastMark[lane] = wx
         } else lastMark[lane] = Float.NaN
-        // what the tyres throw up off the surface
-        val spray = SPRAY[track.weather]
         val speedPx = car.v * PX_PER_M
         if ((track.weather == "rain" || track.weather == "sand") && car.v > 4f) {
             // a rooster tail off the rear tyres: mist on the wet, dust on the dry
@@ -579,19 +577,12 @@ class RaceScreen(
             if (MathUtils.random() < chance) particles.smoke(canvasX + s.rearWheel.first - 6f, ground + 1f, 0.25f,
                 if (dust) DUST_LIT else MIST_LIT, if (dust) DUST_AMBIENT else MIST_AMBIENT, 0.45f, carry = speedPx * 0.7f)
         }
-        if (spray != null && (car.v > 2f || car.slipSpeed > 3f)) {
-            val n = ((speedPx + car.slipSpeed * PX_PER_M) / 90f).toInt().coerceIn(1, 7)
-            for (wheel in listOf(s.rearWheel.first, s.frontWheel.first)) {
-                repeat(n) { particles.spray(canvasX + wheel - 4f, ground, speedPx, car.slipSpeed * PX_PER_M, spray, 2f) }
-            }
-        }
         if (car.slipSpeed >= 1.5f) {
             val wheelX = canvasX + s.rearWheel.first
             val heat = (car.slipSpeed / 20f).coerceIn(0.2f, 1f)
             val n = if (car.slipSpeed > 12f) 3 else 1
             val linger = if (car.mode == Vehicle.Mode.BURNOUT) 1.6f else 1f
             repeat(n) { particles.smoke(wheelX - 4f, ground + 2f, heat, SMOKE_LIT, SMOKE_AMBIENT, linger) }
-            if (MathUtils.random() < 0.35f) particles.rubber(wheelX, ground)
             if (car.mode == Vehicle.Mode.BURNOUT) particles.haze(wheelX, ground + 6f, 0.8f)
         }
         val (ex, ey) = view.exhaustAt(canvasX, ground)
@@ -1086,12 +1077,6 @@ class RaceScreen(
     }
 
     companion object {
-        /** What tyres kick up, by weather: water at Dockside, snow at the airfield, grit in the desert. */
-        val SPRAY = mapOf(
-            "rain" to Color(0.85f, 0.92f, 1f, 0.8f),
-            "snow" to Color(0.95f, 0.97f, 1f, 0.9f),
-            "sand" to Color(0.98f, 0.82f, 0.55f, 0.85f),
-        )
         val MIST_LIT = Color(0.75f, 0.82f, 0.95f, 1f)
         val MIST_AMBIENT = Color(0.45f, 0.5f, 0.62f, 1f)
         val DUST_LIT = Color(0.95f, 0.78f, 0.52f, 1f)

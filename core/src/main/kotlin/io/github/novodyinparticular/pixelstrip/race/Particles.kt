@@ -11,13 +11,12 @@ import kotlin.math.floor
  *  SMOKE  grows through the puff sprites, rises, drifts back and lingers; starts tinted by the
  *         lamps behind it (tail-light red) and fades toward the night ambient. Two layers:
  *         behind the car and billowing in front of it.
- *  RUBBER falls.  SPARK bounces and glows.  PURGE is the nitrous purge jet's white puffs.
+ *  SPARK bounces and glows.  PURGE is the nitrous purge jet's white puffs.
  *  HAZE   is invisible: it only draws into the heat-distortion buffer.
- *  SPRAY  is what the tyres throw up off the surface: water droplets, snow, grit; falls.
  *  CONFETTI flutters down after a win.  ROCKET climbs and bursts into STARs (fireworks), which glow.
  */
 class Particles(private val smoke: Texture, private val white: Texture, private val haze: Texture, capacity: Int = 900) {
-    enum class Kind { SMOKE, RUBBER, SPARK, PURGE, HAZE, SPRAY, CONFETTI, ROCKET, STAR }
+    enum class Kind { SMOKE, SPARK, PURGE, HAZE, CONFETTI, ROCKET, STAR }
 
     private class P {
         var kind = Kind.SMOKE
@@ -79,21 +78,6 @@ class Particles(private val smoke: Texture, private val white: Texture, private 
         p.front = MathUtils.random() < 0.4f
     }
 
-    fun rubber(x: Float, y: Float) {
-        val p = obtain()
-        p.kind = Kind.RUBBER
-        p.alive = true
-        p.x = x
-        p.y = y + 2f
-        p.floor = y - 1f
-        p.vx = MathUtils.random(-80f, -20f)
-        p.vy = MathUtils.random(25f, 70f)
-        p.life = 0f
-        p.maxLife = 0.9f
-        p.color.set(0.06f, 0.05f, 0.1f, 1f)
-        p.front = true
-    }
-
     fun spark(x: Float, y: Float) {
         val p = obtain()
         p.kind = Kind.SPARK
@@ -126,28 +110,6 @@ class Particles(private val smoke: Texture, private val white: Texture, private 
         p.color2.set(0.7f, 0.8f, 0.95f, 1f)
         p.alpha = 0.9f
         p.front = true
-    }
-
-    /**
-     * A droplet (or flake, or grain) off a tyre: carried along by the car's road speed [speedPx]
-     * and flung backwards by the tyre spinning faster than that ([slipPx]), both pixels a second.
-     */
-    fun spray(x: Float, y: Float, speedPx: Float, slipPx: Float, color: Color, size: Float = 1f) {
-        val p = obtain()
-        p.kind = Kind.SPRAY
-        p.alive = true
-        p.x = x + MathUtils.random(-2f, 2f)
-        p.y = y + MathUtils.random(0f, 2f)
-        p.floor = y - 2f
-        // carried along by the tyre: it trails just behind the wheel as a plume, not left in the car's wake
-        p.vx = speedPx * MathUtils.random(0.45f, 0.85f) - slipPx * MathUtils.random(0.25f, 0.6f)
-        p.vy = MathUtils.random(25f, 70f) + (speedPx + slipPx) * 0.06f
-        p.life = 0f
-        p.maxLife = MathUtils.random(0.25f, 0.45f)
-        p.color.set(color)
-        p.size0 = size
-        p.alpha = color.a
-        p.front = MathUtils.random() < 0.7f
     }
 
     private val confettiColors = arrayOf(
@@ -243,7 +205,7 @@ class Particles(private val smoke: Texture, private val white: Texture, private 
                     p.vx *= 1f - dt * 2f
                     p.vy *= 1f - dt * 3.5f
                 }
-                Kind.RUBBER, Kind.SPARK -> {
+                Kind.SPARK -> {
                     p.vy -= 260f * dt
                     if (p.y < p.floor && p.vy < 0f) {
                         p.vy = -p.vy * 0.35f          // bounce off the asphalt
@@ -251,10 +213,6 @@ class Particles(private val smoke: Texture, private val white: Texture, private 
                     }
                 }
                 Kind.HAZE -> p.vy *= 1f - dt
-                Kind.SPRAY -> {
-                    p.vy -= 220f * dt
-                    if (p.y < p.floor) p.alive = false
-                }
                 Kind.CONFETTI -> p.vx = MathUtils.sin(p.life * 5f + p.size0) * 18f
                 Kind.ROCKET -> p.vy -= 60f * dt
                 Kind.STAR -> {
@@ -285,13 +243,9 @@ class Particles(private val smoke: Texture, private val white: Texture, private 
                     batch.setColor(tmp.r, tmp.g, tmp.b, a)
                     batch.draw(smoke, floor(p.x - camX - cell / 2f), floor(p.y - cell / 2f), idx * cell, 0, cell, cell)
                 }
-                Kind.RUBBER, Kind.SPARK -> {
+                Kind.SPARK -> {
                     batch.setColor(p.color.r, p.color.g, p.color.b, 1f)
-                    batch.draw(white, floor(p.x - camX), floor(p.y), if (p.kind == Kind.SPARK) 2f else 1f, 1f)
-                }
-                Kind.SPRAY -> {
-                    batch.setColor(p.color.r, p.color.g, p.color.b, p.alpha * (1f - t * 0.6f))
-                    batch.draw(white, floor(p.x - camX), floor(p.y), p.size0, p.size0)
+                    batch.draw(white, floor(p.x - camX), floor(p.y), 2f, 1f)
                 }
                 Kind.CONFETTI -> {
                     // a flat piece turning over: wide, then edge-on, then wide again
