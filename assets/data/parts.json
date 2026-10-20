@@ -1,0 +1,486 @@
+{
+ "tierPrices": [
+  1500,
+  4000,
+  9000,
+  20000
+ ],
+ "classMultiplier": {
+  "STREET": 1.0,
+  "SPORT": 1.6,
+  "PRO": 2.5,
+  "OUTLAW": 4.0
+ },
+ "slots": [
+  {
+   "id": "intake",
+   "name": "INTAKE",
+   "group": "ENGINE",
+   "tiers": [
+    {
+     "name": "STAGE 1",
+     "hp": 0.04,
+     "tq": 0.03
+    },
+    {
+     "name": "STAGE 2",
+     "hp": 0.07,
+     "tq": 0.05
+    },
+    {
+     "name": "STAGE 3",
+     "hp": 0.11,
+     "tq": 0.07,
+     "visual": "scoop"
+    },
+    {
+     "name": "RACE",
+     "hp": 0.16,
+     "tq": 0.09,
+     "visual": "scoop"
+    }
+   ]
+  },
+  {
+   "id": "exhaust",
+   "name": "EXHAUST",
+   "group": "ENGINE",
+   "tiers": [
+    {
+     "name": "STAGE 1",
+     "hp": 0.04,
+     "tq": 0.04
+    },
+    {
+     "name": "STAGE 2",
+     "hp": 0.07,
+     "tq": 0.06
+    },
+    {
+     "name": "STAGE 3",
+     "hp": 0.1,
+     "tq": 0.08
+    },
+    {
+     "name": "RACE",
+     "hp": 0.15,
+     "tq": 0.1,
+     "visual": "sidepipe"
+    }
+   ]
+  },
+  {
+   "id": "cams",
+   "name": "CAMS",
+   "group": "ENGINE",
+   "tiers": [
+    {
+     "name": "STAGE 1",
+     "hp": 0.05,
+     "tq": 0.0,
+     "hpRpm": 200
+    },
+    {
+     "name": "STAGE 2",
+     "hp": 0.1,
+     "tq": -0.01,
+     "hpRpm": 400,
+     "tqRpm": 200
+    },
+    {
+     "name": "STAGE 3",
+     "hp": 0.16,
+     "tq": -0.03,
+     "hpRpm": 650,
+     "tqRpm": 400
+    },
+    {
+     "name": "RACE",
+     "hp": 0.24,
+     "tq": -0.05,
+     "hpRpm": 900,
+     "tqRpm": 700
+    }
+   ]
+  },
+  {
+   "id": "ecu",
+   "name": "ECU TUNE",
+   "group": "ENGINE",
+   "tiers": [
+    {
+     "name": "STAGE 1",
+     "hp": 0.03,
+     "tq": 0.03,
+     "redline": 200
+    },
+    {
+     "name": "STAGE 2",
+     "hp": 0.06,
+     "tq": 0.05,
+     "redline": 400
+    },
+    {
+     "name": "STAGE 3",
+     "hp": 0.09,
+     "tq": 0.07,
+     "redline": 600
+    },
+    {
+     "name": "RACE",
+     "hp": 0.13,
+     "tq": 0.1,
+     "redline": 900
+    }
+   ]
+  },
+  {
+   "id": "swap",
+   "name": "ENGINE SWAP",
+   "group": "ENGINE",
+   "priceMult": 3,
+   "tiers": [
+    {
+     "name": "STAGE 1",
+     "hp": 0.18,
+     "tq": 0.18,
+     "weight": 15
+    },
+    {
+     "name": "STAGE 2",
+     "hp": 0.36,
+     "tq": 0.34,
+     "weight": 30
+    },
+    {
+     "name": "STAGE 3",
+     "hp": 0.55,
+     "tq": 0.5,
+     "weight": 45,
+     "redline": 300
+    },
+    {
+     "name": "RACE",
+     "hp": 0.78,
+     "tq": 0.7,
+     "weight": 60,
+     "redline": 600
+    }
+   ]
+  },
+  {
+   "id": "turbo",
+   "name": "TURBO",
+   "group": "POWER ADDER",
+   "excludes": [
+    "supercharger"
+   ],
+   "tiers": [
+    {
+     "name": "STAGE 1",
+     "boost": 0.15,
+     "spool": 3200,
+     "lag": 0.7
+    },
+    {
+     "name": "STAGE 2",
+     "boost": 0.27,
+     "spool": 3500,
+     "lag": 0.8,
+     "visual": "intercooler"
+    },
+    {
+     "name": "STAGE 3",
+     "boost": 0.4,
+     "spool": 3800,
+     "lag": 0.9,
+     "visual": "intercooler"
+    },
+    {
+     "name": "RACE",
+     "boost": 0.58,
+     "spool": 4100,
+     "lag": 1.0,
+     "visual": "intercooler"
+    }
+   ]
+  },
+  {
+   "id": "supercharger",
+   "name": "SUPERCHARGER",
+   "group": "POWER ADDER",
+   "excludes": [
+    "turbo"
+   ],
+   "tiers": [
+    {
+     "name": "STAGE 1",
+     "blower": 0.12
+    },
+    {
+     "name": "STAGE 2",
+     "blower": 0.21
+    },
+    {
+     "name": "STAGE 3",
+     "blower": 0.32,
+     "visual": "blower"
+    },
+    {
+     "name": "RACE",
+     "blower": 0.46,
+     "visual": "blower"
+    }
+   ]
+  },
+  {
+   "id": "nitrous",
+   "name": "NITROUS KIT",
+   "group": "POWER ADDER",
+   "tiers": [
+    {
+     "name": "STAGE 1",
+     "nos": 50,
+     "charges": 1,
+     "seconds": 2.5
+    },
+    {
+     "name": "STAGE 2",
+     "nos": 100,
+     "charges": 2,
+     "seconds": 2.5
+    },
+    {
+     "name": "STAGE 3",
+     "nos": 150,
+     "charges": 2,
+     "seconds": 3.0
+    },
+    {
+     "name": "RACE",
+     "nos": 250,
+     "charges": 3,
+     "seconds": 3.0
+    }
+   ]
+  },
+  {
+   "id": "clutch",
+   "name": "CLUTCH",
+   "group": "DRIVETRAIN",
+   "tiers": [
+    {
+     "name": "STAGE 1",
+     "clutch": 0.3,
+     "shift": -0.05
+    },
+    {
+     "name": "STAGE 2",
+     "clutch": 0.6,
+     "shift": -0.1
+    },
+    {
+     "name": "STAGE 3",
+     "clutch": 1.0,
+     "shift": -0.15
+    },
+    {
+     "name": "RACE",
+     "clutch": 1.6,
+     "shift": -0.2
+    }
+   ]
+  },
+  {
+   "id": "gearbox",
+   "name": "TRANSMISSION",
+   "group": "DRIVETRAIN",
+   "tiers": [
+    {
+     "name": "STAGE 1",
+     "shift": -0.15,
+     "tuneRange": 0.1
+    },
+    {
+     "name": "STAGE 2",
+     "gears": 5,
+     "shift": -0.2,
+     "tuneRange": 0.2
+    },
+    {
+     "name": "STAGE 3",
+     "gears": 6,
+     "shift": -0.25,
+     "tuneRange": 0.3
+    },
+    {
+     "name": "RACE",
+     "gears": 6,
+     "shift": -0.5,
+     "tuneRange": 0.5
+    }
+   ]
+  },
+  {
+   "id": "lsd",
+   "name": "LIMITED SLIP",
+   "group": "DRIVETRAIN",
+   "tiers": [
+    {
+     "name": "STAGE 1",
+     "grip": 0.03
+    },
+    {
+     "name": "STAGE 2",
+     "grip": 0.06
+    },
+    {
+     "name": "STAGE 3",
+     "grip": 0.09
+    },
+    {
+     "name": "RACE",
+     "grip": 0.12
+    }
+   ]
+  },
+  {
+   "id": "final",
+   "name": "FINAL DRIVE",
+   "group": "DRIVETRAIN",
+   "tiers": [
+    {
+     "name": "STAGE 1",
+     "finalRange": 0.08
+    },
+    {
+     "name": "STAGE 2",
+     "finalRange": 0.15
+    },
+    {
+     "name": "STAGE 3",
+     "finalRange": 0.25
+    },
+    {
+     "name": "RACE",
+     "finalRange": 0.4
+    }
+   ]
+  },
+  {
+   "id": "tires",
+   "name": "TIRES",
+   "group": "GRIP",
+   "tiers": [
+    {
+     "name": "STAGE 1",
+     "grip": 0.06,
+     "pressureSens": 1.0
+    },
+    {
+     "name": "STAGE 2",
+     "grip": 0.16,
+     "pressureSens": 1.4,
+     "label": "DRAG RADIALS"
+    },
+    {
+     "name": "STAGE 3",
+     "grip": 0.3,
+     "pressureSens": 1.8,
+     "label": "SLICKS"
+    },
+    {
+     "name": "RACE",
+     "grip": 0.42,
+     "pressureSens": 2.0,
+     "label": "RACE SLICKS"
+    }
+   ]
+  },
+  {
+   "id": "weight",
+   "name": "WEIGHT REDUCTION",
+   "group": "GRIP",
+   "tiers": [
+    {
+     "name": "STAGE 1",
+     "weight": -40
+    },
+    {
+     "name": "STAGE 2",
+     "weight": -85
+    },
+    {
+     "name": "STAGE 3",
+     "weight": -135
+    },
+    {
+     "name": "RACE",
+     "weight": -200,
+     "dragArea": -0.03
+    }
+   ]
+  }
+ ],
+ "cosmetic": [
+  {
+   "id": "rims",
+   "name": "RIMS",
+   "group": "LOOKS",
+   "styles": [
+    "stock",
+    "magnum",
+    "rally",
+    "fivestar",
+    "mesh",
+    "turbine",
+    "phone",
+    "three",
+    "sixspoke"
+   ],
+   "price": 2500
+  },
+  {
+   "id": "wing",
+   "name": "SPOILER",
+   "group": "LOOKS",
+   "styles": [
+    "stock",
+    "ducktail",
+    "gt",
+    "drag"
+   ],
+   "price": 3000
+  },
+  {
+   "id": "kit",
+   "name": "BODY KIT",
+   "group": "LOOKS",
+   "styles": [
+    "stock",
+    "street",
+    "race"
+   ],
+   "price": 5000,
+   "dragArea": [
+    0,
+    -0.01,
+    -0.03
+   ]
+  },
+  {
+   "id": "underglow",
+   "name": "UNDERGLOW",
+   "group": "LOOKS",
+   "styles": [
+    "off",
+    "cyan",
+    "magenta",
+    "green",
+    "orange",
+    "purple"
+   ],
+   "price": 1500
+  }
+ ]
+}

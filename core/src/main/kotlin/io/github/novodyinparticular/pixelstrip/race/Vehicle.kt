@@ -36,7 +36,7 @@ class Vehicle(val def: CarDef, private val powerScale: Float = 1f) {
     /** Driven wheels' angular speed (rad/s). Faster than the road while spinning. */
     var driveW = 0f
         private set
-    val rollW get() = v / def.tireRadiusM
+    val rollW get() = v / tireR
     var spinning = false
         private set
     /** Surface speed of the spinning tyres over the road, m/s (smoke comes from this). */
@@ -83,9 +83,18 @@ class Vehicle(val def: CarDef, private val powerScale: Float = 1f) {
     private var surface = DEFAULT_PREP
     private var clock = 0f
 
+    /** Turbo boost 0..1: spools up with RPM and time. */
+    var boost = 0f
+        private set
+
     private val mass get() = def.weightKg
     private val ratio get() = def.gears[gear] * def.finalDrive
-    private val peakGrip get() = def.grip * tempGrip() * surface
+    private val pressureDelta = (CarDef.STOCK_PRESSURE - def.tirePressure)
+    /** Lower pressure: a bigger contact patch, more grip, more rolling drag, a slightly smaller tyre. */
+    private val pressureGrip = 1f + pressureDelta * PRESSURE_GRIP * def.pressureSens
+    private val tireR = def.tireRadiusM * (1f - pressureDelta * PRESSURE_RADIUS)
+    private val rolling = ROLLING * (1f + pressureDelta * PRESSURE_ROLL)
+    private val peakGrip get() = def.grip * tempGrip() * surface * pressureGrip
 
     // --- Commands ------------------------------------------------------------------------
 
@@ -122,7 +131,7 @@ class Vehicle(val def: CarDef, private val powerScale: Float = 1f) {
             val extraW = (rpm - sweet) * RPM_TO_RAD
             val inertia = def.wheelInertia + def.engineInertia * ratio * ratio
             driveW = def.engineInertia * extraW * ratio / inertia * SPIN_SHOCK
-            spinning = driveW * def.tireRadiusM > 0.4f
+            spinning = driveW * tireR > 0.4f
         }
         if (!rate) return
         val d = (rpm - sweet) / sweet
@@ -206,6 +215,8 @@ class Vehicle(val def: CarDef, private val powerScale: Float = 1f) {
             val w = max(rpm, NITROUS_MIN_RPM) * RPM_TO_RAD
             t += def.nitrous.hp * HP_TO_W / w
         }
+        if (def.blowerGain > 0f) t *= 1f + def.blowerGain * (0.75f + 0.25f * rpm / def.redline)
+        if (def.boostGain > 0f) t *= 1f + def.boostGain * boost
         if (bonusTimer > 0f) t *= 1f + PERFECT_BONUS
         // Published torque is already net of friction; it only shows up as engine braking off-throttle
         return t - friction(rpm) * (1f - throttle)
@@ -232,8 +243,17 @@ class Vehicle(val def: CarDef, private val powerScale: Float = 1f) {
         else -> 1f - SPIN_FALLOFF * min(1f, (s - PLATEAU_SLIP) / 0.8f)
     }
 
+    private fun spool(dt: Float) {
+        if (def.boostGain <= 0f) return
+        val target = ((rpm - def.boostSpoolRpm) / BOOST_RANGE_RPM).coerceIn(0f, 1f) * throttle
+        val rate = if (target > boost) dt / def.boostLag else dt * 3f      // blow-off: boost drops fast
+        boost += (target - boost) * minOf(1f, rate * 3f)
+    }
+
     fun step(dt: Float) {
         clock += dt
+        spool(dt)
+        if (def.nitrousAutoGear > 0 && hasLeft && mode == Mode.DRIVE && gear + 1 >= def.nitrousAutoGear) nitrous()
         if (nitrousActive) {
             nitrousTime -= dt
             if (nitrousTime <= 0f) events.add(Event.NitrousOff)
@@ -243,6 +263,7 @@ class Vehicle(val def: CarDef, private val powerScale: Float = 1f) {
             Mode.HELD -> {
                 // Staged: brakes on, clutch in. Gas revs the engine toward the limiter.
                 rpm = if (throttle > 0f) min(def.redline, rpm + REV_UP * throttle * dt) else max(def.idleRpm, rpm - REV_DOWN * dt)
+                if (def.launchControl > 0f && throttle > 0f) rpm = min(rpm, def.launchControl)   // two-step holds the revs
                 limiter = rpm >= def.redline - 1f
                 v = 0f
                 driveW = 0f
@@ -279,16 +300,16 @@ class Vehicle(val def: CarDef, private val powerScale: Float = 1f) {
         val inertia = def.wheelInertia + def.engineInertia * ratio * ratio
         val load = driveLoad()
         val wheelT = engineTorque(dt, bog = false) * ratio * DRIVELINE_EFF
-        val staticLimit = peakGrip * load * def.tireRadiusM
-        if (driveW * def.tireRadiusM < 0.3f && wheelT <= staticLimit) {
+        val staticLimit = peakGrip * load * tireR
+        if (driveW * tireR < 0.3f && wheelT <= staticLimit) {
             driveW = 0f                               // not enough to break them loose
         } else {
             val f = peakGrip * (1f - SPIN_FALLOFF) * load
-            driveW = max(0f, driveW + (wheelT - f * def.tireRadiusM) / inertia * dt)
+            driveW = max(0f, driveW + (wheelT - f * tireR) / inertia * dt)
         }
         rpm = max(def.idleRpm * if (throttle > 0f) 1.8f else 1f, driveW * ratio / RPM_TO_RAD)
         if (rpm >= def.redline) rpm = def.redline
-        slipSpeed = driveW * def.tireRadiusM
+        slipSpeed = driveW * tireR
         spinning = slipSpeed > 0.5f
         tireTemp = min(1.4f, tireTemp + slipSpeed * BURNOUT_HEAT * dt)
     }
@@ -312,29 +333,29 @@ class Vehicle(val def: CarDef, private val powerScale: Float = 1f) {
         val fullT = engineTorque(dt) * ratio * DRIVELINE_EFF
         // The driver pedals to the traction limit: off while the tyres spin, back to just past
         // the limit once they hook. More power than grip costs spin, not a permanent loss.
-        val ideal = if (fullT > 0f) (grip * def.tireRadiusM / fullT).coerceIn(FEATHER_MIN, 1f) else 1f
-        val share = if (spinning) gripShare(slipRatio(max(0f, driveW * def.tireRadiusM - v))) else 1f
+        val ideal = if (fullT > 0f) (grip * tireR / fullT).coerceIn(FEATHER_MIN, 1f) else 1f
+        val share = if (spinning) gripShare(slipRatio(max(0f, driveW * tireR - v))) else 1f
         feather = if (spinning) max(ideal * share * 0.85f, feather - dt * FEATHER_DROP)
         else min(min(1f, ideal * 1.04f), feather + dt * FEATHER_RISE)
         val axleT = fullT * feather
-        val driveF = axleT / def.tireRadiusM
+        val driveF = axleT / tireR
         val inertia = def.wheelInertia + def.engineInertia * ratio * ratio
         val force: Float
         if (!spinning && driveF <= grip) {
             force = driveF                      // tyres hook: the axle rolls with the road
         } else {
             spinning = true
-            val slip = max(0f, driveW * def.tireRadiusM - v)
+            val slip = max(0f, driveW * tireR - v)
             val s = slipRatio(slip)
             // Just broken loose, a tyre sits at its peak; it only loses grip past the plateau
             force = peakGrip * gripShare(max(s, PEAK_SLIP)) * load
-            driveW += (axleT - force * def.tireRadiusM) / inertia * dt
+            driveW += (axleT - force * tireR) / inertia * dt
             if (s < PEAK_SLIP && driveF <= grip) spinning = false    // hooked again
         }
         integrate(force, dt)
         if (!spinning) driveW = rollW
         driveW = max(driveW, rollW)
-        slipSpeed = max(0f, driveW * def.tireRadiusM - v)
+        slipSpeed = max(0f, driveW * tireR - v)
         tireTemp = min(1.4f, tireTemp + slipSpeed * 0.004f * dt)
     }
 
@@ -346,7 +367,7 @@ class Vehicle(val def: CarDef, private val powerScale: Float = 1f) {
         driveLoad()
         integrate(0f, dt)
         driveW += (rollW - driveW) * min(1f, dt * 10f)
-        slipSpeed = max(0f, driveW * def.tireRadiusM - v)
+        slipSpeed = max(0f, driveW * tireR - v)
         shiftTimer -= dt
         if (shiftTimer <= 0f) {
             gear++
@@ -357,7 +378,7 @@ class Vehicle(val def: CarDef, private val powerScale: Float = 1f) {
     }
 
     private fun integrate(force: Float, dt: Float) {
-        val resist = 0.5f * AIR_DENSITY * def.dragArea * v * v + ROLLING * mass * GRAVITY
+        val resist = 0.5f * AIR_DENSITY * def.dragArea * v * v + rolling * mass * GRAVITY
         accel = (force - resist) / mass - brake * BRAKE_DECEL
         v = max(0f, v + accel * dt)
         x += v * dt
@@ -395,6 +416,10 @@ class Vehicle(val def: CarDef, private val powerScale: Float = 1f) {
         const val BURNOUT_SURFACE = 0.4f
         const val DEFAULT_PREP = 1.25f
         const val BOG_FLOOR = 0.9f
+        const val BOOST_RANGE_RPM = 1400f
+        const val PRESSURE_GRIP = 0.008f
+        const val PRESSURE_ROLL = 0.025f
+        const val PRESSURE_RADIUS = 0.0015f
         const val LAUNCH_SAG = 0.25f
         const val FEATHER_MIN = 0.45f
         const val FEATHER_DROP = 4f

@@ -4,8 +4,11 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.utils.JsonReader
 import com.badlogic.gdx.utils.JsonValue
 
-/** One car, loaded from assets/data/cars/<id>.json. Stats are stock; upgrades layer on top later. */
-class CarDef(
+/**
+ * One car, loaded from assets/data/cars/<id>.json. A data class so upgrades and tunes can make an
+ * "effective" copy (see Upgrades.apply); the fields after [defaultPaint] only come from parts/tunes.
+ */
+data class CarDef(
     val id: String,
     val name: String,
     val brand: String,
@@ -40,8 +43,20 @@ class CarDef(
     val nitrous: Nitrous,
     val sprite: SpriteDef,
     val defaultPaint: Int,
+    /** Turbo: extra torque share at full boost, the RPM it starts spooling, seconds to spool. */
+    val boostGain: Float = 0f,
+    val boostSpoolRpm: Float = 0f,
+    val boostLag: Float = 0.8f,
+    /** Supercharger: instant extra torque share (grows a little with RPM). */
+    val blowerGain: Float = 0f,
+    val tirePressure: Float = STOCK_PRESSURE,
+    val pressureSens: Float = 1f,
+    /** Launch control: staged RPM held automatically while the gas is down (0 = off). */
+    val launchControl: Float = 0f,
+    /** Spray automatically on reaching this gear (1-based, 0 = manual). */
+    val nitrousAutoGear: Int = 0,
 ) {
-    class Nitrous(val hp: Float, val charges: Int, val seconds: Float)
+    data class Nitrous(val hp: Float, val charges: Int, val seconds: Float)
 
     val ratingFactor get() = if (powerRating == "gross") io.github.novodyinparticular.pixelstrip.race.DragMath.GROSS_TO_NET else 1f
 
@@ -65,6 +80,8 @@ class CarDef(
 
     companion object {
         /** Stats from data/cars/<id>.json; sprite anchors from the generated cars/<id>/sprite.json. */
+        const val STOCK_PRESSURE = 32f
+
         fun load(id: String): CarDef {
             val stats = JsonReader().parse(Gdx.files.internal("data/cars/$id.json"))
             val sprite = stats.get("sprite") ?: JsonReader().parse(Gdx.files.internal("cars/$id/sprite.json"))
