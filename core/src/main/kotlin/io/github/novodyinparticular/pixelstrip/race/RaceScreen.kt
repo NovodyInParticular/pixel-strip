@@ -582,7 +582,7 @@ class RaceScreen(
         if (spray != null && (car.v > 2f || car.slipSpeed > 3f)) {
             val n = ((speedPx + car.slipSpeed * PX_PER_M) / 90f).toInt().coerceIn(1, 7)
             for (wheel in listOf(s.rearWheel.first, s.frontWheel.first)) {
-                repeat(n) { particles.spray(canvasX + wheel - 4f, ground, max(speedPx, car.slipSpeed * PX_PER_M * 0.6f), spray, 2f) }
+                repeat(n) { particles.spray(canvasX + wheel - 4f, ground, speedPx, car.slipSpeed * PX_PER_M, spray, 2f) }
             }
         }
         if (car.slipSpeed >= 1.5f) {

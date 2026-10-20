@@ -128,8 +128,11 @@ class Particles(private val smoke: Texture, private val white: Texture, private 
         p.front = true
     }
 
-    /** A droplet (or flake, or grain) flung back off a tyre moving at [speedPx] pixels a second. */
-    fun spray(x: Float, y: Float, speedPx: Float, color: Color, size: Float = 1f) {
+    /**
+     * A droplet (or flake, or grain) off a tyre: carried along by the car's road speed [speedPx]
+     * and flung backwards by the tyre spinning faster than that ([slipPx]), both pixels a second.
+     */
+    fun spray(x: Float, y: Float, speedPx: Float, slipPx: Float, color: Color, size: Float = 1f) {
         val p = obtain()
         p.kind = Kind.SPRAY
         p.alive = true
@@ -137,8 +140,8 @@ class Particles(private val smoke: Texture, private val white: Texture, private 
         p.y = y + MathUtils.random(0f, 2f)
         p.floor = y - 2f
         // carried along by the tyre: it trails just behind the wheel as a plume, not left in the car's wake
-        p.vx = speedPx * MathUtils.random(0.45f, 0.85f)
-        p.vy = MathUtils.random(25f, 70f) + speedPx * 0.08f
+        p.vx = speedPx * MathUtils.random(0.45f, 0.85f) - slipPx * MathUtils.random(0.25f, 0.6f)
+        p.vy = MathUtils.random(25f, 70f) + (speedPx + slipPx) * 0.06f
         p.life = 0f
         p.maxLife = MathUtils.random(0.25f, 0.45f)
         p.color.set(color)

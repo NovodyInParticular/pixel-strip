@@ -82,7 +82,8 @@ void main() {
     vec2 off = (d.rg - 0.5) * 2.0 * d.a * u_distortAmp / u_src;
     if (u_haze.z > 0.0 && w.y > u_haze.x && w.y < u_haze.y) {
         float edge = smoothstep(u_haze.x, u_haze.x + 0.03, w.y) * smoothstep(u_haze.y, u_haze.y - 0.03, w.y);
-        off.x += sin(w.y * u_src.y * 1.7 + u_haze.w * 7.0) * u_haze.z * edge / u_src.x;
+        // a slow wobble a few rows tall: shifting every row a different way just shreds the cars
+        off.x += sin(w.y * u_src.y * 0.45 + u_haze.w * 4.0) * u_haze.z * edge / u_src.x;
     }
     w += off;
 
