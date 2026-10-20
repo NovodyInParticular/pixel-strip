@@ -40,6 +40,8 @@ abstract class MenuScreen(protected val game: PixelStrip) : ScreenAdapter() {
         private set
     protected open val lut: Texture get() = art.tex("tracks/neon_city/lut.png")
     protected open val bloom = 1.4f
+    /** Music for this screen (see audio/Music.kt SONGS). */
+    protected open val song: String? = "garage"
     /** World zoom around (focusX, focusY) in buffer pixels; the UI layer is never zoomed. */
     protected var zoom = 1f
     protected var focusX = 0f
@@ -71,11 +73,13 @@ abstract class MenuScreen(protected val game: PixelStrip) : ScreenAdapter() {
         controls.update(dt)
         if (!game.transitioning) {
             for ((b, fn) in handlers) if (b.justPressed && b.visible) {
+                game.audio.play(io.github.novodyinparticular.pixelstrip.audio.Sfx.Kind.BLIP)
                 fn()
                 break
             }
             if (Gdx.input.isKeyJustPressed(Input.Keys.BACK) || Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) onBack()
         }
+        game.audio.music(song, MENU_MUSIC)
         update(dt)
 
         cam.setToOrtho(false, w.toFloat(), h.toFloat())
@@ -128,6 +132,7 @@ abstract class MenuScreen(protected val game: PixelStrip) : ScreenAdapter() {
         post.time = time
         post.present(lut)
         flash = max(0f, flash - dt * 2f)
+        chimeOnCashChange()
         captureShots()
     }
 
@@ -219,6 +224,13 @@ abstract class MenuScreen(protected val game: PixelStrip) : ScreenAdapter() {
     }
 
     private var shownCash = -1L
+    private var heardCash = -1L
+
+    private fun chimeOnCashChange() {
+        val c = game.save.cash
+        if (heardCash >= 0 && c != heardCash) game.audio.play(io.github.novodyinparticular.pixelstrip.audio.Sfx.Kind.CHIME)
+        heardCash = c
+    }
 
     /** Cash counter that rolls toward the real balance, arcade style. */
     protected fun cash(x: Float, y: Float, dt: Float = 1f / 60f) {
@@ -280,5 +292,6 @@ abstract class MenuScreen(protected val game: PixelStrip) : ScreenAdapter() {
         val BTN_TEAL = Color(0.13f, 0.6f, 0.62f, 1f)
         val BTN_PURPLE = Color(0.45f, 0.2f, 0.55f, 1f)
         val BTN_GREY = Color(0.3f, 0.3f, 0.42f, 1f)
+        const val MENU_MUSIC = 0.5f
     }
 }

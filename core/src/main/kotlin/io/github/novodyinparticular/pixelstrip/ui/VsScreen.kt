@@ -27,6 +27,7 @@ class VsScreen(game: PixelStrip, private val rival: Career.Rival, private val pi
     private val theirs = rival.asCar()
     private var line = 0
     private var typed = 0f
+    override val song = if (rival.boss) "boss" else "career"
     private val talking get() = rival.boss && !pinkSlip && rival.id !in game.save.beaten && line < rival.intro.size
 
     private val race = button("RACE", BTN_RED, big = true, keys = intArrayOf(Input.Keys.ENTER)) { go() }

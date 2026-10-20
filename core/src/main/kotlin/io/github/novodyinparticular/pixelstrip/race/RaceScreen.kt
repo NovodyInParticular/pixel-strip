@@ -10,6 +10,7 @@ import com.badlogic.gdx.graphics.Pixmap
 import com.badlogic.gdx.graphics.PixmapIO
 import com.badlogic.gdx.math.MathUtils
 import io.github.novodyinparticular.pixelstrip.PixelStrip
+import io.github.novodyinparticular.pixelstrip.audio.Sfx
 import io.github.novodyinparticular.pixelstrip.data.Career
 import io.github.novodyinparticular.pixelstrip.save.OwnedCar
 import io.github.novodyinparticular.pixelstrip.save.RunRecord
@@ -144,6 +145,8 @@ class RaceScreen(
     private var screenTime = 0f
     private var playerFoul = false
     private var greenSeen = false
+    private var stagedBeep = false
+    private var cheered = false
     private var bestBefore: RunRecord? = null
     private var smokeTimer = 0f
     private var timeScale = 1f
@@ -166,6 +169,7 @@ class RaceScreen(
         ghostDriver = AutoDriver(ghost, skill = rival?.skill ?: if (close) 0.9f else 0.6f, trackGrip = ghost.trackGrip)
         payout = 0L
         wonPrize = false
+        cheered = false
         autoPlayer = if (shots != null) AutoDriver(player, skill = 0.9f, trackGrip = player.trackGrip).apply { burnoutTime = 2.2f } else null
         player.x = BURNOUT_X
         ghost.x = BURNOUT_X
@@ -320,6 +324,18 @@ class RaceScreen(
         handleEvents(ghost, ghostMotion, 1, false)
         updateFinish()
 
+        // Sound: both engines from the live physics, the crowd with the action, music under it all
+        val audio = game.audio
+        audio.engine(0, player, owned.parts["exhaust"] ?: 0, 0.9f)
+        if (!test) audio.engine(1, ghost, rivalCar?.parts?.get("exhaust") ?: 0, 0.5f) else audio.synth.engines[1].active = false
+        audio.synth.crowd = if (phase == Phase.RACING) 0.25f + 0.6f * min(1f, player.v / 40f) else 0.15f
+        audio.music(if (rival?.boss == true) "boss" else "neon_city", if (phase == Phase.RACING) 0.12f else 0.3f)
+        if (tree.staged[1] && !stagedBeep) {
+            stagedBeep = true
+            audio.play(Sfx.Kind.BEEP)
+        }
+        if (!tree.staged[1]) stagedBeep = false
+
         // Body motion, wheels, flames, smoke, haze, purge
         if (phase != Phase.PHOTO) {
             playerMotion.update(dt, player, phase == Phase.STAGING || phase == Phase.COUNTDOWN)
@@ -352,7 +368,12 @@ class RaceScreen(
             slowMo = true
         }
         timeScale += ((if (slowMo) 0.22f else 1f) - timeScale) * 0.25f
+        if (playerDone && !cheered) {
+            cheered = true
+            game.audio.play(Sfx.Kind.CHEER, 0.8f)
+        }
         if (playerDone && ghostDone && slowMo) {
+            game.audio.play(Sfx.Kind.SLAM)
             setPhase(Phase.PHOTO)
             timeScale = 1f
             popFlash(Color.WHITE, 0.9f)                      // the camera fires
@@ -413,6 +434,8 @@ class RaceScreen(
                 is Vehicle.Event.Shifted -> {
                     motion.kick()
                     flame[lane] = 0.14f                       // backfire through the pipes
+                    game.audio.play(Sfx.Kind.CLUNK, if (isPlayer) 0.8f else 0.35f)
+                    game.audio.play(Sfx.Kind.POP, if (isPlayer) 0.6f else 0.3f)
                     if (!isPlayer) continue
                     shake = max(shake, 1.2f)
                     buzz(20)

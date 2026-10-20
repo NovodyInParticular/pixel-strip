@@ -37,5 +37,10 @@
     "charges": 0,
     "seconds": 0
   },
-  "defaultPaint": 10
+  "defaultPaint": 10,
+  "engine": {
+    "layout": "v8",
+    "cylinders": 8,
+    "stockTurbo": false
+  }
 }

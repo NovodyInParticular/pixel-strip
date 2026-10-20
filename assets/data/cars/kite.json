@@ -38,5 +38,10 @@
     "charges": 0,
     "seconds": 0
   },
-  "defaultPaint": 2
+  "defaultPaint": 2,
+  "engine": {
+    "layout": "i4",
+    "cylinders": 4,
+    "stockTurbo": false
+  }
 }

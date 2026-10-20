@@ -54,6 +54,8 @@ class DynoScreen(game: PixelStrip) : MenuScreen(game) {
         if (game.shots?.screen == "dyno" && !pulling && !done && time > 0.2f) start()
         shake = max(0f, shake - dt * 6f)
         pop = max(0f, pop - dt)
+        game.audio.engine(0, def, rpm, if (pulling) 1f else 0.04f, owned.parts["exhaust"] ?: 0, 0.7f)
+        if (pop > 0.09f) game.audio.play(io.github.novodyinparticular.pixelstrip.audio.Sfx.Kind.POP, 0.8f)
         if (pulling) {
             t += dt
             rpm = startRpm + (def.redline - startRpm) * (t / PULL_S).coerceIn(0f, 1f)

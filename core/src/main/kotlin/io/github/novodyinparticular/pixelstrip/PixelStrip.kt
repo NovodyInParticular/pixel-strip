@@ -37,6 +37,8 @@ class PixelStrip(val platform: Platform, val shots: ShotPlan? = null, private va
         private set
     lateinit var economy: Economy
         private set
+    lateinit var audio: io.github.novodyinparticular.pixelstrip.audio.AudioEngine
+        private set
 
     lateinit var parts: PartCatalog
         private set
@@ -90,6 +92,8 @@ class PixelStrip(val platform: Platform, val shots: ShotPlan? = null, private va
             }
         }
         Gdx.input.setCatchKey(Input.Keys.BACK, true)
+        audio = io.github.novodyinparticular.pixelstrip.audio.AudioEngine(settings)
+        audio.start()
         setScreen(firstScreen())
     }
 
@@ -130,6 +134,7 @@ class PixelStrip(val platform: Platform, val shots: ShotPlan? = null, private va
         trans = Trans.OUT
         transT = 0f
         post.transitionKind = kind
+        audio.play(io.github.novodyinparticular.pixelstrip.audio.Sfx.Kind.WHOOSH, 0.7f)
     }
 
     override fun render() {
@@ -140,6 +145,8 @@ class PixelStrip(val platform: Platform, val shots: ShotPlan? = null, private va
                 if (transT >= 1f) {
                     transT = 1f
                     val old = screen
+                    audio.silenceEngines()
+                    if (post.transitionKind == 2) audio.play(io.github.novodyinparticular.pixelstrip.audio.Sfx.Kind.SLAM)
                     setScreen(pending!!.invoke())
                     old?.dispose()
                     pending = null
@@ -164,7 +171,18 @@ class PixelStrip(val platform: Platform, val shots: ShotPlan? = null, private va
         super.resize(width, height)
     }
 
+    override fun pause() {
+        audio.stop()
+        super.pause()
+    }
+
+    override fun resume() {
+        audio.start()
+        super.resume()
+    }
+
     override fun dispose() {
+        audio.dispose()
         screen?.dispose()
         batch.dispose()
         post.dispose()

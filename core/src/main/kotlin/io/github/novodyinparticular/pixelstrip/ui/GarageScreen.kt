@@ -98,6 +98,10 @@ class GarageScreen(game: PixelStrip) : MenuScreen(game) {
 
     override fun update(dt: Float) {
         confirmSell = (confirmSell - dt).coerceAtLeast(0f)
+        // the car on the lift idles, with a lumpy little blip every few seconds
+        val blip = if ((time % 5f) in 2f..2.35f) 0.6f else 0f
+        val d = game.effective(owned)
+        game.audio.engine(0, d, d.idleRpm + blip * 2600f, 0.04f + blip, owned.parts["exhaust"] ?: 0, 0.3f)
         lights.clear()
         val w = post.width
         for (i in LAMPS.indices) lights.add(lampX(w, i), LAMP_Y, 60f, 1f, 0.82f, 0.55f, 210f)

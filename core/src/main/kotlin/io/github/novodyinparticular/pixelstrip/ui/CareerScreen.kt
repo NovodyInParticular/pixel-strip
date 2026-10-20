@@ -39,6 +39,7 @@ class CareerScreen(game: PixelStrip) : MenuScreen(game) {
     private val next = button(">", BTN_GREY, keys = intArrayOf(Input.Keys.RIGHT)) { selected = (selected + 1) % all.size }
 
     private val rival get() = all[selected]
+    override val song = "career"
 
     private fun start() {
         if (!career.unlocked(save, rival)) {

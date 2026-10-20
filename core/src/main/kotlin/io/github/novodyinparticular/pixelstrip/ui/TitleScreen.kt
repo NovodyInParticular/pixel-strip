@@ -15,6 +15,7 @@ class TitleScreen(game: PixelStrip) : MenuScreen(game) {
     private var started = false
 
     override val bloom = 1.8f
+    override val song = "title"
 
     override fun layout(w: Int, h: Int) {}
 

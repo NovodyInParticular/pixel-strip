@@ -37,5 +37,10 @@
     "charges": 0,
     "seconds": 0
   },
-  "defaultPaint": 5
+  "defaultPaint": 5,
+  "engine": {
+    "layout": "v6",
+    "cylinders": 6,
+    "stockTurbo": true
+  }
 }

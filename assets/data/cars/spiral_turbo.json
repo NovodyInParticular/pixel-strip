@@ -38,5 +38,10 @@
     "charges": 0,
     "seconds": 0
   },
-  "defaultPaint": 7
+  "defaultPaint": 7,
+  "engine": {
+    "layout": "rotary",
+    "cylinders": 2,
+    "stockTurbo": true
+  }
 }

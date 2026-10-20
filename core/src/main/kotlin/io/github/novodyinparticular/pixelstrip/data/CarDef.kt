@@ -43,6 +43,10 @@ data class CarDef(
     /** "gross" for period SAE gross ratings (derated in the physics), "net" otherwise. */
     val powerRating: String,
     val nitrous: Nitrous,
+    /** For the sound: "v8", "i4", "i6", "v6", "v10" or "rotary"; cylinders (rotors for a rotary). */
+    val engineLayout: String,
+    val cylinders: Int,
+    val stockTurbo: Boolean,
     val sprite: SpriteDef,
     val defaultPaint: Int,
     /** Turbo: extra torque share at full boost, the RPM it starts spooling, seconds to spool. */
@@ -131,6 +135,9 @@ data class CarDef(
                 powerRating = j.getString("powerRating", "net"),
                 nitrous = j.get("nitrous")?.let { Nitrous(it.getFloat("hp"), it.getInt("charges"), it.getFloat("seconds")) }
                     ?: Nitrous(0f, 0, 0f),
+                engineLayout = j.get("engine")?.getString("layout", "v8") ?: "v8",
+                cylinders = j.get("engine")?.getInt("cylinders", 8) ?: 8,
+                stockTurbo = j.get("engine")?.getBoolean("stockTurbo", false) ?: false,
                 defaultPaint = j.getInt("defaultPaint", 0),
                 sprite = SpriteDef(
                     dir = s.getString("dir"),
