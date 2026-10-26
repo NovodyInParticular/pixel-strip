@@ -98,9 +98,9 @@ def _tone(s, crease_t, hot, flat, x, y):
     sharp dark horizon line a little under halfway, the darker ground below it, and a thin bounce of
     light just above the sill. Bands are flat paint; only a narrow seam between two bands is dithered,
     so panels stay smooth instead of speckled."""
-    if s < 0.06:
+    if s < 0.035:
         return 7 if hot else 6
-    if not flat and abs(s - crease_t) < 0.035:
+    if not flat and abs(s - crease_t) < 0.025:
         return 7 if hot else 6                      # the body line catching the light
     if flat:
         bands = [(0.5, 5), (0.84, 5), (0.93, 4), (1.01, 2)]
@@ -151,7 +151,7 @@ def body_layer(p):
             if solid_b[y, x]:
                 yb = _interp_y(p["beltline"], lx)
                 s = (ly - yb) / max(1.0, yr - yb)
-                hot = any(a <= lx <= b for a, b in p["hotspots"])
+                hot = any(abs(lx - (a + b) / 2) < 0.6 for a, b in p["hotspots"]) and s < 0.3
                 i = _tone(s, p["crease_t"], hot, flat, x, y)
                 shine[y, x] = 255 if s < 0.07 else (220 if s < p["crease_t"] else (160 if s < 0.44 else 90))
                 if lx < 2.5 or lx > front_end - 1.8:     # panels turning away at the ends
@@ -522,16 +522,19 @@ def _glass(out, cw, poly, p, tint_dark=False, main=False):
 
 
 def _windshield(out, cw, poly, dim=False):
+    """The windshield (or rear glass) seen almost edge-on: dark glass with the sky in one thin line
+    along its top edge, not a bright band."""
     ys, xs = _poly_pixels(cw, poly)
     if not len(ys):
         return
-    y0, y1 = ys.min(), ys.max()
+    top = {}
     for y, x in zip(ys, xs):
-        t = (y - y0) / max(1, y1 - y0)
+        top[x] = min(top.get(x, CH), y)
+    for y, x in zip(ys, xs):
         if dim:
-            out[y, x] = P("night", 2) if (x + y) % 4 else P("blue", 1)
+            out[y, x] = P("night", 2)
         else:
-            out[y, x] = P("blue", 4) if (x + y) % 6 == 0 else (P("blue", 3) if t < 0.4 else P("blue", 2))
+            out[y, x] = P("blue", 2) if y == top[x] else (P("night", 3) if (x + y) % 4 else P("blue", 1))
 
 
 def _chrome_bar(out, cw, poly):

@@ -552,8 +552,12 @@ def _stand_ins():
     import json
     import pathlib
     data = pathlib.Path(__file__).resolve().parents[2] / "assets" / "data"
+    from real_cars import REAL          # profiles rebuilt from the real cars' dimensions win
     out = []
     for cid in json.loads((data / "roster.json").read_text()):
+        if cid in REAL:
+            out.append(REAL[cid])
+            continue
         if cid in _BY_ID:
             out.append(_BY_ID[cid])
             continue
