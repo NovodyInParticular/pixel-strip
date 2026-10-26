@@ -262,6 +262,8 @@ TURBO = {
     "wal": dict(lag=1.0, spoolRpm=3200),
 }
 
+# Japanese cars whose real one is a US car, driven from the left: Joe's EF
+LEFT_HAND = {"kite_ef"}
 JAPANESE = {"Nissan", "Datsun", "Toyota", "Honda", "Acura", "Mazda", "Eunos", "Mitsubishi", "Subaru", "Lexus", "Infiniti",
             "Suzuki", "Isuzu", "Daihatsu"}
 
@@ -365,8 +367,10 @@ def main():
         if c["id"] in COCKPIT:
             d["cockpit"] = COCKPIT[c["id"]]
         # the driver sits on the right in the Japanese cars (home-market right-hand drive), on the left in the rest
-        if c["_inspired"].split()[1] in JAPANESE:
+        if c["_inspired"].split()[1] in JAPANESE and c["id"] not in LEFT_HAND:
             d["rhd"] = True
+        else:
+            d.pop("rhd", None)
         if c["id"] in SHIFT:
             d["shiftTime"] = SHIFT[c["id"]]
         path.write_text(json.dumps(d, indent=2) + "\n")
