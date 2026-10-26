@@ -75,43 +75,49 @@ def car_m(id, length, wheelbase, rear_axle, tyre_d, belt, nose, tail, rocker, ro
 SILVER5 = {"style": "fivestar", "spokes": 5, "color": "silver"}
 
 # 1999 Nissan Skyline GT-R V-Spec (R34): 4,600 long, 2,665 wheelbase, 1,360 tall, 245/40R18.
-# Boxy and upright: tall flat sides, a short square trunk, a high tail with quad round lamps and a
-# big adjustable wing; deep front bumper, a long flat hood, vents behind the front wheels.
+# Traced from the side photo. Boxy and upright: tall flat sides, a short square trunk with a high
+# tail, the big adjustable wing, a long hood falling to slim lamps, a deep front bumper and splitter.
 R34 = car_m(
-    "kaminari_mk3", 4.60, 2.665, 1.06, 0.653,
-    belt=[(0.0, 0.98), (0.10, 1.01), (0.70, 1.02), (0.85, 1.01), (1.40, 0.95), (2.30, 0.92), (3.00, 0.90), (3.70, 0.86),
-          (4.20, 0.81), (4.50, 0.74)],
-    nose=[(4.56, 0.71), (4.60, 0.58), (4.60, 0.36), (4.55, 0.20)],
-    tail=[(0.10, 0.20), (0.02, 0.32), (0.00, 0.60), (0.00, 0.85), (0.0, 0.98)],
-    rocker=0.21,
-    roof=[(0.86, 1.01), (1.05, 1.18), (1.30, 1.33), (1.60, 1.36), (2.20, 1.36), (2.36, 1.34), (3.02, 0.91)],
-    glass=[[(1.32, 0.97), (1.42, 1.27), (1.66, 1.31), (1.66, 0.96)],
-           [(1.76, 0.95), (1.76, 1.31), (2.22, 1.32), (2.34, 1.29), (2.86, 0.94)]],
-    head=(4.36, 0.60, 4.58, 0.70), tail_lamp=(-0.01, 0.76, 0.04, 0.92),
-    rim=SILVER5, bumpers="body", front_bumper=(4.20, 4.61, 0.20, 0.50), rear_bumper=(-0.01, 0.40, 0.21, 0.46),
-    wing_m=(0.04, 0.66, 1.02, 1.18), seams=[1.72, 2.96],
-    extras=[{"kind": "vent", "rect": (3.98, 0.55, 4.16, 0.66), "slots": 3},
-            {"kind": "intake", "rect": (4.34, 0.27, 4.58, 0.36)}],
+    "kaminari_mk3", 4.60, 2.665, 1.046, 0.653,
+    belt=[(0.13, 0.96), (0.50, 0.98), (0.95, 0.99), (1.35, 0.95), (2.00, 0.93), (2.90, 0.92), (3.30, 0.89),
+          (3.70, 0.85), (4.05, 0.79), (4.35, 0.72), (4.52, 0.66)],
+    nose=[(4.57, 0.62), (4.60, 0.50), (4.60, 0.30), (4.57, 0.16)],
+    tail=[(0.10, 0.20), (0.02, 0.28), (0.00, 0.42), (0.01, 0.58), (0.08, 0.64), (0.09, 0.90), (0.13, 0.96)],
+    rocker=0.18,
+    roof=[(0.92, 0.99), (1.15, 1.12), (1.40, 1.23), (1.65, 1.28), (2.05, 1.29), (2.38, 1.27), (2.52, 1.24),
+          (3.05, 0.92)],
+    glass=[[(1.36, 0.94), (1.60, 1.21), (1.85, 1.24), (1.85, 0.93)],
+           [(1.93, 0.93), (1.93, 1.24), (2.05, 1.26), (2.42, 1.24), (2.95, 0.93)]],
+    head=(4.38, 0.60, 4.55, 0.73), tail_lamp=(-0.01, 0.66, 0.06, 0.88),
+    rim={"style": "sixspoke", "spokes": 6, "color": "black"}, bumpers="body",
+    front_bumper=(4.25, 4.61, 0.16, 0.56), rear_bumper=(-0.01, 0.45, 0.20, 0.60),
+    wing_m=(0.04, 0.58, 0.97, 1.10), seams=[1.78, 3.06],
+    extras=[{"kind": "intake", "rect": (4.30, 0.24, 4.52, 0.40)},
+            {"kind": "fill", "rect": (1.85, 0.93, 1.93, 1.26), "color": ("night", 0)}],     # the black B-pillar
     exhaust=[(0.10, 0.22)], tail_style="round", tail_count=2, crease=0.3,
 )
 
 # 1994 Toyota Supra Turbo (MK4): 4,515 long, 2,550 wheelbase, 1,275 tall, 255/40R17.
-# Round and low-nosed: a long falling hood, a bubble cabin, the rear glass curving down into a tall
-# tail, and the hoop wing standing over the deck.
+# Traced from the side photo. Round and low-nosed: a long falling hood, a bubble cabin with the
+# rear glass running down into a tall rounded tail, and the hoop wing standing over the deck.
 SUPRA = car_m(
-    "tsunami", 4.515, 2.55, 0.96, 0.636,
-    belt=[(0.0, 0.94), (0.15, 0.99), (0.55, 1.00), (1.10, 0.93), (1.90, 0.88), (2.70, 0.86), (3.30, 0.80), (3.90, 0.70),
-          (4.30, 0.62), (4.47, 0.56)],
-    nose=[(4.51, 0.50), (4.515, 0.40), (4.48, 0.26), (4.40, 0.18)],
-    tail=[(0.12, 0.20), (0.03, 0.34), (0.00, 0.60), (0.0, 0.94)],
-    rocker=0.20,
-    roof=[(0.58, 0.99), (0.95, 1.16), (1.35, 1.26), (1.75, 1.275), (2.15, 1.26), (2.30, 1.23), (2.95, 0.85)],
-    glass=[[(1.45, 0.92), (1.52, 1.18), (1.85, 1.23), (2.20, 1.22), (2.85, 0.88), (1.90, 0.89)]],
-    head=(4.24, 0.55, 4.47, 0.63), tail_lamp=(-0.01, 0.74, 0.04, 0.88),
-    rim=SILVER5, bumpers="body", front_bumper=(4.20, 4.52, 0.18, 0.44), rear_bumper=(-0.01, 0.42, 0.20, 0.46),
-    wing_m=(0.02, 0.92, 0.99, 1.20), seams=[1.50, 2.86],
-    extras=[{"kind": "intake", "rect": (4.30, 0.24, 4.50, 0.33)}],
-    exhaust=[(0.14, 0.24)], crease=0.26, dark_quarters=True,
+    "tsunami", 4.515, 2.55, 0.981, 0.636,
+    belt=[(0.05, 0.88), (0.25, 0.92), (0.60, 0.92), (1.00, 0.90), (1.60, 0.87), (2.40, 0.85), (2.90, 0.83),
+          (3.30, 0.80), (3.70, 0.74), (4.10, 0.66), (4.38, 0.58)],
+    nose=[(4.48, 0.52), (4.515, 0.42), (4.50, 0.26), (4.45, 0.15)],
+    tail=[(0.12, 0.15), (0.02, 0.28), (0.00, 0.50), (0.02, 0.70), (0.05, 0.88)],
+    rocker=0.15,
+    roof=[(0.62, 0.94), (1.00, 1.04), (1.35, 1.14), (1.70, 1.21), (2.05, 1.22), (2.30, 1.19), (2.42, 1.15),
+          (2.95, 0.84)],
+    glass=[[(1.30, 0.92), (1.40, 1.07), (1.58, 1.12), (1.58, 0.91)],
+           [(1.66, 0.91), (1.66, 1.14), (2.05, 1.17), (2.30, 1.14), (2.82, 0.86)]],
+    head=(4.30, 0.57, 4.50, 0.64), tail_lamp=(-0.01, 0.60, 0.04, 0.78),
+    rim={"style": "fivestar", "spokes": 5, "color": "silver"}, bumpers="body",
+    front_bumper=(4.20, 4.52, 0.15, 0.48), rear_bumper=(-0.01, 0.40, 0.15, 0.46),
+    wing_m=(0.08, 0.60, 0.92, 1.10), seams=[1.55, 2.92],
+    extras=[{"kind": "intake", "rect": (4.30, 0.20, 4.50, 0.30)},
+            {"kind": "fill", "rect": (1.58, 0.91, 1.66, 1.14), "color": ("night", 0)}],
+    exhaust=[(0.14, 0.18)], crease=0.26, dark_quarters=True,
 )
 
 # 1991 Acura NSX: 4,405 long, 2,530 wheelbase, 1,170 tall, 225/50R16 rear.
@@ -135,22 +141,24 @@ NSX = car_m(
 )
 
 # 2002 Mazda RX-7 Spirit R (FD3S): 4,295 long, 2,425 wheelbase, 1,230 tall, 255/40R17.
-# Low and curvy: the hood dips between humped front fenders, a double-bubble roof flows into the glass
-# hatch, the hips swell over the rear wheels, round tails under a wing.
+# Traced from the side photo. Low and curvy: a long low nose, the hood dipping between humped front
+# fenders, a bubble canopy that flows into the glass hatch, swollen rear hips, the wing on the tail.
 FD = car_m(
-    "spiral_r", 4.295, 2.425, 0.92, 0.636,
-    belt=[(0.0, 0.90), (0.10, 0.96), (0.50, 0.98), (0.90, 0.95), (1.30, 0.86), (2.00, 0.80), (2.70, 0.78), (3.25, 0.76),
-          (3.55, 0.72), (3.95, 0.62), (4.24, 0.52)],
-    nose=[(4.285, 0.47), (4.295, 0.36), (4.26, 0.24), (4.18, 0.17)],
-    tail=[(0.10, 0.20), (0.02, 0.34), (0.00, 0.62), (0.0, 0.90)],
-    rocker=0.19,
-    roof=[(0.52, 0.98), (0.90, 1.12), (1.40, 1.22), (1.85, 1.23), (2.20, 1.21), (2.32, 1.18), (2.92, 0.79)],
-    glass=[[(1.50, 0.86), (1.58, 1.13), (1.90, 1.18), (2.22, 1.16), (2.80, 0.81), (1.70, 0.84)]],
-    head=(3.95, 0.55, 4.20, 0.60), tail_lamp=(-0.01, 0.72, 0.03, 0.86),
-    rim=SILVER5, bumpers="body", front_bumper=(3.95, 4.30, 0.17, 0.40), rear_bumper=(-0.01, 0.40, 0.19, 0.44),
-    wing_m=(0.04, 0.70, 0.98, 1.10), seams=[1.48, 2.78],
-    extras=[{"kind": "intake", "rect": (4.05, 0.22, 4.28, 0.31)}],
-    popup=(3.60, 3.95, 0.66, 0.74), exhaust=[(0.10, 0.24)], tail_style="round", tail_count=2, crease=0.22, flare=0.5,
+    "spiral_r", 4.295, 2.425, 1.107, 0.636,
+    belt=[(0.10, 0.80), (0.30, 0.82), (0.70, 0.83), (1.10, 0.82), (1.50, 0.80), (2.20, 0.77), (2.80, 0.74),
+          (3.30, 0.71), (3.60, 0.66), (3.90, 0.60), (4.15, 0.53)],
+    nose=[(4.24, 0.48), (4.295, 0.40), (4.29, 0.28), (4.24, 0.15)],
+    tail=[(0.12, 0.17), (0.02, 0.28), (0.00, 0.44), (0.05, 0.56), (0.08, 0.72), (0.10, 0.80)],
+    rocker=0.16,
+    roof=[(0.55, 0.83), (0.95, 0.98), (1.30, 1.11), (1.55, 1.18), (1.90, 1.20), (2.20, 1.18), (2.35, 1.13),
+          (2.95, 0.78)],
+    glass=[[(1.45, 0.86), (1.55, 1.08), (1.85, 1.13), (2.20, 1.11), (2.82, 0.80), (1.70, 0.83)]],
+    head=(4.05, 0.33, 4.28, 0.42), tail_lamp=(-0.01, 0.62, 0.06, 0.78),
+    rim=SILVER5, bumpers="body", front_bumper=(3.95, 4.30, 0.15, 0.42), rear_bumper=(-0.01, 0.40, 0.17, 0.52),
+    wing_m=(0.08, 0.55, 0.78, 0.88), seams=[1.48, 2.78],
+    extras=[{"kind": "intake", "rect": (4.05, 0.20, 4.28, 0.30)},
+            {"kind": "fill", "rect": (1.30, 0.84, 1.45, 1.10), "color": ("night", 0)}],
+    popup=(3.55, 3.90, 0.62, 0.70), exhaust=[(0.10, 0.20)], tail_style="round", tail_count=2, crease=0.22, flare=0.5,
 )
 
 # 1996 Dodge Viper GTS: 4,488 long, 2,443 wheelbase, 1,194 tall, 335/30ZR18 rear.
@@ -193,4 +201,48 @@ CHEVELLE = car_m(
     grille=(5.13, 0.48, 5.18, 0.76),
 )
 
-REAL = {p["id"]: p for p in (R34, SUPRA, NSX, FD, VIPER, CHEVELLE)}
+# 1996 Nissan 180SX Type X: 4,540 long, 2,475 wheelbase, 1,290 tall, 205/55R15 (here on 16s).
+# Traced from the side photo. A long low wedge: pop-up lamps in a sharp nose, a flat beltline, the
+# big glass hatch sloping all the way down to a short tail with a small lip spoiler.
+S180 = car_m(
+    "sylph_180", 4.54, 2.475, 1.073, 0.627,
+    belt=[(0.12, 0.84), (0.40, 0.86), (0.90, 0.86), (1.50, 0.85), (2.20, 0.84), (2.80, 0.81), (3.30, 0.75),
+          (3.70, 0.69), (4.10, 0.62), (4.40, 0.55)],
+    nose=[(4.50, 0.50), (4.54, 0.40), (4.53, 0.25), (4.48, 0.14)],
+    tail=[(0.12, 0.17), (0.02, 0.28), (0.00, 0.50), (0.05, 0.70), (0.12, 0.84)],
+    rocker=0.17,
+    roof=[(0.60, 0.88), (1.20, 1.05), (1.70, 1.18), (1.95, 1.21), (2.35, 1.21), (2.55, 1.17), (3.05, 0.84)],
+    glass=[[(0.68, 0.87), (1.25, 1.03), (1.73, 1.16), (1.73, 0.86)],
+           [(1.83, 0.86), (1.83, 1.17), (2.35, 1.18), (2.52, 1.14), (2.95, 0.86)]],
+    head=(4.30, 0.48, 4.50, 0.53), tail_lamp=(-0.01, 0.60, 0.05, 0.76),
+    rim={"style": "fivestar", "spokes": 5, "color": "silver"}, bumpers="body",
+    front_bumper=(4.25, 4.55, 0.14, 0.44), rear_bumper=(-0.01, 0.40, 0.17, 0.50),
+    seams=[1.73, 2.98], popup=(3.85, 4.30, 0.62, 0.68),
+    extras=[{"kind": "lip", "polys": [[(0.10, 0.84), (0.55, 0.87), (0.55, 0.90), (0.15, 0.89)]]},
+            {"kind": "fill", "rect": (1.73, 0.86, 1.83, 1.18), "color": ("night", 0)}],
+    exhaust=[(0.05, 0.18)], crease=0.24, dark_quarters=True,
+)
+
+# 1997 Acura Integra Type R (DC2): 4,380 long, 2,570 wheelbase, 1,335 tall, 195/55R15.
+# Traced from the side photo. A low, smooth three-door coupe: a long sloping hood over quad round
+# lamps, a high rounded deck behind the hatch glass and the tall Type R wing; white ten-spokes.
+DC2 = car_m(
+    "arrow", 4.38, 2.57, 0.916, 0.596,
+    belt=[(0.10, 0.94), (0.40, 0.96), (0.90, 0.95), (1.50, 0.91), (2.30, 0.88), (2.90, 0.85), (3.40, 0.79),
+          (3.80, 0.72), (4.15, 0.62), (4.33, 0.54)],
+    nose=[(4.37, 0.48), (4.38, 0.36), (4.36, 0.22), (4.30, 0.14)],
+    tail=[(0.12, 0.17), (0.02, 0.28), (0.00, 0.48), (0.04, 0.64), (0.06, 0.82), (0.10, 0.94)],
+    rocker=0.18,
+    roof=[(0.55, 0.97), (1.00, 1.11), (1.45, 1.22), (1.85, 1.29), (2.30, 1.29), (2.55, 1.25), (3.05, 0.90)],
+    glass=[[(1.10, 0.93), (1.62, 1.15), (1.70, 1.18), (1.70, 0.91)],
+           [(1.80, 0.91), (1.80, 1.21), (2.30, 1.23), (2.52, 1.19), (2.95, 0.90)]],
+    head=(4.15, 0.50, 4.36, 0.60), tail_lamp=(-0.01, 0.64, 0.06, 0.78),
+    rim={"style": "sixspoke", "spokes": 10, "color": "white"}, bumpers="body",
+    front_bumper=(4.15, 4.39, 0.14, 0.46), rear_bumper=(-0.01, 0.45, 0.17, 0.55),
+    wing_m=(0.10, 0.55, 0.96, 1.10), seams=[1.70, 3.02],
+    extras=[{"kind": "intake", "rect": (4.20, 0.20, 4.37, 0.27)},
+            {"kind": "fill", "rect": (1.70, 0.91, 1.80, 1.22), "color": ("night", 0)}],
+    exhaust=[(0.12, 0.18)], crease=0.24,
+)
+
+REAL = {p["id"]: p for p in (R34, SUPRA, NSX, FD, VIPER, CHEVELLE, S180, DC2)}

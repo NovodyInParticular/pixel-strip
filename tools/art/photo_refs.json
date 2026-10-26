@@ -1,0 +1,461 @@
+{
+ "dir": "~/Pictures/car-refs/PixelRacingCarList",
+ "cars": {
+  "kite_ef": {
+   "folder": "1989 Honda Civic DX",
+   "side": "2.jpg",
+   "length": 3.965,
+   "wheelbase": 2.5,
+   "rear_axle": 0.659,
+   "tyre": 0.578,
+   "rear": [
+    508,
+    290
+   ],
+   "front": [
+    127,
+    268
+   ]
+  },
+  "sylph_180": {
+   "folder": "240",
+   "side": "2.jpg",
+   "length": 4.54,
+   "wheelbase": 2.475,
+   "rear_axle": 0.929,
+   "tyre": 0.627,
+   "rear": [
+    1000,
+    595
+   ],
+   "front": [
+    265,
+    595
+   ],
+   "ends": [
+    0.02,
+    4.245
+   ]
+  },
+  "vortex": {
+   "folder": "Corvvett",
+   "side": "3.jpg",
+   "length": 4.564,
+   "wheelbase": 2.655,
+   "rear_axle": 0.859,
+   "tyre": 0.663,
+   "rear": [
+    1446,
+    800
+   ],
+   "front": [
+    484,
+    805
+   ],
+   "ends": [
+    -0.03,
+    4.33
+   ]
+  },
+  "delsol": {
+   "folder": "del sol",
+   "side": "3.jpg",
+   "length": 3.995,
+   "wheelbase": 2.37,
+   "rear_axle": 0.731,
+   "tyre": 0.59,
+   "rear": [
+    1084,
+    733
+   ],
+   "front": [
+    321,
+    731
+   ],
+   "ends": [
+    0.077,
+    3.88
+   ]
+  },
+  "kite": {
+   "folder": "EG",
+   "side": "3.jpg",
+   "length": 4.07,
+   "wheelbase": 2.57,
+   "rear_axle": 0.675,
+   "tyre": 0.578,
+   "rear": [
+    1240,
+    647
+   ],
+   "front": [
+    313,
+    647
+   ],
+   "ends": [
+    0.03,
+    3.96
+   ]
+  },
+  "kite_rx": {
+   "folder": "EK",
+   "side": "1.jpg",
+   "length": 4.18,
+   "wheelbase": 2.62,
+   "rear_axle": 0.702,
+   "tyre": 0.596,
+   "rear": [
+    1033,
+    460
+   ],
+   "front": [
+    265,
+    460
+   ],
+   "ends": [
+    0.115,
+    4.06
+   ]
+  },
+  "spiral_turbo": {
+   "folder": "Fc",
+   "side": "1.jpg",
+   "length": 4.29,
+   "wheelbase": 2.43,
+   "rear_axle": 0.837,
+   "tyre": 0.627,
+   "rear": [
+    1417,
+    2459
+   ],
+   "front": [
+    4083,
+    2449
+   ],
+   "ends": [
+    -0.07,
+    4.015
+   ]
+  },
+  "spiral_r": {
+   "folder": "FD",
+   "side": "3.jpg",
+   "length": 4.295,
+   "wheelbase": 2.425,
+   "rear_axle": 0.842,
+   "tyre": 0.636,
+   "rear": [
+    1468,
+    809
+   ],
+   "front": [
+    464,
+    809
+   ],
+   "ends": [
+    -0.15,
+    3.95
+   ]
+  },
+  "typhoon": {
+   "folder": "GT3000",
+   "side": "3.jpg",
+   "length": 4.58,
+   "wheelbase": 2.47,
+   "rear_axle": 0.95,
+   "tyre": 0.654,
+   "rear": [
+    518,
+    827
+   ],
+   "front": [
+    1504,
+    831
+   ],
+   "ends": [
+    0.08,
+    4.28
+   ]
+  },
+  "arrow": {
+   "folder": "Integra",
+   "side": "1.jpg",
+   "length": 4.38,
+   "wheelbase": 2.57,
+   "rear_axle": 0.815,
+   "tyre": 0.596,
+   "rear": [
+    1050,
+    1384
+   ],
+   "front": [
+    2787,
+    1378
+   ],
+   "ends": [
+    0.0,
+    4.18
+   ]
+  },
+  "halberd_6": {
+   "folder": "Lancer",
+   "side": "2.jpg",
+   "length": 4.35,
+   "wheelbase": 2.51,
+   "rear_axle": 0.828,
+   "tyre": 0.634,
+   "rear": [
+    172,
+    372
+   ],
+   "front": [
+    643,
+    372
+   ],
+   "ends": [
+    -0.03,
+    4.115
+   ]
+  },
+  "ronin": {
+   "folder": "MR2",
+   "side": "1.jpg",
+   "length": 4.17,
+   "wheelbase": 2.4,
+   "rear_axle": 0.796,
+   "tyre": 0.606,
+   "rear": [
+    247,
+    425
+   ],
+   "front": [
+    792,
+    425
+   ],
+   "ends": [
+    0.08,
+    3.84
+   ]
+  },
+  "kirin": {
+   "folder": "NSX",
+   "side": "1.jpg",
+   "length": 4.405,
+   "wheelbase": 2.53,
+   "rear_axle": 0.844,
+   "tyre": 0.63,
+   "rear": [
+    230,
+    348
+   ],
+   "front": [
+    757,
+    348
+   ],
+   "ends": [
+    -0.015,
+    4.115
+   ]
+  },
+  "overture": {
+   "folder": "Prelude",
+   "side": "1.jpg",
+   "length": 4.52,
+   "wheelbase": 2.585,
+   "rear_axle": 0.871,
+   "tyre": 0.611,
+   "rear": [
+    1176,
+    803
+   ],
+   "front": [
+    401,
+    805
+   ],
+   "ends": [
+    0.04,
+    4.2
+   ]
+  },
+  "kaminari_mk1": {
+   "folder": "R32",
+   "side": "1.jpg",
+   "length": 4.545,
+   "wheelbase": 2.615,
+   "rear_axle": 0.868,
+   "tyre": 0.631,
+   "rear": [
+    1517,
+    707
+   ],
+   "front": [
+    391,
+    707
+   ],
+   "ends": [
+    0.0,
+    4.33
+   ]
+  },
+  "kaminari_mk2": {
+   "folder": "R33",
+   "side": "3.jpg",
+   "length": 4.675,
+   "wheelbase": 2.72,
+   "rear_axle": 0.88,
+   "tyre": 0.652,
+   "rear": [
+    274,
+    610
+   ],
+   "front": [
+    998,
+    610
+   ],
+   "ends": [
+    0.0,
+    4.47
+   ]
+  },
+  "kaminari_mk3": {
+   "folder": "R34",
+   "side": "3.jpg",
+   "length": 4.6,
+   "wheelbase": 2.665,
+   "rear_axle": 0.871,
+   "tyre": 0.653,
+   "rear": [
+    268,
+    603
+   ],
+   "front": [
+    1042,
+    607
+   ],
+   "ends": [
+    0.02,
+    4.26
+   ]
+  },
+  "prairie": {
+   "folder": "Rx3",
+   "side": "2.jpg",
+   "length": 4.075,
+   "wheelbase": 2.31,
+   "rear_axle": 0.794,
+   "tyre": 0.59,
+   "rear": [
+    563,
+    901
+   ],
+   "front": [
+    1560,
+    905
+   ],
+   "ends": [
+    -0.12,
+    3.78
+   ]
+  },
+  "sylph_13": {
+   "folder": "s13",
+   "side": "1.jpg",
+   "length": 4.47,
+   "wheelbase": 2.475,
+   "rear_axle": 0.898,
+   "tyre": 0.615,
+   "rear": [
+    540,
+    345
+   ],
+   "front": [
+    196,
+    345
+   ],
+   "ends": [
+    -0.1,
+    4.215
+   ]
+  },
+  "sylph_15": {
+   "folder": "s15",
+   "side": "1.jpg",
+   "length": 4.445,
+   "wheelbase": 2.525,
+   "rear_axle": 0.864,
+   "tyre": 0.625,
+   "rear": [
+    985,
+    586
+   ],
+   "front": [
+    257,
+    584
+   ],
+   "ends": [
+    -0.065,
+    4.195
+   ]
+  },
+  "tenshi": {
+   "folder": "S2000",
+   "side": "1.jpg",
+   "length": 4.135,
+   "wheelbase": 2.4,
+   "rear_axle": 0.781,
+   "tyre": 0.63,
+   "rear": [
+    514,
+    782
+   ],
+   "front": [
+    1583,
+    782
+   ],
+   "ends": [
+    0.0,
+    3.87
+   ]
+  },
+  "tsunami": {
+   "folder": "Supra",
+   "side": "1.jpg",
+   "length": 4.515,
+   "wheelbase": 2.55,
+   "rear_axle": 0.884,
+   "tyre": 0.636,
+   "rear": [
+    191,
+    359
+   ],
+   "front": [
+    585,
+    358
+   ],
+   "ends": [
+    -0.01,
+    4.33
+   ]
+  },
+  "comet_gd": {
+   "folder": "WRX",
+   "side": "2.jpg",
+   "length": 4.415,
+   "wheelbase": 2.525,
+   "rear_axle": 0.851,
+   "tyre": 0.634,
+   "rear": [
+    188,
+    309
+   ],
+   "front": [
+    552,
+    309
+   ],
+   "ends": [
+    -0.03,
+    4.26
+   ]
+  }
+ }
+}
