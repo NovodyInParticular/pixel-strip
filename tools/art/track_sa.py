@@ -1,4 +1,4 @@
-"""San Antonio at dusk: Joe's home track (only his boss race uses it).
+"""San Antonio at dusk: Joe's home track (his boss race, and open to everyone).
 
 The Tower of the Americas on its own slow layer, a downtown skyline with the Tower Life
 Building, the Alamo's facade and San Fernando's twin towers, colourful Tex-Mex shopfronts under

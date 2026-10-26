@@ -7,6 +7,7 @@
  * unique), players/{uid}.crew. Every change goes through these functions; clients can't write.
  */
 import { randomBytes } from "node:crypto";
+import { TRACK_IDS } from "./tracks";
 import { FieldValue, getFirestore, Transaction } from "firebase-admin/firestore";
 import { HttpsError, onCall } from "firebase-functions/v2/https";
 
@@ -24,7 +25,7 @@ export interface Member { role: Role; name: string; joined: number; best?: Showc
 export interface Showcase { car: string; paint: number; parts: Record<string, number>; cosmetics: Record<string, number>; et: number }
 
 /** Districts of the war map: the tracks open to everyone. */
-export const DISTRICTS = ["neon_city", "desert", "port", "coast", "airfield", "speedway"];
+export const DISTRICTS = TRACK_IDS;
 
 /** ISO week, e.g. "2026-W43": the war resets every Monday. */
 export function weekKey(t = Date.now()): string {

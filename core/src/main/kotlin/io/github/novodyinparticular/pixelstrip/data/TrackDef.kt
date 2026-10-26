@@ -69,8 +69,18 @@ class TrackDef(
     )
 
     companion object {
-        /** Tracks open to quick races and ordinary rivals (not boss-only ones like San Antonio). */
-        val GENERAL = listOf("neon_city", "desert", "port", "coast", "airfield", "speedway")
+        /**
+         * Tracks open to quick and online races, rivals, tournaments and the crew war (the server's
+         * TRACK_IDS, server/functions/src/tracks.ts). Joe's boss race is always on San Antonio.
+         */
+        val GENERAL = listOf("neon_city", "desert", "port", "coast", "airfield", "speedway", "sanantonio")
+
+        private val names = HashMap<String, String>()
+
+        /** A track's name as the game shows it ("SAN ANTONIO"), read once from its file. */
+        fun displayName(id: String): String = names.getOrPut(id) {
+            runCatching { JsonReader().parse(Gdx.files.internal("data/tracks/$id.json")).getString("name") }.getOrDefault(id.replace('_', ' ')).uppercase()
+        }
 
         fun load(id: String): TrackDef = parse(JsonReader().parse(Gdx.files.internal("data/tracks/$id.json")))
 

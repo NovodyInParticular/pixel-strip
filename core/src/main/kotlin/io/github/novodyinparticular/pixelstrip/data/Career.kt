@@ -33,7 +33,7 @@ class Career(val tiers: List<Tier>, val barns: List<Barn> = emptyList()) {
         val tier: String,
         /** Who's visible through the glass: "joe" for the boss drawn from the user's friend. */
         val driver: String?,
-        /** Where the race happens. Joe's San Antonio is his alone. */
+        /** Where the race happens: Joe always on San Antonio, the others around the general tracks. */
         val track: String,
     ) {
         /** The rival's car as an OwnedCar, so the usual effective-stats and looks code applies. */

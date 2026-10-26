@@ -123,7 +123,7 @@ class Music(private val synth: Synth) {
                 intArrayOf(0, -1, 4, -1, 7, -1, 4, -1, 5, -1, 4, -1, 2, -1, -1, -1), 0.6f),
             "speedway" to Song(136f, listOf(55 to false, 53 to false, 48 to false, 55 to false),
                 intArrayOf(0, 2, 4, -1, 4, -1, 2, 4, 5, -1, 4, -1, 2, -1, 0, -1), 0.9f),
-            // Joe's San Antonio: conjunto two-step, bass on the beat, accordion-ish lead running over it
+            // San Antonio (Joe's home strip): conjunto two-step, bass on the beat, accordion-ish lead running over it
             "sanantonio" to Song(128f, listOf(55 to false, 50 to false, 55 to false, 48 to false),
                 intArrayOf(4, 5, 4, 2, 0, -1, 2, 4, 5, 4, 2, 4, 7, -1, -1, -1), 0.65f),
             "boss" to Song(132f, listOf(52 to true, 52 to true, 48 to false, 50 to false),

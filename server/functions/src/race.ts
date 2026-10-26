@@ -7,6 +7,7 @@
  */
 import { randomBytes } from "node:crypto";
 import { readFileSync, readdirSync } from "node:fs";
+import { TRACK_IDS } from "./tracks";
 import { join } from "node:path";
 import { getDatabase } from "firebase-admin/database";
 import { FieldValue, getFirestore, Transaction } from "firebase-admin/firestore";
@@ -32,8 +33,8 @@ const cars = new Map<string, CarDef>(
     return [c.id, c];
   }),
 );
-/** Tracks anyone can race on (Joe's San Antonio is his alone), with their surface grip. */
-export const TRACKS = ["neon_city", "desert", "port", "coast", "airfield", "speedway"].map((id) => {
+/** Tracks anyone can race on, with their surface grip. */
+export const TRACKS = TRACK_IDS.map((id) => {
   const t = JSON.parse(readFileSync(join(data, "tracks", `${id}.json`), "utf8"));
   return { id, grip: typeof t.trackGrip === "number" ? t.trackGrip : 1.25 };
 });

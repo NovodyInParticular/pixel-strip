@@ -42,9 +42,10 @@ Done so far:
   VS cards, boss intro scenes, purses, and the boss's car as a pink-slip prize. Street boss is Joe
   "Ground Control" in his EF Civic hatch, Sport boss is Rotor in a black FC RX-7.
 
-- Six tracks: Neon City, Sundown Strip (desert), Dockside (rain, wet reflections, lightning),
+- Seven tracks: Neon City, Sundown Strip (desert), Dockside (rain, wet reflections, lightning),
   Sunset Coast, Summit Airfield (snow), Dusk Speedway '77; each with its own grip, weather and
-  song. Joe's boss race has a seventh, San Antonio, which is his alone.
+  song; and San Antonio, Joe's home strip, where his boss race always runs and which is open to
+  quick races, rivals, online matchmaking and tournaments like the rest.
 - Audio, all synthesized: engines from the live physics (per-cylinder firing for I4, I6, V6, V8,
   V10, V12, flat-4 with its unequal-header burble, flat-6, flat-12 and rotary; a VTEC-style cam
   crossover that hardens the note; turbo, blower, limiter, nitrous, tyre squeal), effects, crowd,
@@ -64,7 +65,7 @@ Done so far:
 
 - Crews: up to 20 racers under a name, a 2-4 character tag and a pixel emblem (worn on the door
   with the CREW decal); leaders, officers and members; online wins fight a weekly war for the
-  six districts (see below)
+  seven districts (see below)
 - Tournaments: a daily time trial per class with an entry fee, five server-checked passes, a
   live leaderboard, and the top ten splitting the pool (see below)
 

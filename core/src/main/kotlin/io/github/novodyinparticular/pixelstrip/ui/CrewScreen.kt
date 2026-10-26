@@ -494,21 +494,27 @@ class CrewScreen(game: PixelStrip) : MenuScreen(game) {
     private fun drawWar(w: Int, h: Int) {
         font.draw(batch, "WEEK $week: EVERY ONLINE WIN SCORES FOR YOUR CREW WHERE IT WAS RACED", 8f, h - 44f, SOFT, 1, null)
         font.draw(batch, "MOST WINS HOLDS THE DISTRICT. RESETS MONDAY.", 8f, h - 54f, SOFT, 1, null)
-        val tw = 150f
+        // four to a row: seven districts since San Antonio opened up
+        val cols = 4
+        val tw = 112f
         val th = 66f
-        val x0 = w / 2f - (tw * 3 + 8f) / 2f
+        val x0 = w / 2f - (tw * cols + 4f * (cols - 1)) / 2f
         TrackDef.GENERAL.forEachIndexed { i, d ->
-            val x = x0 + (i % 3) * (tw + 4f)
-            val y = h - 132f - (i / 3) * (th + 4f)
+            val row = i / cols
+            val inRow = minOf(cols, TrackDef.GENERAL.size - row * cols)
+            val x = x0 + (cols - inRow) * (tw + 4f) / 2f + (i % cols) * (tw + 4f)
+            val y = h - 132f - row * (th + 4f)
             val holder = map[d]
             val ours = holder != null && holder.tag == mine?.tag
             panel(x, y, tw, th, if (ours) GREEN else if (holder != null) ORANGE else BTN_GREY, 0.88f)
-            font.draw(batch, d.replace('_', ' ').uppercase(), x + 6f, y + th - 12f, YELLOW, 1, null)
+            font.draw(batch, TrackDef.displayName(d), x + 6f, y + th - 12f, YELLOW, 1, null)
             if (holder != null) {
-                emblem(holder.emblem, x + 6f, y + 8f, 32)
-                font.draw(batch, "[${holder.tag}]", x + 44f, y + 30f, if (ours) GREEN else Color.WHITE, 2, null)
-                font.draw(batch, "${holder.wins} WINS", x + 44f, y + 14f, SOFT, 1, null)
-            } else font.draw(batch, "UNCLAIMED", x + 6f, y + 26f, SOFT, 2, null)
+                emblem(holder.emblem, x + 6f, y + 8f, 24)
+                val tag = "[${holder.tag}]"
+                val scale = if (34f + font.width(tag, 2) <= tw - 4f) 2 else 1
+                font.draw(batch, tag, x + 34f, y + 26f, if (ours) GREEN else Color.WHITE, scale, null)
+                font.draw(batch, "${holder.wins} WINS", x + 34f, y + 12f, SOFT, 1, null)
+            } else font.draw(batch, "UNCLAIMED", x + 6f, y + 26f, SOFT, 1, null)
             mine?.let { c ->
                 val n = c.districts[d] ?: 0
                 if (!ours && n > 0) font.draw(batch, "US: $n", x + tw - 6f - font.width("US: $n"), y + th - 12f, CYAN, 1, null)
