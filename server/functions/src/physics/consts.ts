@@ -18,6 +18,8 @@ export const BOG_FLOOR = 0.9;
 export const BOOST_RANGE_RPM = 1400;
 /** Staged with the clutch in, an unloaded engine barely makes boost. */
 export const NO_LOAD_BOOST = 0.3;
+/** Torque multiplication of a stock street converter at stall. */
+export const CONVERTER_STALL_TR = 2.0;
 /** Factory turbo: stock boost (10 psi x PSI_GAIN x the stock intercooler) as a torque share; spool floor; spool time. */
 export const STOCK_BOOST_GAIN = 10 * 0.05 * 0.86;
 export const STOCK_SPOOL_MIN = 1200;

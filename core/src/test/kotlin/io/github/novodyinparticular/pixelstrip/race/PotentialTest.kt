@@ -8,12 +8,13 @@ import io.github.novodyinparticular.pixelstrip.data.Tune
 import io.github.novodyinparticular.pixelstrip.data.Upgrades
 import java.io.File
 import kotlin.test.Test
-import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 /**
  * Tuned potential: every car's best quarter mile with everything it can take, trying an NA build,
- * turbo builds across boost settings and blower builds, each with nitrous. Joe's EF Civic must be
- * the quickest of its stock class when built right.
+ * turbo builds across boost settings and blower builds, each with nitrous, on whichever suspension
+ * and ballast suit its drivetrain. Joe's EF is an honest front-driver (no AWD special): it must not
+ * be the quickest street car once built.
  */
 class PotentialTest {
     private val catalog = PartCatalog(JsonReader().parse(File("data/parts.json").readText()))
@@ -29,6 +30,21 @@ class PotentialTest {
             base[s.id] = top
         }
         if (def.drivetrain != "RWD") base.remove("tubs").also { base["fenders"] = 2 }
+        // weight transfer helps a rear-driver and hurts a front-driver: pick the setup on a strong reference build
+        val chassis = SETUP_SLOTS.map { id -> catalog.slots.first { it.id == id } }
+        var setup = emptyMap<String, Int>()
+        var setupEt = Float.MAX_VALUE
+        fun combos(i: Int, acc: Map<String, Int>) {
+            if (i == chassis.size) {
+                val et = DragMath.perfectPass(Upgrades.apply(def, catalog, base + acc + mapOf("turbo" to 3, "nitrous" to 2), emptyMap(),
+                    Tune(boostPsi = 25f, nitrousGear = 2))).quarter
+                if (et < setupEt) { setupEt = et; setup = acc }
+                return
+            }
+            for (o in chassis[i].options.indices) combos(i + 1, acc + (chassis[i].id to o))
+        }
+        combos(0, emptyMap())
+        base.putAll(setup)
         var best = Float.MAX_VALUE
         var what = ""
         fun tryBuild(parts: Map<String, Int>, tune: Tune, label: String) {
@@ -43,16 +59,25 @@ class PotentialTest {
         tryBuild(base, Tune(), "NA")
         for (t in 1..5) for (psi in listOf(10f, 15f, 20f, 25f, 30f, 40f)) tryBuild(base + mapOf("turbo" to t), Tune(boostPsi = psi), "turbo$t@$psi")
         for (sc in 1..4) tryBuild(base + mapOf("supercharger" to sc), Tune(), "sc$sc")
-        return best to what
+        return best to "$what ${setup.entries.joinToString(" ") { "${it.key}${it.value}" }}"
     }
 
     @Test
-    fun joesCivicIsTheQuickestStreetCarBuilt() {
+    fun joesCivicIsNotTheQuickestStreetBuild() {
         val ids = JsonReader().parse(File("data/roster.json").readText()).asStringArray().toList()
         val byClass = ids.map { car(it) }.groupBy { economy.classFor(DragMath.perfectPass(it).quarter) }
         val street = byClass.getValue("STREET")
         val results = street.associate { it.id to best(it) }
         for ((id, r) in results.entries.sortedBy { it.value.first }) println("STREET %-13s stock %.2f  built %.2f  (%s)".format(id, DragMath.perfectPass(car(id)).quarter, r.first, r.second))
-        assertEquals("kite_ef", results.minByOrNull { it.value.first }!!.key, "Joe's Civic should have the most potential in its class")
+        val order = results.entries.sortedBy { it.value.first }.map { it.key }
+        val rank = order.indexOf("kite_ef")
+        val gap = results.getValue("kite_ef").first - results.getValue(order.first()).first
+        println("Joe's EF built: #${rank + 1} of ${order.size} in STREET, %.2f s off the quickest".format(gap))
+        assertTrue(rank > 0, "Joe's EF shouldn't be the quickest street car once built: an equal build has to be able to beat it")
+    }
+
+    companion object {
+        /** Slots whose best option depends on which wheels drive. */
+        val SETUP_SLOTS = listOf("springs", "shocks", "battery")
     }
 }

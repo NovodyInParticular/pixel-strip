@@ -4,7 +4,7 @@
   "brand": "Fenice",
   "year": 1990,
   "era": "90s",
-  "price": 320000,
+  "price": 205000,
   "dealer": false,
   "hp": 478,
   "powerRating": "net",
@@ -26,7 +26,7 @@
     0.766
   ],
   "finalDrive": 2.727,
-  "shiftTime": 0.25,
+  "shiftTime": 0.33,
   "clutchTime": 0.32,
   "clutchTorque": 1.5,
   "tireRadiusM": 0.333,
@@ -43,7 +43,9 @@
   "engine": {
     "layout": "v8",
     "cylinders": 8,
-    "stockTurbo": true
+    "stockTurbo": true,
+    "lag": 0.7,
+    "spoolRpm": 3400
   },
   "exotic": true
 }

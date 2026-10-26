@@ -511,7 +511,7 @@
    }
   ],
   "expect": {
-   "cash": 47940,
+   "cash": 47040,
    "cars": [
     {
      "uid": "c1",
@@ -794,7 +794,7 @@
    }
   ],
   "expect": {
-   "cash": 0,
+   "cash": 1500,
    "cars": [
     {
      "uid": "c1",
@@ -1002,7 +1002,7 @@
   }
  },
  {
-  "name": "Joe's AWD conversion only fits his EF",
+  "name": "Joe's K-swap only fits his EF",
   "entries": [
    {
     "type": "start",
@@ -1010,56 +1010,24 @@
     "car": "kite"
    },
    {
-    "type": "race",
-    "t": 10000,
-    "uid": "c1",
-    "rival": "dash",
-    "won": true,
-    "pink": false
-   },
-   {
-    "type": "race",
-    "t": 20000,
-    "uid": "c1",
-    "rival": "kat",
-    "won": true,
-    "pink": false
-   },
-   {
-    "type": "race",
-    "t": 30000,
-    "uid": "c1",
-    "rival": "tiny",
-    "won": true,
-    "pink": false
-   },
-   {
-    "type": "race",
-    "t": 40000,
-    "uid": "c1",
-    "rival": "joe",
-    "won": true,
-    "pink": false
-   },
-   {
     "type": "part",
     "t": 2000,
     "uid": "c1",
-    "slot": "drive",
-    "opt": 1
-   },
-   {
-    "type": "part",
-    "t": 41000,
-    "uid": "c2",
-    "slot": "drive",
-    "opt": 1
+    "slot": "swap",
+    "opt": 4
    }
   ],
   "expect": {
-   "cash": 15000,
+   "cash": 5000,
+   "cars": [
+    {
+     "uid": "c1",
+     "car": "kite",
+     "parts": {}
+    }
+   ],
    "refused": [
-    5
+    1
    ]
   }
  },
@@ -1248,6 +1216,60 @@
      "cosmetics": {},
      "uid": "c1",
      "car": "kite"
+    }
+   ]
+  }
+ },
+ {
+  "name": "a retired part pays back what it cost and comes off the car, which stays",
+  "entries": [
+   {
+    "type": "retire",
+    "t": 2000,
+    "uid": "c1"
+   },
+   {
+    "type": "retire",
+    "t": 2000,
+    "uid": "c1"
+   }
+  ],
+  "expect": {
+   "cash": 16000,
+   "cars": [
+    {
+     "uid": "c1",
+     "car": "kite_ef",
+     "parts": {
+      "swap": 2
+     }
+    }
+   ],
+   "refused": [
+    1
+   ]
+  },
+  "state": {
+   "cash": 1000,
+   "xp": 0,
+   "nextUid": 2,
+   "lastRaceT": 0,
+   "beaten": [],
+   "found": [],
+   "cars": [
+    {
+     "paint": 12,
+     "parts": {
+      "drive": 1,
+      "swap": 2
+     },
+     "owned": {
+      "drive": 2,
+      "swap": 4
+     },
+     "cosmetics": {},
+     "uid": "c1",
+     "car": "kite_ef"
     }
    ]
   }

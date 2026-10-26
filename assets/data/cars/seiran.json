@@ -4,7 +4,7 @@
   "brand": "Hayate",
   "year": 1991,
   "era": "90s",
-  "price": 26000,
+  "price": 22000,
   "dealer": true,
   "hp": 200,
   "powerRating": "net",
@@ -43,6 +43,7 @@
   "engine": {
     "layout": "i4",
     "cylinders": 4,
-    "stockTurbo": true
+    "stockTurbo": true,
+    "lag": 0.7
   }
 }

@@ -4,7 +4,7 @@
   "brand": "Raijin",
   "year": 1990,
   "era": "90s",
-  "price": 48000,
+  "price": 61000,
   "dealer": true,
   "hp": 300,
   "powerRating": "net",
@@ -43,6 +43,7 @@
   "engine": {
     "layout": "v6",
     "cylinders": 6,
-    "stockTurbo": true
+    "stockTurbo": true,
+    "lag": 0.45
   }
 }

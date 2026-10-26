@@ -395,7 +395,9 @@ class Vehicle(val def: CarDef, private val powerScale: Float = 1f) {
         }
         rpm = rpm.coerceIn(def.idleRpm * BOG_FLOOR, def.redline + 50f)
 
-        val fullT = engineTorque(dt) * ratio * DRIVELINE_EFF
+        // A torque converter multiplies torque while it slips, from its stall ratio down to 1:1 as it locks up
+        val converterTr = if (def.converter && mode == Mode.LAUNCH) 1f + (CONVERTER_STALL_TR - 1f) * (1f - (coupledRpm / max(rpm, 1f)).coerceIn(0f, 1f)) else 1f
+        val fullT = engineTorque(dt) * ratio * DRIVELINE_EFF * converterTr
         // The driver pedals to the traction limit: off while the tyres spin, back to just past
         // the limit once they hook. More power than grip costs spin, not a permanent loss.
         val ideal = if (fullT > 0f) (grip * tireR / fullT).coerceIn(FEATHER_MIN, 1f) else 1f
@@ -502,6 +504,8 @@ class Vehicle(val def: CarDef, private val powerScale: Float = 1f) {
         const val PERFECT_BONUS_S = 0.6f
         const val ANTI_LAG_BOOST = 0.6f
         const val NO_LOAD_BOOST = 0.3f
+        /** Torque multiplication of a stock street converter at stall. */
+        const val CONVERTER_STALL_TR = 2.0f
         const val TRANSFER_TAU = 0.06f
         const val WHEELIE_LIFT = 0.35f
         const val WHEELIE_BAR_LIFT = 0.18f

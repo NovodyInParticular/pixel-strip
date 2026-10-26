@@ -4,7 +4,7 @@
   "brand": "Tsubasa",
   "year": 1991,
   "era": "90s",
-  "price": 72000,
+  "price": 51000,
   "hp": 300,
   "powerRating": "net",
   "peakHpRpm": 6000,
@@ -42,7 +42,8 @@
   "engine": {
     "layout": "v6",
     "cylinders": 6,
-    "stockTurbo": true
+    "stockTurbo": true,
+    "lag": 0.45
   },
   "dealer": true
 }

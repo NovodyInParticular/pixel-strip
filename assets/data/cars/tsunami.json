@@ -4,7 +4,7 @@
   "brand": "Hayate",
   "year": 1994,
   "era": "90s",
-  "price": 160000,
+  "price": 95000,
   "hp": 320,
   "powerRating": "net",
   "peakHpRpm": 5600,
@@ -43,7 +43,9 @@
   "engine": {
     "layout": "i6",
     "cylinders": 6,
-    "stockTurbo": true
+    "stockTurbo": true,
+    "lag": 0.4,
+    "spoolRpm": 2400
   },
   "dealer": true
 }

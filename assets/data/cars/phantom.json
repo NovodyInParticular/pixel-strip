@@ -4,7 +4,7 @@
   "brand": "Regent",
   "year": 1987,
   "era": "80s",
-  "price": 60000,
+  "price": 43000,
   "hp": 300,
   "powerRating": "net",
   "peakHpRpm": 4400,
@@ -24,7 +24,7 @@
     0.67
   ],
   "finalDrive": 3.42,
-  "shiftTime": 0.36,
+  "shiftTime": 0.15,
   "clutchTime": 0.32,
   "clutchTorque": 1.5,
   "tireRadiusM": 0.325,
@@ -41,7 +41,8 @@
   "engine": {
     "layout": "v6",
     "cylinders": 6,
-    "stockTurbo": true
+    "stockTurbo": true,
+    "lag": 0.5
   },
   "dealer": true,
   "converter": true

@@ -1919,5 +1919,12 @@
    "paint": 11
   }
  },
- "parts": {}
+ "parts": {
+  "drive": {
+   "1": {
+    "kite_ef": 15000
+   }
+  }
+ },
+ "_partNote": "drive/1 was the AWD CONVERSION, Joe's EF only (removed 2026-10-25: it made the EF the quickest street car by far)."
 }

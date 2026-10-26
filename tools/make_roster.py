@@ -249,6 +249,83 @@ ROSTER = [
         sprite="kirin", turbo=True, grip=0.93),
 ]
 
+# Factory turbo character from each real setup (engine.lag in s, engine.spoolRpm): without an entry a
+# turbo is on full boost by the torque peak after 0.6 s. Twin and sequential turbos snap on sooner;
+# big early singles make you wait (the 930 most of all).
+TURBO = {
+    "kaminari_mk1": dict(lag=0.45), "kaminari_mk2": dict(lag=0.45), "kaminari_mk3": dict(lag=0.45),
+    "tsunami": dict(lag=0.4, spoolRpm=2400), "spiral_r": dict(lag=0.45, spoolRpm=3000),
+    "typhoon": dict(lag=0.45), "zephyr_tt": dict(lag=0.45), "wal_awd": dict(lag=0.45),
+    "phantom": dict(lag=0.5), "pursuit": dict(lag=0.55),
+    "tsunami_mk3": dict(lag=0.75), "ronin": dict(lag=0.7), "seiran": dict(lag=0.7),
+    "stellar": dict(lag=0.85), "wraith": dict(lag=0.8), "quaranta": dict(lag=0.7, spoolRpm=3400),
+    "wal": dict(lag=1.0, spoolRpm=3200),
+}
+
+# Gated shifters: the exotics change gear slower than the era's default. An automatic's shift is
+# quick and never takes the clutch out: the GNX's power gap is short.
+SHIFT = {"zanna": 0.38, "scarlatta": 0.36, "quaranta": 0.33, "phantom": 0.15}
+
+# Prices (2026-10-25 rebalance): a band per stock class (STREET 6-30k, SPORT 28-75k, PRO 70-180k,
+# OUTLAW 180-340k), placed in it by the stock quarter mile, x1.05-1.2 for icons. Cars nobody sells
+# (boss, barn, prize) get the same book value: it only sets what the dealer pays for them.
+PRICES = {
+    "shirasagi": 8500,
+    "kite_ef": 9500,
+    "zephyr_240": 10500,
+    "kestrel": 10500,
+    "kaminari_c10": 11000,
+    "prairie": 11500,
+    "dart": 11500,
+    "kite": 13500,
+    "kokoro": 14000,
+    "spiral_sa": 16000,
+    "seiran": 22000,
+    "tsunami_mk3": 23000,
+    "spiral_turbo": 24000,
+    "squall": 24000,
+    "stellar": 24000,
+    "overture": 26000,
+    "arrow": 27000,
+    "ronin": 28000,
+    "isar_s3": 32000,
+    "tenshi": 32000,
+    "sylph_14": 34000,
+    "sylph_180": 34000,
+    "kite_rx": 36000,
+    "sylph_13": 37000,
+    "phantom": 43000,
+    "typhoon": 51000,
+    "condor": 52000,
+    "pursuit": 55000,
+    "kaminari_mk2": 56000,
+    "ranger_500": 57000,
+    "wal": 57000,
+    "sylph_15": 59000,
+    "zephyr_tt": 61000,
+    "kaminari_mk1": 68000,
+    "kirin": 80000,
+    "wraith": 80000,
+    "mammoth": 81000,
+    "halberd_4": 82000,
+    "halberd_5": 90000,
+    "tsunami": 95000,
+    "halberd_6": 95000,
+    "kaminari_mk3": 100000,
+    "comet_22x": 120000,
+    "spiral_r": 130000,
+    "comet": 130000,
+    "scarlatta": 135000,
+    "kirin_r": 150000,
+    "vortex": 165000,
+    "lm40": 180000,
+    "quaranta": 205000,
+    "zanna": 205000,
+    "mamba": 235000,
+    "wal_awd": 265000,
+    "asp": 280000,
+}
+
 BRANDS = ("Raijin (Nissan), Hayate (Toyota), Kitsune (Mazda), Hikari (Honda/Acura), Tsubasa (Mitsubishi), Seiza (Subaru), "
           "Carver (Shelby), Harlan (Ford), Crestline (Chevrolet), Regent (Buick), Dominion (Dodge/Plymouth), Kessler (Porsche), "
           "Isar (BMW), Fenice (Ferrari), Furia (Lamborghini), Arden (Lotus).")
@@ -274,6 +351,12 @@ def main():
                     d[k] = c[k]
         else:
             d = {k: v for k, v in c.items() if not k.startswith("_") and k != "avail"}
+        if c["id"] in TURBO:
+            assert d["engine"]["stockTurbo"], f"{c['id']} has no factory turbo"
+            d["engine"].update(TURBO[c["id"]])
+        d["price"] = PRICES[c["id"]]
+        if c["id"] in SHIFT:
+            d["shiftTime"] = SHIFT[c["id"]]
         path.write_text(json.dumps(d, indent=2) + "\n")
         rows.append(f"| {d['brand']} {d['name']} | `{d['id']}` | {c['_inspired']} | {d['drivetrain']} | {c['_specs']} | {c['_et']:.1f} | {AVAIL[c['avail']]} |")
     (ROOT / "assets" / "data" / "roster.json").write_text(json.dumps(ids, indent=2) + "\n")

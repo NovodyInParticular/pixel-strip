@@ -4,7 +4,7 @@
   "brand": "Raijin",
   "year": 1999,
   "era": "90s",
-  "price": 220000,
+  "price": 100000,
   "hp": 330,
   "powerRating": "net",
   "peakHpRpm": 7000,
@@ -43,7 +43,8 @@
   "engine": {
     "layout": "i6",
     "cylinders": 6,
-    "stockTurbo": true
+    "stockTurbo": true,
+    "lag": 0.45
   },
   "dealer": true
 }

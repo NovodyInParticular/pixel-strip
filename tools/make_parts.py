@@ -28,7 +28,6 @@ for a STREET-class car and scale with the car's stock class (classMultiplier). E
   weight, rear       kg, and weight moved rearward (share)
   drag               drag area (m^2)
   requires           [[slot, minOption], ...] any one of them; rwdOnly; carOnly = car ids it fits
-  awd                converts the drivetrain to all-wheel drive
 """
 import json
 import pathlib
@@ -203,10 +202,6 @@ SLOTS = [
         o("TORSEN", 1800, "SMOOTH AND STRONG", grip=0.05),
         o("SPOOL", 900, "LOCKED SOLID. PURE DRAG", grip=0.07),
     ]),
-    ("drive", "DRIVE LAYOUT", "DRIVETRAIN", [
-        STOCK("AS BUILT"),
-        o("AWD CONVERSION", 15000, "JOE'S SPECIAL: ALL FOUR WHEELS PULL. ONLY FITS HIS EF", awd=1, weight=55, carOnly=["kite_ef"]),
-    ]),
     ("final", "RING AND PINION", "DRIVETRAIN", [
         STOCK(),
         o("SHORTER (+8%)", 1000, "QUICKER OFF THE LINE", finalMult=1.08, finalRange=0.08),
@@ -219,11 +214,13 @@ SLOTS = [
         STOCK(),
         o("DRAG SPRINGS", 700, "SOFT REAR, MORE SQUAT", transfer=1.12),
         o("COILOVERS", 2800, "ADJUSTABLE RIDE HEIGHT", transfer=1.08, adjustable=1),
+        o("LOCKED REAR", 900, "STIFF REAR, NO SQUAT: THE NOSE STAYS DOWN. FRONT-DRIVE DRAG TRICK", transfer=0.8),
     ]),
     ("shocks", "SHOCKS", "SUSPENSION", [
         STOCK(),
         o("90/10 DRAG SHOCKS", 1100, "FRONT LIFTS FAST, WEIGHT HITS THE REAR", transferRate=1.8),
         o("DOUBLE ADJUSTABLE", 2600, "TUNE HOW FAST IT TRANSFERS", transferRate=1.6, adjustable=2),
+        o("SLOW-RISE FRONT SHOCKS", 1300, "THE NOSE RISES LATE: WEIGHT STAYS ON THE FRONT TYRES", transferRate=0.55),
     ]),
     ("bars", "TRACTION BARS", "SUSPENSION", [
         STOCK(),
@@ -277,6 +274,7 @@ SLOTS = [
         STOCK("UNDER THE HOOD"),
         o("TRUNK RELOCATION", 300, "MOVES WEIGHT TO THE REAR", rear=0.012),
         o("LIGHT BATTERY IN TRUNK", 800, "LIGHTER AND REARWARD", rear=0.012, weight=-11),
+        o("LIGHT BATTERY, UP FRONT", 700, "LIGHTER, AND THE WEIGHT STAYS ON THE NOSE", weight=-11),
     ]),
     # --- BODY: drawn on the car, and they change the aero ---------------------------------------
     ("bumper", "FRONT BUMPER", "BODY", [

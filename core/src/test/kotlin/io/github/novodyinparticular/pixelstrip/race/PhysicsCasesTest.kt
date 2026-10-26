@@ -35,7 +35,7 @@ class PhysicsCasesTest {
         Case("mammoth bolt-ons on slicks", "mammoth", mapOf("intake" to 2, "headers" to 2, "exhaust" to 2, "cams" to 2, "heads" to 1, "tires" to 4, "tubs" to 1), null),
         Case("mammoth turbo, launch control, timing", "mammoth", supported + mapOf("turbo" to 3, "tires" to 3, "tubs" to 1),
             Tune(boostPsi = 20f, launchRpm = 3600f, timing = 2f)),
-        Case("joe's AWD K-swap on nitrous", "kite_ef", supported + mapOf("drive" to 1, "swap" to 4, "turbo" to 3, "nitrous" to 2, "bottle" to 1, "gearbox" to 3),
+        Case("joe's K-swap on nitrous", "kite_ef", supported + mapOf("swap" to 4, "turbo" to 3, "nitrous" to 2, "bottle" to 1, "gearbox" to 3),
             Tune(boostPsi = 25f, nitrousGear = 2)),
         Case("mammoth blower, manual spray", "mammoth", mapOf("supercharger" to 2, "internals" to 1, "fuel" to 2, "nitrous" to 2, "tires" to 2), null, spray = true),
         Case("squall stock, wet track", "squall", emptyMap(), null, trackGrip = 0.95f),

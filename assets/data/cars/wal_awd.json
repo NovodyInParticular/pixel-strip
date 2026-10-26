@@ -4,7 +4,7 @@
   "brand": "Kessler",
   "year": 1996,
   "era": "90s",
-  "price": 170000,
+  "price": 265000,
   "dealer": true,
   "hp": 402,
   "powerRating": "net",
@@ -44,6 +44,7 @@
   "engine": {
     "layout": "flat6",
     "cylinders": 6,
-    "stockTurbo": true
+    "stockTurbo": true,
+    "lag": 0.45
   }
 }

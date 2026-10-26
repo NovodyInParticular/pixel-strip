@@ -4,7 +4,7 @@
   "brand": "Kessler",
   "year": 1979,
   "era": "classic",
-  "price": 80000,
+  "price": 57000,
   "dealer": true,
   "hp": 296,
   "powerRating": "net",
@@ -42,6 +42,8 @@
   "engine": {
     "layout": "flat6",
     "cylinders": 6,
-    "stockTurbo": true
+    "stockTurbo": true,
+    "lag": 1.0,
+    "spoolRpm": 3200
   }
 }

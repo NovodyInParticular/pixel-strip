@@ -894,29 +894,6 @@
    "excludes": []
   },
   {
-   "id": "drive",
-   "name": "DRIVE LAYOUT",
-   "group": "DRIVETRAIN",
-   "options": [
-    {
-     "name": "STOCK",
-     "price": 0,
-     "info": "AS BUILT"
-    },
-    {
-     "name": "AWD CONVERSION",
-     "price": 15000,
-     "info": "JOE'S SPECIAL: ALL FOUR WHEELS PULL. ONLY FITS HIS EF",
-     "awd": 1,
-     "weight": 55,
-     "carOnly": [
-      "kite_ef"
-     ]
-    }
-   ],
-   "excludes": []
-  },
-  {
    "id": "final",
    "name": "RING AND PINION",
    "group": "DRIVETRAIN",
@@ -978,6 +955,12 @@
      "info": "ADJUSTABLE RIDE HEIGHT",
      "transfer": 1.08,
      "adjustable": 1
+    },
+    {
+     "name": "LOCKED REAR",
+     "price": 900,
+     "info": "STIFF REAR, NO SQUAT: THE NOSE STAYS DOWN. FRONT-DRIVE DRAG TRICK",
+     "transfer": 0.8
     }
    ],
    "excludes": []
@@ -1004,6 +987,12 @@
      "info": "TUNE HOW FAST IT TRANSFERS",
      "transferRate": 1.6,
      "adjustable": 2
+    },
+    {
+     "name": "SLOW-RISE FRONT SHOCKS",
+     "price": 1300,
+     "info": "THE NOSE RISES LATE: WEIGHT STAYS ON THE FRONT TYRES",
+     "transferRate": 0.55
     }
    ],
    "excludes": []
@@ -1305,6 +1294,12 @@
      "price": 800,
      "info": "LIGHTER AND REARWARD",
      "rear": 0.012,
+     "weight": -11
+    },
+    {
+     "name": "LIGHT BATTERY, UP FRONT",
+     "price": 700,
+     "info": "LIGHTER, AND THE WEIGHT STAYS ON THE NOSE",
      "weight": -11
     }
    ],

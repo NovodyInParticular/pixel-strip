@@ -210,7 +210,6 @@ export function apply(def: CarDef, c: Catalog, parts: Record<string, number>, co
   const warm = fx(c, parts, "tires", "warm");
   return {
     ...def,
-    drivetrain: fx(c, parts, "drive", "awd") > 0 ? "AWD" : def.drivetrain,
     peakHpRpm: peakHp,
     peakTorqueRpm: Math.min(def.peakTorqueRpm + peakRpm * 0.6, peakHp - 300),
     idleRpm: def.idleRpm + idle,

@@ -264,7 +264,6 @@ object Upgrades {
         val maxRedline = maxOf(lim.limiterMax, peakHp + 300f)
         val redline = if (lim.limiter) (tune?.limiter ?: maxRedline).coerceIn(peakHp + 200f, maxRedline) else maxRedline
         return def.copy(
-            drivetrain = if (c.fx(parts, "drive", "awd") > 0f) "AWD" else def.drivetrain,
             peakHpRpm = peakHp,
             peakTorqueRpm = minOf(def.peakTorqueRpm + peakRpm * 0.6f, peakHp - 300f),
             idleRpm = def.idleRpm + idle,

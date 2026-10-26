@@ -290,7 +290,9 @@ export class Vehicle {
     }
     this.rpm = clamp(this.rpm, d.idleRpm * K.BOG_FLOOR, d.redline + 50);
 
-    const fullT = this.engineTorque(dt) * this.ratio * K.DRIVELINE_EFF;
+    // a torque converter multiplies torque while it slips, from its stall ratio down to 1:1 as it locks up
+    const converterTr = d.converter && this.mode === "LAUNCH" ? 1 + (K.CONVERTER_STALL_TR - 1) * (1 - clamp(coupledRpm / Math.max(this.rpm, 1), 0, 1)) : 1;
+    const fullT = this.engineTorque(dt) * this.ratio * K.DRIVELINE_EFF * converterTr;
     const ideal = fullT > 0 ? clamp(grip * this.tireR / fullT, K.FEATHER_MIN, 1) : 1;
     const share = this.spinning ? this.gripShare(this.slipRatio(Math.max(0, this.driveW * this.tireR - this.v))) : 1;
     this.feather = this.spinning ? Math.max(ideal * share * 0.85, this.feather - dt * K.FEATHER_DROP)

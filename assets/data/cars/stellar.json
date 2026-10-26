@@ -4,7 +4,7 @@
   "brand": "Tsubasa",
   "year": 1988,
   "era": "80s",
-  "price": 13000,
+  "price": 24000,
   "dealer": true,
   "hp": 188,
   "powerRating": "net",
@@ -43,6 +43,7 @@
   "engine": {
     "layout": "i4",
     "cylinders": 4,
-    "stockTurbo": true
+    "stockTurbo": true,
+    "lag": 0.85
   }
 }

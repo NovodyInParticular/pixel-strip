@@ -4,7 +4,7 @@
   "brand": "Furia",
   "year": 1985,
   "era": "80s",
-  "price": 230000,
+  "price": 205000,
   "dealer": true,
   "hp": 420,
   "powerRating": "net",
@@ -26,7 +26,7 @@
     0.857
   ],
   "finalDrive": 4.091,
-  "shiftTime": 0.27,
+  "shiftTime": 0.38,
   "clutchTime": 0.32,
   "clutchTorque": 1.5,
   "tireRadiusM": 0.311,

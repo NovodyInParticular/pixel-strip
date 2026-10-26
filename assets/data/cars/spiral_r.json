@@ -4,7 +4,7 @@
   "brand": "Kitsune",
   "year": 2002,
   "era": "90s",
-  "price": 95000,
+  "price": 130000,
   "dealer": true,
   "hp": 276,
   "powerRating": "net",
@@ -43,6 +43,8 @@
   "engine": {
     "layout": "rotary",
     "cylinders": 2,
-    "stockTurbo": true
+    "stockTurbo": true,
+    "lag": 0.45,
+    "spoolRpm": 3000
   }
 }

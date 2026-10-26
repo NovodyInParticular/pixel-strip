@@ -4,7 +4,7 @@
   "brand": "Arden",
   "year": 1989,
   "era": "80s",
-  "price": 60000,
+  "price": 80000,
   "dealer": true,
   "hp": 264,
   "powerRating": "net",
@@ -43,6 +43,7 @@
   "engine": {
     "layout": "i4",
     "cylinders": 4,
-    "stockTurbo": true
+    "stockTurbo": true,
+    "lag": 0.8
   }
 }

@@ -67,6 +67,7 @@ class RosterCalibrationTest {
     }
 
     companion object {
-        const val TOLERANCE = 1.0f
+        /** Road tests of one car spread 0.3-0.5 s between magazines: past this a car is way off, not just unlucky. */
+        const val TOLERANCE = 0.8f
     }
 }

@@ -4,7 +4,7 @@
   "brand": "Hayate",
   "year": 1987,
   "era": "80s",
-  "price": 15000,
+  "price": 23000,
   "dealer": true,
   "hp": 230,
   "powerRating": "net",
@@ -43,6 +43,7 @@
   "engine": {
     "layout": "i6",
     "cylinders": 6,
-    "stockTurbo": true
+    "stockTurbo": true,
+    "lag": 0.75
   }
 }

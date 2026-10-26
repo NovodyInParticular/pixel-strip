@@ -125,8 +125,7 @@ case("wide tyres need tubs or a widebody, and the widebody can't come off under 
      [start(), race("dash", 10000), race("kat", 20000), part("tires", 4), part("fenders", 2), part("tires", 4), part("fenders", 0)],
      refused=[3, 6], cash=two - k["fenders"][1] - k["tires"][3], cars=[kite(parts={"fenders": 2, "tires": 4})])
 case("RWD-only parts on a front-driver are refused", [start(), part("wheeliebars", 1)], refused=[1], cash=START)
-case("Joe's AWD conversion only fits his EF", boss + [part("drive", 1), part("drive", 1, uid="c2", t=41000)], refused=[5],
-     cash=boss_cash - CARS[joe["car"]]["parts"]["drive"][0])
+case("Joe's K-swap only fits his EF", [start(), part("swap", 4)], refused=[1], cash=START, cars=[kite()])
 case("unknown things are refused",
      [start(), {"type": "gift", "t": 2000}, part("rocket", 1), {"type": "part", "t": 2000, "uid": "c9", "slot": "intake", "opt": 1},
       race("nobody", 10000)], refused=[1, 2, 3, 4], cash=START)
@@ -156,6 +155,11 @@ case("retiring the last car needs a starter to take its place",
      [retire(), retire(car="mammoth"), retire(car="kokoro")], refused=[0, 1], state=garage({"car": "zephyr", "paint": OLD["zephyr"]["paint"]}),
      cash=1000 + OLD["zephyr"]["price"], cars=[kite("c2", car="kokoro")])
 case("only retired cars and parts pay back", [retire()], refused=[0], state=garage({"car": "kite"}), cash=1000)
+awd = R["retired"]["parts"]["drive"]["1"]["kite_ef"]
+case("a retired part pays back what it cost and comes off the car, which stays",
+     [retire(), retire()], refused=[1],
+     state=garage({"car": "kite_ef", "paint": 12, "parts": {"drive": 1, "swap": 2}, "owned": {"drive": 0b10, "swap": 0b100}}),
+     cash=1000 + awd, cars=[kite(parts={"swap": 2}, car="kite_ef")])
 
 # --- barn finds: once each, after the boss it hides behind --------------------------------------------
 barn = {b["car"]: b for b in R["barns"]}

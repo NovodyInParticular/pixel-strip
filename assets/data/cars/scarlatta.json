@@ -4,7 +4,7 @@
   "brand": "Fenice",
   "year": 1986,
   "era": "80s",
-  "price": 150000,
+  "price": 135000,
   "dealer": true,
   "hp": 380,
   "powerRating": "net",
@@ -26,7 +26,7 @@
     0.917
   ],
   "finalDrive": 3.21,
-  "shiftTime": 0.27,
+  "shiftTime": 0.36,
   "clutchTime": 0.32,
   "clutchTorque": 1.5,
   "tireRadiusM": 0.331,
