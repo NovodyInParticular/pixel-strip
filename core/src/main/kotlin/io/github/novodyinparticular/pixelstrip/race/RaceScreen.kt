@@ -86,7 +86,7 @@ class RaceScreen(
     /** Switching views: counts down over VIEW_SWITCH_S; the view flips halfway, under a pixel dissolve. */
     private var viewSwitch = 0f
     private val cockpit by lazy {
-        CockpitView(track, art, trackView, white).apply { camSide = if (carDef.rhd) CockpitView.SEAT_SIDE else -CockpitView.SEAT_SIDE }
+        CockpitView(track, art, trackView, white, font, tree).apply { camSide = if (carDef.rhd) CockpitView.SEAT_SIDE else -CockpitView.SEAT_SIDE }
     }
     private val opponentRear by lazy { RearView(white, paintColor(rivalCar?.paint ?: 2)) }
 
@@ -271,7 +271,7 @@ class RaceScreen(
             Phase.RACING, Phase.PHOTO -> "SHIFT"
             Phase.FINISHED -> if (online != null) "LOBBY" else if (tournament != null) "BOARD" else if (rival == null) "AGAIN" else if (wonPrize) "CLAIM" else "MAP"
         }
-        actionButton.visible = phase != Phase.STAGING && phase != Phase.PHOTO
+        actionButton.visible = phase != Phase.PHOTO            // LAUNCH from staging on, SHIFT once you're gone
         // shown (dimmed) from staging so the thumb finds it before the green; it only sprays once the car has left
         nosButton.visible = player.def.nitrous.charges > 0 && (phase == Phase.STAGING || phase == Phase.COUNTDOWN || phase == Phase.RACING)
         distButton.visible = phase == Phase.BURNOUT && rival == null && online == null && tournament == null
@@ -860,6 +860,7 @@ class RaceScreen(
 
     private fun drawCockpitGlow(w: Int, h: Int) {
         if (!solo) cockpit.drawOpponentGlow(batch, w, h, eyeX(), ghost.x, opponentRear, shakeX, shakeY)
+        cockpit.drawGlow(batch, w, h, eyeX(), trackView.time, shakeX, shakeY)
         weather.drawGlow(batch)
         if (cockpit.goldenHour) cockpit.drawGlare(batch, w, h, trackView.time)
         dashView.drawGlow(batch, w, player.rpm, player.nitrousActive, player.shiftPoints.getOrElse(player.gear) { carDef.redline }, trackView.time, shakeX, shakeY)
@@ -952,21 +953,23 @@ class RaceScreen(
             if (carDef.boostGain > 0f) drawBoost()
         }
         val blink = (screenTime * 2.5f).toInt() % 2 == 0
+        // in the cockpit the hints sit low, over the hood, so the tree stays in view
+        val hy = if (firstPerson) HINT_COCKPIT_TOP else h.toFloat()
         if (phase == Phase.BURNOUT || phase == Phase.STAGING || phase == Phase.COUNTDOWN) {
             batch.setColor(0.03f, 0.02f, 0.08f, 0.6f)
-            batch.draw(white, 0f, h - (if (phase == Phase.BURNOUT) 112f else 92f), w.toFloat(), if (phase == Phase.BURNOUT) 56f else 36f)
+            batch.draw(white, 0f, hy - (if (phase == Phase.BURNOUT) 112f else 92f), w.toFloat(), if (phase == Phase.BURNOUT) 56f else 36f)
             batch.color = Color.WHITE
         }
         when (phase) {
             Phase.BURNOUT -> {
-                font.drawCentered(batch, if (player.spinning) "SMOKE 'EM!" else "HOLD GAS: BURNOUT", w / 2f, h - 70f, if (player.spinning) ORANGE else Color.WHITE, 2)
+                font.drawCentered(batch, if (player.spinning) "SMOKE 'EM!" else "HOLD GAS: BURNOUT", w / 2f, hy - 70f, if (player.spinning) ORANGE else Color.WHITE, 2)
                 drawTireTemp(w, h)
-                if (blink) font.drawCentered(batch, "TAP STAGE WHEN READY", w / 2f, h - 86f, CYAN)
+                if (blink) font.drawCentered(batch, "TAP STAGE WHEN READY", w / 2f, hy - 86f, CYAN)
             }
-            Phase.STAGING -> font.drawCentered(batch, "STAGING...", w / 2f, h - 70f, Color.WHITE, 2)
+            Phase.STAGING -> font.drawCentered(batch, "STAGING...", w / 2f, hy - 70f, Color.WHITE, 2)
             Phase.COUNTDOWN -> {
-                font.drawCentered(batch, "REV INTO THE ZONE", w / 2f, h - 70f, Color.WHITE, 2)
-                if (blink) font.drawCentered(batch, "LAUNCH ON GREEN", w / 2f, h - 86f, Hud.GOOD_C)
+                font.drawCentered(batch, "REV INTO THE ZONE", w / 2f, hy - 70f, Color.WHITE, 2)
+                if (blink) font.drawCentered(batch, "LAUNCH ON GREEN", w / 2f, hy - 86f, Hud.GOOD_C)
             }
             Phase.RACING -> if (player.nitrousCharges > 0 && player.gear == 0 && player.hasLeft) {
                 font.drawCentered(batch, "SPRAY ONCE IT HOOKS", w / 2f, h - 54f, NOS_BLUE)
@@ -1194,6 +1197,8 @@ class RaceScreen(
         const val STEP = 1f / 240f
         const val VIEW_SWITCH_S = 0.6f
         const val SHIFT_JOLT = 2.5f
+        /** Where the hint banner's top reference sits in the cockpit view (it normally hangs from the top of the screen). */
+        const val HINT_COCKPIT_TOP = 172f
         const val EYE_BACK_M = 1.9f
         const val BURNOUT_X = -9f
         const val CAM_LEAD = 0.42f

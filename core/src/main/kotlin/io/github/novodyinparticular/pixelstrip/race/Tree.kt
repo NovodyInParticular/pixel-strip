@@ -106,6 +106,25 @@ class Tree(art: Art, private val pro: Boolean = false) {
         }
     }
 
+    /** The tree as a billboard (the cockpit view): bottom-centre at (x, y), [s] times its pixel size. */
+    fun drawScaled(batch: SpriteBatch, x: Float, y: Float, s: Float, bulbsOnly: Boolean = false) {
+        val bx = x - tex.width * s / 2f
+        if (!bulbsOnly) batch.draw(tex, bx, y, tex.width * s, tex.height * s)
+        var amber = 0
+        for ((kind, ry, _) in rows) {
+            for (lane in 0..1) {
+                if (!lit(kind, lane, amber)) continue
+                val idx = sprite.getInt(kind)
+                val cx = bx + (cols[lane] - cell / 2) * s
+                val cy = y + (tex.height - ry - cell / 2 - 1) * s
+                batch.draw(bulbs, cx, cy, cell * s, cell * s, idx * cell, 0, cell, cell, false, false)
+            }
+            if (kind == "amber") amber++
+        }
+    }
+
+    val height get() = tex.height
+
     val width get() = tex.width
 
     companion object {
