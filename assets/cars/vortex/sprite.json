@@ -1,45 +1,50 @@
 {
   "dir": "cars/vortex",
-  "width": 90,
-  "height": 40,
+  "width": 131,
+  "height": 56,
+  "scale": 1.5,
   "rearWheel": [
-    22,
-    28.9
+    31.0,
+    41.349999999999994
   ],
   "frontWheel": [
-    66,
-    28.9
+    97.0,
+    41.349999999999994
   ],
-  "wheelSize": 18,
+  "wheelSize": 24,
   "wheelFrames": 4,
   "blurFrames": 3,
   "spokes": 12,
   "headlight": [
-    86.4,
-    27.4
+    127.60000000000001,
+    39.099999999999994
   ],
   "taillight": [
-    3.8,
-    23.8
+    3.7,
+    33.7
   ],
   "exhaust": [
-    6.0,
-    30.4
+    7.0,
+    43.599999999999994
   ],
-  "groundY": 35.5,
-  "frontX": 86,
+  "groundY": 51.25,
+  "frontX": 127.0,
   "popup": true,
   "driver": [
-    35.84,
-    11.4
+    51.76,
+    15.350000000000001
   ],
   "wheelRadius10": 66,
   "sideExhaust": [
-    30.854,
-    32.8
+    44.281,
+    47.2
+  ],
+  "sideExit": [
+    45.031,
+    46.599999999999994
   ],
   "door": [
-    38,
-    28
+    55,
+    40
   ]
 }

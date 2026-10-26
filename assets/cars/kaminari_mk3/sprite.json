@@ -1,45 +1,50 @@
 {
   "dir": "cars/kaminari_mk3",
-  "width": 92,
-  "height": 40,
+  "width": 134,
+  "height": 56,
+  "scale": 1.5,
   "rearWheel": [
-    23,
-    29.0
+    32.5,
+    41.5
   ],
   "frontWheel": [
-    71,
-    29.0
+    104.5,
+    41.5
   ],
-  "wheelSize": 18,
+  "wheelSize": 24,
   "wheelFrames": 4,
   "blurFrames": 3,
   "spokes": 5,
   "headlight": [
-    88.2,
-    22.9
+    130.3,
+    32.349999999999994
   ],
   "taillight": [
-    3.8,
-    22.8
+    3.7,
+    32.2
   ],
   "exhaust": [
-    6.0,
-    30.0
+    7.0,
+    43.0
   ],
-  "groundY": 35.5,
-  "frontX": 88,
+  "groundY": 51.25,
+  "frontX": 130.0,
   "popup": false,
   "driver": [
-    39.980000000000004,
-    10.0
+    57.970000000000006,
+    13.25
   ],
   "wheelRadius10": 65,
   "sideExhaust": [
-    31.735,
-    32.4
+    45.6025,
+    46.599999999999994
+  ],
+  "sideExit": [
+    46.3525,
+    45.99999999999999
   ],
   "door": [
-    42,
-    28
+    61,
+    39
   ]
 }

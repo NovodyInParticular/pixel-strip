@@ -1,45 +1,50 @@
 {
   "dir": "cars/tsunami",
-  "width": 90,
-  "height": 40,
+  "width": 131,
+  "height": 56,
+  "scale": 1.5,
   "rearWheel": [
-    22,
-    29.1
+    31.0,
+    41.650000000000006
   ],
   "frontWheel": [
-    68,
-    29.1
+    100.0,
+    41.650000000000006
   ],
-  "wheelSize": 18,
+  "wheelSize": 24,
   "wheelFrames": 4,
   "blurFrames": 3,
   "spokes": 5,
   "headlight": [
-    85.4,
-    24.3
+    126.10000000000001,
+    34.45
   ],
   "taillight": [
-    3.8,
-    23.2
+    3.7,
+    32.8
   ],
   "exhaust": [
-    6.0,
-    30.2
+    7.0,
+    43.3
   ],
-  "groundY": 35.5,
-  "frontX": 86,
+  "groundY": 51.25,
+  "frontX": 127.0,
   "popup": false,
   "driver": [
-    38.6,
-    10.8
+    55.900000000000006,
+    14.450000000000003
   ],
   "wheelRadius10": 64,
   "sideExhaust": [
-    30.616,
-    32.6
+    43.924,
+    46.900000000000006
+  ],
+  "sideExit": [
+    44.674,
+    46.3
   ],
   "door": [
-    41,
-    28
+    59,
+    39
   ]
 }

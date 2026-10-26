@@ -1,5 +1,6 @@
 package io.github.novodyinparticular.pixelstrip.race
 
+import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.Texture
@@ -25,6 +26,8 @@ class CarRenderer(val def: CarDef, private val art: Art, private val paint: Shad
     private val trim = TextureRegion(art.tex("${s.dir}/trim.png"))
     private val lampLayer = TextureRegion(art.tex("${s.dir}/lights.png"))
     private val wells = art.tex("${s.dir}/wells.png")
+    /** The soft contact shadow under the car (newer sprites have one). */
+    private val shadow = if (Gdx.files.internal("${s.dir}/shadow.png").exists()) art.tex("${s.dir}/shadow.png") else null
     private val bodyRegion = TextureRegion(body)
     private val wheelTex = art.tex("${s.dir}/wheel.png")
     private val wheelFrames = Array(s.wheelFrames + s.blurFrames) { TextureRegion(wheelTex, it * s.wheelSize, 0, s.wheelSize, s.wheelSize) }
@@ -107,6 +110,7 @@ class CarRenderer(val def: CarDef, private val art: Art, private val paint: Shad
         tint.setUniformf("u_lit", if (litTrim) 0.55f else 0f)
         if (litTrim) lights!!.apply(tint, shakeX, shakeY)
         if (ghost <= 0f) {
+            shadow?.let { batch.draw(it, bx, by) }        // stays on the ground when the body pitches and lifts
             looks.underglow?.let { c ->
                 batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE)
                 batch.setColor(c.r, c.g, c.b, 0.55f + 0.1f * kotlin.math.sin(time * 3f))

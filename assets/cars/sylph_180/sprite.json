@@ -1,45 +1,50 @@
 {
   "dir": "cars/sylph_180",
-  "width": 97,
-  "height": 40,
+  "width": 142,
+  "height": 56,
+  "scale": 1.5,
   "rearWheel": [
-    27,
-    29.1
+    38.5,
+    41.650000000000006
   ],
   "frontWheel": [
-    74,
-    29.1
+    109.0,
+    41.650000000000006
   ],
-  "wheelSize": 18,
+  "wheelSize": 24,
   "wheelFrames": 4,
   "blurFrames": 3,
   "spokes": 5,
   "headlight": [
-    93.2,
-    25.2
+    137.8,
+    35.8
   ],
   "taillight": [
-    3.8,
-    24.0
+    3.7,
+    34.0
   ],
   "exhaust": [
-    6.0,
-    30.6
+    7.0,
+    43.900000000000006
   ],
-  "groundY": 35.5,
-  "frontX": 93,
+  "groundY": 51.25,
+  "frontX": 137.5,
   "popup": false,
   "driver": [
-    44.74,
-    11.1
+    65.11,
+    14.899999999999999
   ],
   "wheelRadius10": 64,
   "sideExhaust": [
-    35.616,
-    33.0
+    51.424,
+    47.5
+  ],
+  "sideExit": [
+    52.174,
+    46.9
   ],
   "door": [
-    47,
-    28
+    69,
+    40
   ]
 }

@@ -53,7 +53,7 @@ def main():
         rows = []
         for i, (p, layers) in enumerate(built):
             img = car.preview_image(p, layers, ramps[i % len(ramps)])
-            cell = np.zeros((car.CH, 112, 4), dtype=np.uint8)
+            cell = np.zeros((car.CH, 170, 4), dtype=np.uint8)
             cell[:] = P("night", 2)
             cell[:, :img.shape[1]] = img
             rows.append(cell)

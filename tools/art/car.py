@@ -1,60 +1,81 @@
 """Layered side-view car sprites, built from a profile (see roster.py).
 
-Profiles use car-local pixels: x from the rear bumper (0) to the front, y down with the ground
-at y = GROUND. Output layers share one canvas (car + padding) so the game can stack and rotate them:
+Profiles are authored in car-local units (about 18 per metre): x from the rear bumper (0) to the
+front, y down with the ground at y = GROUND. The sprite is drawn S times finer than that, so every
+shape and threshold below is in profile units and goes through to_px / unit_x / unit_y; only
+deliberately pixel-sized details (seams, glints, rivets) count actual pixels. Output layers share
+one canvas (car + padding) so the game can stack and rotate them:
 
   body.png    paint layer, not colours: R = ramp index * 32 + 16 (0..7), G = shine mask
               (where the paint shop's sweep shows), A = coverage. A shader maps R through a paint ramp.
   body_n.png  normal map for the 2D lighting (x right, y up, z toward the viewer).
   popup.png   raised pop-up headlamp housings (paint layer like body.png), drawn with the lamps on.
-  trim.png    true colours: glass, chrome, rubber, grille, vents, scoops, pipes, unlit lamps.
+  trim.png    true colours: glass (and the cabin through it), chrome, rubber, grille, vents,
+              lamp lenses, mirrors, handles, pipes.
   lights.png  emissive pixels (head/tail lamps). Drawn lit at night and into the bloom buffer.
-  wells.png   dark wheel-well interiors, drawn behind the wheels.
+  wells.png   wheel-well interiors with the brake disc and caliper, drawn behind the wheels (they
+              show between open spokes and don't turn with them).
+  shadow.png  the soft contact shadow under the car, drawn first.
   wheel.png   strip of wheel frames: 4 rotation steps across one spoke period + 3 motion-blur frames.
-  sprite.json anchors for the game (wheel centres, lamps, exhaust, ground row, nose).
+  sprite.json anchors for the game (wheel centres, lamps, exhaust, ground row, nose), in pixels.
 """
 import json
 import math
 import os
 
 import numpy as np
-from PIL import Image
 
-from common import ASSETS, P, TRANSPARENT, bayer, canvas, disc_mask, edges, poly_mask, put, save
+from common import ASSETS, P, TRANSPARENT, bayer, canvas, disc_mask, edges, ellipse_mask, poly_mask, put, save
 
+S = 1.5                       # pixels per profile unit (~27 px/m)
 PAD_X, PAD_Y = 4, 4
-CH = 32 + PAD_Y * 2          # canvas height: 40
-GROUND = 31.5                # ground row in car-local coordinates
+CH = int(math.ceil(32 * S)) + PAD_Y * 2      # canvas height: 56
+GROUND = 31.5                 # ground row in profile units
 ROT_FRAMES, BLUR_FRAMES = 4, 3
 
 
 def width_of(p):
-    return int(math.ceil(p["length"])) + PAD_X * 2
+    return int(math.ceil(p["length"] * S)) + PAD_X * 2
+
+
+def px_x(x):
+    return x * S + PAD_X
+
+
+def px_y(y):
+    return y * S + PAD_Y
+
+
+def unit_x(x):
+    """Profile x at the centre of pixel column x."""
+    return (x + 0.5 - PAD_X) / S
+
+
+def unit_y(y):
+    return (y + 0.5 - PAD_Y) / S
 
 
 def L(pts):
-    """Car-local points -> canvas points."""
-    return [(x + PAD_X, y + PAD_Y) for x, y in pts]
+    """Profile points -> canvas pixels."""
+    return [(px_x(x), px_y(y)) for x, y in pts]
 
 
 def _interp_y(pts, x):
+    """Linear interpolation of a polyline's y at x (profile units)."""
     for (x0, y0), (x1, y1) in zip(pts, pts[1:]):
         if x0 <= x <= x1:
-            t = (x - x0) / max(1e-6, x1 - x0)
-            return y0 + (y1 - y0) * t
+            return y0 + (y1 - y0) * (x - x0) / max(1e-6, x1 - x0)
     return pts[0][1] if x < pts[0][0] else pts[-1][1]
 
 
 def _hand_aa(cov, solid):
-    """Pixels with partial coverage next to the solid shape: filled with a darker step to soften stairs."""
-    pad = np.pad(solid, 1)
-    near = pad[:-2, 1:-1] | pad[2:, 1:-1] | pad[1:-1, :-2] | pad[1:-1, 2:]
-    return (~solid) & near & (cov >= 0.3)
+    """Pixels on the curve edges that are partly covered: softened by one tone."""
+    return (cov > 0.2) & (cov < 0.8) & solid
 
 
 def _glass_union(p, cw):
     m = np.zeros((CH, cw), dtype=np.float32)
-    for g in p["glass"] + [p["windshield"]] + ([p["rear_strip"]] if p.get("rear_strip") else []):
+    for g in p["glass"]:
         m = np.maximum(m, poly_mask(cw, CH, L(g)))
     return m
 
@@ -71,13 +92,40 @@ def _paint_extras_mask(p, cw):
 PAINTED = {"wing", "ducktail", "roof_spoiler", "lip"}
 
 
-# --- Body (paint index layer) ----------------------------------------------------------------
+def _tone(s, crease_t, hot, flat, x, y):
+    """Paint ramp index (0 dark .. 7 light) for a point on the side, s = 0 at the beltline .. 1 at the
+    rocker. The side reflects the world like a mirror bent down: the bright sky on the shoulder, a
+    sharp dark horizon line a little under halfway, the darker ground below it, and a thin bounce of
+    light just above the sill. Bands are flat paint; only a narrow seam between two bands is dithered,
+    so panels stay smooth instead of speckled."""
+    if s < 0.06:
+        return 7 if hot else 6
+    if not flat and abs(s - crease_t) < 0.035:
+        return 7 if hot else 6                      # the body line catching the light
+    if flat:
+        bands = [(0.5, 5), (0.84, 5), (0.93, 4), (1.01, 2)]
+    else:
+        bands = [(crease_t, 5), (0.42, 5), (0.47, 4), (0.53, 2), (0.80, 3), (0.9, 3), (0.95, 2), (1.01, 1)]
+        bands[1] = (0.42, 4 if crease_t > 0.3 else 5)
+    seam = 0.03
+    for k, (edge, tone) in enumerate(bands):
+        if s < edge:
+            prev_edge = bands[k - 1][0] if k else 0.0
+            # just past the previous band's edge, mix the two tones with an ordered dither
+            if k and s - prev_edge < seam and bayer(x, y) > (s - prev_edge) / seam:
+                tone = bands[k - 1][1]
+            if hot and s < 0.45:
+                tone = min(7, tone + 1)             # a light source's glint on the upper side
+            return tone
+    return 1
+
 
 def body_layer(p):
     cw = width_of(p)
     body = poly_mask(cw, CH, L(p["body"]))
+    ar_px = p["arch_r"] * S
     for cx, cy in (p["rear_wheel"], p["front_wheel"]):
-        body = np.minimum(body, 1 - disc_mask(cw, CH, cx + PAD_X, cy + PAD_Y, p["arch_r"]))
+        body = np.minimum(body, 1 - disc_mask(cw, CH, px_x(cx), px_y(cy), ar_px))
     gh = poly_mask(cw, CH, L(p["greenhouse"]))
     glass = _glass_union(p, cw)
     gh = np.minimum(gh, 1 - (glass >= 0.5))
@@ -90,55 +138,22 @@ def body_layer(p):
     idx = np.full((CH, cw), -1, dtype=np.int32)
     shine = np.zeros((CH, cw), dtype=np.uint8)
 
-    yr = p["rocker_y"] + PAD_Y
+    yr = p["rocker_y"]
     glass_x0 = min(x for g in p["glass"] for x, _ in g) if p["glass"] else 0
     glass_x1 = max(x for g in p["glass"] for x, _ in g) if p["glass"] else p["length"]
     roof_y = min(y for _, y in p["greenhouse"]) + 1.2
     front_end = p["length"]
+    flat = bool(p.get("flat_sides"))
     for y in range(CH):
+        ly = unit_y(y)
         for x in range(cw):
-            lx = x - PAD_X + 0.5
-            ly = y - PAD_Y + 0.5
+            lx = unit_x(x)
             if solid_b[y, x]:
-                yb = _interp_y(p["beltline"], lx) + PAD_Y
-                s = (y + 0.5 - yb) / max(1.0, yr - yb)
+                yb = _interp_y(p["beltline"], lx)
+                s = (ly - yb) / max(1.0, yr - yb)
                 hot = any(a <= lx <= b for a, b in p["hotspots"])
-                if p.get("flat_sides"):
-                    # slab sides: a lit edge under the beltline, then an even, gently darkening panel
-                    if s < 0.07:
-                        i = 6
-                        shine[y, x] = 230
-                    elif s < 0.5:
-                        i = 5
-                        shine[y, x] = 150
-                    elif s < 0.84:
-                        i = 5
-                        shine[y, x] = 110
-                    elif s < 0.93:
-                        i = 5 if bayer(x, y) > (s - 0.84) / 0.09 else 4
-                        shine[y, x] = 80
-                    else:
-                        i = 3
-                elif s < 0.07:
-                    i = 7 if hot else 6
-                    shine[y, x] = 255
-                elif abs(s - p["crease_t"]) < 0.045:
-                    i = 7 if hot else 6     # body character line catching the light
-                    shine[y, x] = 255
-                elif s < p["crease_t"]:
-                    i = 5
-                    shine[y, x] = 220
-                elif s < 0.44:
-                    i = 4 if s > 0.3 or bayer(x, y) > (s - p["crease_t"]) / 0.1 else 5
-                    shine[y, x] = 160
-                elif p.get("flat_sides") and s < 0.92:
-                    i = 4 if s < 0.62 or bayer(x, y) > (s - 0.62) / 0.3 else 3   # slab sides: one tone down to the sill
-                elif s < 0.58:
-                    i = 4 if bayer(x, y) > (s - 0.44) / 0.14 else 3   # soft horizon line
-                elif s < 0.8:
-                    i = 3 if s < 0.7 else (3 if bayer(x, y) > (s - 0.7) / 0.1 else 2)
-                else:
-                    i = 2 if s < 0.9 else 1
+                i = _tone(s, p["crease_t"], hot, flat, x, y)
+                shine[y, x] = 255 if s < 0.07 else (220 if s < p["crease_t"] else (160 if s < 0.44 else 90))
                 if lx < 2.5 or lx > front_end - 1.8:     # panels turning away at the ends
                     i = max(1, i - 2)
                 elif lx < 4.5 or lx > front_end - 3.5:
@@ -146,11 +161,14 @@ def body_layer(p):
                 idx[y, x] = i
             elif solid_g[y, x]:
                 if ly < roof_y:
+                    # roof: the sky's brightest reflection, with a glint along the leading edge
                     i = 7 if (glass_x0 + 4) < lx < (glass_x0 + 9) else 6
                     shine[y, x] = 255
                 elif lx < glass_x0:      # sail / C-pillar: lit at the top, falling off toward the deck
                     t = (ly - roof_y) / max(1.0, (_interp_y(p["beltline"], lx) - roof_y))
-                    i = 5 if t < 0.35 else (4 if t < 0.7 else 3)
+                    i = 5 if t < 0.3 else (4 if t < 0.65 else 3)
+                    if 0.25 < t < 0.4 and bayer(x, y) > 0.5:
+                        i = 4
                     shine[y, x] = 160
                 else:
                     i = 4 if lx > glass_x1 else 5
@@ -163,32 +181,32 @@ def body_layer(p):
                 shine[y, x] = 200 if not above else 0
                 idx[y, x] = i
 
-    # Door seams: dark cut with a lit lip on the trailing side
+    # Door seams: a dark one-pixel cut with a lit lip on the trailing side, and the door's lower edge
     for sx in p["door_seams"]:
-        x = int(sx + PAD_X)
+        x = int(px_x(sx))
         for y in range(CH):
             if 0 <= x < cw and solid_b[y, x]:
-                lx = x - PAD_X
-                yb = _interp_y(p["beltline"], lx) + PAD_Y
-                if yb + 1.5 < y < yr - 1:
+                yb = _interp_y(p["beltline"], unit_x(x))
+                ly = unit_y(y)
+                if yb + 1.5 < ly < yr - 1:
                     idx[y, x] = 1
                     if x + 1 < cw and solid_b[y, x + 1] and idx[y, x + 1] < 7:
                         idx[y, x + 1] = min(7, idx[y, x + 1] + 1)
 
     # Wheel-arch lips: highlight the upper rim of each arch, shadow the inside edge
-    lip = 1.0 + p.get("flare", 0.0)
+    lip = (1.0 + p.get("flare", 0.0)) * S
     for cx, cy in (p["rear_wheel"], p["front_wheel"]):
-        cx += PAD_X
-        cy += PAD_Y
+        cxp, cyp = px_x(cx), px_y(cy)
         for y in range(CH):
             for x in range(cw):
                 if not solid_b[y, x]:
                     continue
-                d = math.hypot(x + 0.5 - cx, y + 0.5 - cy)
-                if p["arch_r"] - 0.2 <= d < p["arch_r"] + lip and y + 0.5 < cy:
-                    up = (cy - (y + 0.5)) / p["arch_r"]
-                    idx[y, x] = 6 if up > 0.55 else 2
-                    if p.get("flare", 0) > 0 and d > p["arch_r"] + 0.8 and up > 0.3:
+                d = math.hypot(x + 0.5 - cxp, y + 0.5 - cyp)
+                if ar_px - 0.3 <= d < ar_px + lip and y + 0.5 < cyp:
+                    up = (cyp - (y + 0.5)) / ar_px
+                    inner = d < ar_px + 0.9
+                    idx[y, x] = (6 if up > 0.55 else 2) if inner else (5 if up > 0.4 else 3)
+                    if p.get("flare", 0) > 0 and d > ar_px + 0.8 * S and up > 0.3:
                         idx[y, x] = 5          # flared fender: a second, softer band
 
     # Selective outline: dark along the bottom and ends, soft on top edges
@@ -202,7 +220,7 @@ def body_layer(p):
             elif left[y, x] or right[y, x]:
                 idx[y, x] = min(idx[y, x], 1 if not up[y, x] else 3)
             elif up[y, x] and idx[y, x] >= 7:
-                idx[y, x] = 6 if (x % 7 == 0) else 7
+                idx[y, x] = 6 if (x % 9 == 0) else 7
 
     aa = _hand_aa(np.maximum(np.maximum(body, gh), extras), solid)
     for y in range(CH):
@@ -235,10 +253,10 @@ def popup_layer(p):
     x0, x1, base, top = pu
     for y in range(CH):
         for x in range(cw):
-            lx, ly = x - PAD_X + 0.5, y - PAD_Y + 0.5
+            lx, ly = unit_x(x), unit_y(y)
             if x0 <= lx <= x1 and top <= ly <= base:
                 face = lx > x1 - 1.2
-                idx[y, x] = 1 if face else (6 if ly < top + 1 else 4)
+                idx[y, x] = 1 if face else (6 if ly < top + 0.8 else 4)
     return _encode(idx, np.zeros((CH, cw), dtype=np.uint8)), idx
 
 
@@ -247,17 +265,17 @@ def popup_layer(p):
 def normal_layer(p, idx):
     cw = width_of(p)
     out = canvas(cw, CH)
-    yr = p["rocker_y"] + PAD_Y
+    yr = p["rocker_y"]
     gh = poly_mask(cw, CH, L(p["greenhouse"])) >= 0.5
     glass_x0 = min(x for g in p["glass"] for x, _ in g) if p["glass"] else 0
     roof_y = min(y for _, y in p["greenhouse"]) + 1.2
     belt_min = min(y for _, y in p["beltline"])
+    ar_px = p["arch_r"] * S
     for y in range(CH):
         for x in range(cw):
             if idx[y, x] < 0:
                 continue
-            lx = x - PAD_X + 0.5
-            ly = y - PAD_Y + 0.5
+            lx, ly = unit_x(x), unit_y(y)
             if gh[y, x] and ly < _interp_y(p["beltline"], lx) - 0.4:
                 if ly < roof_y:
                     nx, ny = 0.0, 0.85                     # roof
@@ -268,8 +286,8 @@ def normal_layer(p, idx):
             elif ly < belt_min - 0.5:
                 nx, ny = 0.0, 0.7                          # wings, ducktails: top surfaces
             else:
-                yb = _interp_y(p["beltline"], lx) + PAD_Y
-                s_ = (y + 0.5 - yb) / max(1.0, yr - yb)
+                yb = _interp_y(p["beltline"], lx)
+                s_ = (ly - yb) / max(1.0, yr - yb)
                 if s_ < 0.07:
                     ny = 0.8
                 elif abs(s_ - p["crease_t"]) < 0.045:
@@ -287,10 +305,11 @@ def normal_layer(p, idx):
                 end = p["length"]
                 nx = -0.65 if lx < 3 else (-0.3 if lx < 5 else (0.65 if lx > end - 2 else (0.3 if lx > end - 4 else 0.0)))
             for cx, cy in (p["rear_wheel"], p["front_wheel"]):
-                d = math.hypot(x + 0.5 - cx - PAD_X, y + 0.5 - cy - PAD_Y)
-                if p["arch_r"] - 0.2 <= d < p["arch_r"] + 1.2:
-                    nx = (x + 0.5 - cx - PAD_X) / d * 0.7
-                    ny = -(y + 0.5 - cy - PAD_Y) / d * 0.7
+                dx, dy = x + 0.5 - px_x(cx), y + 0.5 - px_y(cy)
+                d = math.hypot(dx, dy)
+                if ar_px - 0.3 <= d < ar_px + 1.2 * S:
+                    nx = dx / d * 0.7
+                    ny = -dy / d * 0.7
             nz = math.sqrt(max(0.05, 1 - nx * nx - ny * ny))
             out[y, x] = (int((nx * 0.5 + 0.5) * 255), int((ny * 0.5 + 0.5) * 255), int((nz * 0.5 + 0.5) * 255), 255)
     return out
@@ -304,35 +323,44 @@ def _poly_pixels(cw, poly):
 
 
 def _rect(p_out, x0, y0, x1, y1, col_fn):
-    for y in range(int(round(y0 + PAD_Y)), int(round(y1 + PAD_Y))):
-        for x in range(int(round(x0 + PAD_X)), int(round(x1 + PAD_X))):
+    """Fill a profile-unit rectangle; col_fn gets canvas pixel coordinates."""
+    for y in range(int(round(px_y(y0))), int(round(px_y(y1)))):
+        for x in range(int(round(px_x(x0))), int(round(px_x(x1)))):
             if 0 <= y < CH and 0 <= x < p_out.shape[1]:
                 c = col_fn(x, y)
                 if c is not None:
                     p_out[y, x] = c
 
 
+def _rect_px(x0, y0, x1, y1):
+    """A profile-unit rectangle's pixel bounds (inclusive start, exclusive end)."""
+    return int(round(px_x(x0))), int(round(px_y(y0))), int(round(px_x(x1))), int(round(px_y(y1)))
+
+
 def trim_layer(p, idx):
     cw = width_of(p)
     out = canvas(cw, CH)
     for k, g in enumerate(p["glass"]):
-        _glass(out, cw, g, tint_dark=(k > 0 and p.get("dark_quarters", False)))
+        _glass(out, cw, g, p, tint_dark=(k > 0 and p.get("dark_quarters", False)), main=(g is _main_glass(p)))
     _windshield(out, cw, p["windshield"])
     if p.get("rear_strip"):
         _windshield(out, cw, p["rear_strip"], dim=True)
 
     # Window surround on the main side glass
     if p["glass"] and p.get("chrome_surround", True):
-        main = max(p["glass"], key=lambda g: max(x for x, _ in g) - min(x for x, _ in g))
+        main = _main_glass(p)
         m = poly_mask(cw, CH, L(main)) >= 0.5
         ys, _ = np.nonzero(m)
         y0 = ys.min() if len(ys) else 0
         pad = np.pad(m, 1)
         ring = (~m) & (pad[:-2, 1:-1] | pad[2:, 1:-1] | pad[1:-1, :-2] | pad[1:-1, 2:])
-        surround = P("steel", 5) if p.get("bumpers") == "chrome" else P("night", 1)
+        chrome = p.get("bumpers") == "chrome"
         for y, x in zip(*np.nonzero(ring)):
             if idx[y, x] >= 0 and out[y, x, 3] == 0:
-                out[y, x] = surround if y < y0 + 2 else (P("steel", 3) if p.get("bumpers") == "chrome" else P("night", 0))
+                if chrome:
+                    out[y, x] = P("steel", 6) if y < y0 + 1 else (P("steel", 4) if y < y0 + 3 else P("steel", 3))
+                else:
+                    out[y, x] = P("night", 1) if y < y0 + 2 else P("night", 0)
 
     style = p.get("bumpers", "chrome")
     for key in ("front_bumper", "rear_bumper"):
@@ -345,7 +373,8 @@ def trim_layer(p, idx):
             ys, xs = _poly_pixels(cw, b)
             top = ys.min() if len(ys) else 0
             for y, x in zip(ys, xs):
-                out[y, x] = P("steel", 2) if y == top else (P("steel", 1) if (x + y) % 5 else P("night", 1))
+                # textured black plastic: a lit top edge, a faint mid crease, grain
+                out[y, x] = P("steel", 2) if y == top else (P("steel", 1) if (x * 3 + y) % 7 else P("night", 1))
         else:   # body-colour bumper: just a dark parting line on top
             ys, xs = _poly_pixels(cw, b)
             if len(ys):
@@ -355,91 +384,167 @@ def trim_layer(p, idx):
                         out[y, x] = P("night", 1)
 
     if p.get("grille"):
-        gx0, gy0, gx1, gy1 = p["grille"]
-        _rect(out, gx0, gy0, gx1, gy1, lambda x, y: P("steel", 2) if y % 2 == 0 else P("night", 0))
+        gx0, gy0, gx1, gy1 = _rect_px(*p["grille"])
+        for y in range(gy0, gy1):
+            for x in range(gx0, gx1):
+                if 0 <= y < CH and 0 <= x < cw:
+                    edge = y in (gy0, gy1 - 1) or x in (gx0, gx1 - 1)
+                    out[y, x] = P("steel", 4) if edge else (P("steel", 2) if (y - gy0) % 2 == 0 else P("night", 0))
 
-    tx0, ty0, tx1, ty1 = p["tail_lamp"]
-    _rect(out, tx0, ty0, tx1 + 0.6, ty1, lambda x, y: P("red", 1) if y % 2 else P("red", 0))
-    hx0, hy0, hx1, hy1 = p["head_lamp"]
-    _rect(out, hx0, hy0, hx1, hy1, lambda x, y: P("steel", 4))
+    _lamp_lenses(out, p)
 
     for (mx, my), ramp in p["markers"]:
-        put(out, mx + PAD_X, my + PAD_Y, P(ramp, 1))
-        put(out, mx + PAD_X + 1, my + PAD_Y, P(ramp, 0))
+        x0, y0 = int(px_x(mx)), int(px_y(my))
+        for dx in range(3):
+            put(out, x0 + dx, y0, P(ramp, 1) if dx < 2 else P(ramp, 0))
+            put(out, x0 + dx, y0 + 1, P(ramp, 0))
 
     if p.get("handle"):
         hx, hy = p["handle"]
-        lip = (P("steel", 3), P("night", 0)) if style == "black" else (P("steel", 5), P("steel", 4))   # black handles on black-trim cars
-        for dx, dy, c in ((0, 0, lip[0]), (1, 0, lip[1]), (0, 1, P("night", 1)), (1, 1, P("night", 1))):
-            put(out, hx + dx + PAD_X, hy + dy + PAD_Y, c)
+        x0, y0 = int(px_x(hx)), int(px_y(hy))
+        dark = style == "black"
+        for dx in range(4):
+            put(out, x0 + dx, y0, P("steel", 3) if dark else P("steel", 6 if dx < 2 else 5))     # the grip, lit along its top
+            put(out, x0 + dx, y0 + 1, P("night", 1) if dark else P("steel", 3))
+        put(out, x0 - 1, y0 + 1, P("night", 0))                                                   # the pocket behind it
+        put(out, x0 + 4, y0 + 1, P("night", 0))
     if p.get("mirror"):
-        mx, my = p["mirror"]
-        mc = [P("steel", 5), P("steel", 6), P("steel", 3), P("steel", 2), P("steel", 1)] if style == "chrome" else \
-             [P("night", 2), P("night", 3), P("night", 1), P("night", 1), P("night", 0)]
-        for (dx, dy), c in zip(((0, 0), (1, 0), (0, 1), (1, 1), (0, 2)), mc):
-            put(out, mx + dx + PAD_X, my + dy + PAD_Y, c)
+        _mirror(out, p, style)
     if p.get("gas_cap"):
         gx, gy = p["gas_cap"]
-        for dx, dy, c in ((0, 0, P("steel", 6)), (1, 0, P("steel", 4)), (0, 1, P("steel", 3)), (1, 1, P("steel", 2))):
-            put(out, gx + dx + PAD_X, gy + dy + PAD_Y, c)
+        x0, y0 = int(px_x(gx)), int(px_y(gy))
+        for dy in range(3):
+            for dx in range(3):
+                c = P("steel", 6) if dx + dy == 0 else (P("steel", 2) if dx + dy >= 3 else P("steel", 4))
+                put(out, x0 + dx, y0 + dy, c)
 
     # Rocker trim between the wheels (unless the sills are body colour)
-    rx0 = p["rear_wheel"][0] + p["arch_r"] + 1 if p.get("rocker_trim", True) else 0
-    rx1 = p["front_wheel"][0] - p["arch_r"] - 1
-    ry = int(p["rocker_y"] + PAD_Y) - 1
-    for x in range(int(rx0 + PAD_X), int(rx1 + PAD_X) if p.get("rocker_trim", True) else 0):
-        if 0 <= ry < CH and idx[ry, x] >= 0:
-            out[ry, x] = P("steel", 1)
-            out[ry - 1, x] = P("steel", 3) if x % 2 else P("steel", 2)
+    if p.get("rocker_trim", True):
+        rx0 = int(px_x(p["rear_wheel"][0] + p["arch_r"] + 1))
+        rx1 = int(px_x(p["front_wheel"][0] - p["arch_r"] - 1))
+        ry = int(px_y(p["rocker_y"])) - 1
+        for x in range(rx0, rx1):
+            if 0 <= ry < CH and idx[ry, x] >= 0:
+                out[ry, x] = P("steel", 1)
+                out[ry - 1, x] = P("steel", 3) if x % 2 else P("steel", 2)
 
     for ex, ey in p["exhaust_tips"]:
-        put(out, ex + PAD_X, ey + PAD_Y, P("steel", 5))
-        put(out, ex + PAD_X + 1, ey + PAD_Y, P("steel", 3))
-        put(out, ex + PAD_X + 1, ey + PAD_Y + 1, P("night", 0))
+        _tip(out, int(px_x(ex)), int(px_y(ey)))
 
     for e in p.get("extras", []):
         _trim_extra(out, cw, idx, e, p)
     return out
 
 
-def _glass(out, cw, poly, tint_dark=False):
+def _main_glass(p):
+    return max(p["glass"], key=lambda g: max(x for x, _ in g) - min(x for x, _ in g)) if p["glass"] else None
+
+
+def _tip(out, x, y):
+    """A tailpipe seen from the side: a lit rolled lip, the dark bore, the pipe under it."""
+    for dx, dy, c in ((0, 0, P("steel", 6)), (1, 0, P("steel", 5)), (2, 0, P("steel", 4)), (0, 1, P("steel", 4)),
+                      (1, 1, P("night", 0)), (2, 1, P("steel", 3)), (0, 2, P("steel", 2)), (1, 2, P("steel", 2)), (2, 2, P("steel", 1))):
+        put(out, x + dx, y + dy, c)
+
+
+def _mirror(out, p, style):
+    """A door mirror: a housing with a lit top, the glass edge, a short stalk to the door."""
+    mx, my = p["mirror"]
+    x0, y0 = int(px_x(mx)), int(px_y(my))
+    chrome = style == "chrome"
+    top, mid, low = (P("steel", 6), P("steel", 5), P("steel", 3)) if chrome else (P("night", 3), P("night", 2), P("night", 1))
+    for dx in range(4):
+        put(out, x0 + dx, y0, top)
+        put(out, x0 + dx, y0 + 1, mid if dx < 3 else P("blue", 3))
+        put(out, x0 + dx, y0 + 2, low)
+    put(out, x0 + 1, y0 + 3, P("night", 1))
+    put(out, x0 + 2, y0 + 3, P("night", 0))
+
+
+def _lamp_lenses(out, p):
+    """Unlit lamps: a tail lamp with a lens rim and segments; a headlamp with a chrome rim and a reflector."""
+    tx0, ty0, tx1, ty1 = _rect_px(*p["tail_lamp"])
+    tx1 = max(tx1, tx0 + 2)
+    for y in range(ty0, ty1):
+        for x in range(tx0, tx1):
+            rim = y in (ty0, ty1 - 1)
+            seg = (y - ty0) % 3 == 2
+            put(out, x, y, P("red", 0) if rim else (P("red", 1) if not seg else P("red", 0)))
+    hx0, hy0, hx1, hy1 = _rect_px(*p["head_lamp"])
+    hx1 = max(hx1, hx0 + 2)
+    hy1 = max(hy1, hy0 + 2)
+    for y in range(hy0, hy1):
+        for x in range(hx0, hx1):
+            rim = y in (hy0, hy1 - 1) or x == hx0
+            c = P("steel", 6) if (rim and y == hy0) else (P("steel", 3) if rim else (P("steel", 5) if (x + y) % 3 else P("steel", 4)))
+            put(out, x, y, c)
+    put(out, (hx0 + hx1) // 2, (hy0 + hy1) // 2, P("steel", 6))          # the reflector's bright centre
+
+
+def _glass(out, cw, poly, p, tint_dark=False, main=False):
+    """Side glass: the sky reflected along the top, the dark cabin below, two diagonal glints. The
+    main window shows the driver's seat headrest and the top of the steering wheel through it."""
     ys, xs = _poly_pixels(cw, poly)
     if not len(ys):
         return
-    y0, y1, xmin = ys.min(), ys.max(), xs.min()
+    y0, y1, xmin, xmax = ys.min(), ys.max(), xs.min(), xs.max()
     for y, x in zip(ys, xs):
         t = (y - y0) / max(1, y1 - y0)
         d = (x - xmin) - (y1 - y) * 1.3
-        streak = 6 <= d < 9 or 12 <= d < 13
+        streak = 9 <= d < 11 or 15 <= d < 16
         if tint_dark:
             col = P("night", 1) if not streak else P("night", 3)
         elif streak:
-            col = P("blue", 3) if t < 0.5 else P("blue", 2)
-        elif t < 0.22:
-            col = P("blue", 1)
-        elif t < 0.6:
-            col = P("night", 3) if bayer(x, y) > (t - 0.22) / 0.38 else P("night", 2)
+            col = P("blue", 3) if t < 0.35 else (P("blue", 2) if t < 0.7 else P("night", 3))
+        elif t < 0.16:
+            col = P("blue", 2)
+        elif t < 0.3:
+            col = P("blue", 1) if bayer(x, y) > (t - 0.16) / 0.14 else P("night", 3)
+        elif t < 0.62:
+            col = P("night", 3) if bayer(x, y) > (t - 0.3) / 0.32 else P("night", 2)
         else:
             col = P("night", 1)
         out[y, x] = col
+    if main and not tint_dark:
+        w = xmax - xmin
+        # headrest toward the back of the window, the wheel rim toward the front
+        hx, hy = xmin + int(w * 0.3), y0 + int((y1 - y0) * 0.35)
+        for dy in range(4):
+            for dx in range(4):
+                if (dx, dy) not in ((0, 0), (3, 0)) and 0 <= hy + dy <= y1:
+                    if out[hy + dy, hx + dx, 3]:
+                        out[hy + dy, hx + dx] = P("night", 0) if dy else P("night", 2)
+        wx, wy = xmin + int(w * 0.72), y0 + int((y1 - y0) * 0.55)
+        for dx in range(-3, 4):
+            yy = wy + (abs(dx) * abs(dx)) // 4
+            if 0 <= yy < CH and out[yy, wx + dx, 3]:
+                out[yy, wx + dx] = P("night", 0)
 
 
 def _windshield(out, cw, poly, dim=False):
     ys, xs = _poly_pixels(cw, poly)
+    if not len(ys):
+        return
+    y0, y1 = ys.min(), ys.max()
     for y, x in zip(ys, xs):
+        t = (y - y0) / max(1, y1 - y0)
         if dim:
             out[y, x] = P("night", 2) if (x + y) % 4 else P("blue", 1)
         else:
-            out[y, x] = P("blue", 2) if (x + y) % 5 else P("blue", 4)
+            out[y, x] = P("blue", 4) if (x + y) % 6 == 0 else (P("blue", 3) if t < 0.4 else P("blue", 2))
 
 
 def _chrome_bar(out, cw, poly):
+    """Chrome reflects the world in bands: a hot sky line on top, the dark horizon, the ground under it."""
     ys, xs = _poly_pixels(cw, poly)
     if not len(ys):
         return
     top, bot = ys.min(), ys.max()
+    hgt = max(1, bot - top)
     for y, x in zip(ys, xs):
-        out[y, x] = P("steel", 6) if y == top else (P("steel", 2) if y == bot else P("steel", 4))
+        t = (y - top) / hgt
+        c = P("steel", 6) if t < 0.2 else (P("steel", 5) if t < 0.4 else (P("steel", 1) if t < 0.55 else (P("steel", 3) if t < 0.85 else P("steel", 2))))
+        out[y, x] = c
     put(out, xs.min() + 1 + (xs.max() - xs.min()) // 2, top, P("yellow", 2))
 
 
@@ -448,47 +553,43 @@ def _trim_extra(out, cw, idx, e, p):
     if k in PAINTED:
         return
     if k in ("vent", "gills", "intake"):
-        x0, y0, x1, y1 = e["rect"]
+        x0, y0, x1, y1 = _rect_px(*e["rect"])
         slots = e.get("slots", 3)
-        for y in range(int(y0 + PAD_Y), int(y1 + PAD_Y)):
-            for x in range(int(x0 + PAD_X), int(x1 + PAD_X)):
+        for y in range(y0, y1):
+            for x in range(x0, x1):
                 if not (0 <= x < cw and 0 <= y < CH):
                     continue
                 if k == "intake":
-                    edge = y == int(y0 + PAD_Y)
+                    edge = y == y0
                     out[y, x] = P("night", 2) if edge else (P("night", 0) if (x + y) % 3 else P("night", 1))
                 else:
                     w = (x1 - x0) / slots
-                    inside = ((x - x0 - PAD_X) % w) < w * 0.55
-                    out[y, x] = P("night", 0) if inside else (P("steel", 2) if y == int(y0 + PAD_Y) else TRANSPARENT)
+                    inside = ((x - x0) % w) < w * 0.55
+                    out[y, x] = P("night", 0) if inside else (P("steel", 2) if y == y0 else TRANSPARENT)
     elif k in ("scoop", "shaker"):
-        x0, y0, x1, y1 = e["rect"]
-        for y in range(int(y0 + PAD_Y), int(y1 + PAD_Y)):
-            for x in range(int(x0 + PAD_X), int(x1 + PAD_X)):
+        x0, y0, x1, y1 = _rect_px(*e["rect"])
+        for y in range(y0, y1):
+            for x in range(x0, x1):
                 if 0 <= x < cw and 0 <= y < CH:
-                    top = y == int(y0 + PAD_Y)
-                    front = x == int(x1 + PAD_X) - 1
+                    top = y == y0
+                    front = x == x1 - 1
                     if k == "shaker":
                         out[y, x] = P("night", 0) if front else (P("steel", 2) if top else P("night", 2))
                     else:
                         out[y, x] = P("night", 0) if front else (P("night", 3) if top else P("night", 1))
     elif k == "sidepipe":
-        x0, y0, x1, y1 = e["rect"]
-        for y in range(int(y0 + PAD_Y), int(y1 + PAD_Y)):
-            for x in range(int(x0 + PAD_X), int(x1 + PAD_X)):
+        x0, y0, x1, y1 = _rect_px(*e["rect"])
+        for y in range(y0, y1):
+            for x in range(x0, x1):
                 if 0 <= x < cw and 0 <= y < CH:
-                    t = (y - y0 - PAD_Y) / max(1, (y1 - y0))
-                    shield = (x // 2) % 3 == 0
-                    out[y, x] = P("steel", 6) if t < 0.3 else (P("steel", 4) if t < 0.7 else P("steel", 2))
+                    t = (y - y0) / max(1, (y1 - y0))
+                    shield = (x // 3) % 3 == 0
+                    out[y, x] = P("steel", 6) if t < 0.25 else (P("steel", 5) if t < 0.45 else (P("steel", 3) if t < 0.75 else P("steel", 2)))
                     if shield and 0.2 < t < 0.8:
-                        out[y, x] = P("steel", 3)
-        put(out, x0 + PAD_X - 1, (y0 + y1) / 2 + PAD_Y, P("night", 0))
+                        out[y, x] = P("steel", 4)
+        put(out, x0 - 1, (y0 + y1) // 2, P("night", 0))
     elif k == "rollbar":
-        for (ax, ay), (bx, by) in zip(e["pts"], e["pts"][1:]):
-            n = int(max(abs(bx - ax), abs(by - ay)) * 2) + 1
-            for i in range(n + 1):
-                t = i / n
-                put(out, ax + (bx - ax) * t + PAD_X, ay + (by - ay) * t + PAD_Y, P("steel", 2))
+        _poly_line(out, e["pts"], P("steel", 2))
     elif k == "headrest":
         x0, y0, x1, y1 = e["rect"]
         _rect(out, x0, y0, x1, y1, lambda x, y: P("night", 1) if (x + y) % 4 else P("night", 2))
@@ -510,35 +611,45 @@ def _trim_extra(out, cw, idx, e, p):
         _rect(out, x0, y0, x1, y1, lambda x, y: c)
     elif k == "outline":
         # a panel's shut line: a one-pixel ring (fuel doors, hatches)
-        x0, y0, x1, y1 = e["rect"]
         c = P(*e.get("color", ("night", 1)))
-        ys, ye = int(round(y0 + PAD_Y)), int(round(y1 + PAD_Y)) - 1
-        xs, xe = int(round(x0 + PAD_X)), int(round(x1 + PAD_X)) - 1
-        _rect(out, x0, y0, x1, y1, lambda x, y: c if (y in (ys, ye) or x in (xs, xe)) and idx[y, x] >= 0 else None)
+        xs, ys, xe, ye = _rect_px(*e["rect"])
+        xe -= 1
+        ye -= 1
+        _rect(out, *e["rect"], lambda x, y: c if (y in (ys, ye) or x in (xs, xe)) and idx[y, x] >= 0 else None)
     elif k == "line":
-        c = P(*e.get("color", ("night", 1)))
-        for (ax, ay), (bx, by) in zip(e["pts"], e["pts"][1:]):
-            n = int(max(abs(bx - ax), abs(by - ay)) * 2) + 1
-            for i in range(n + 1):
-                t = i / n
-                put(out, ax + (bx - ax) * t + PAD_X, ay + (by - ay) * t + PAD_Y, c)
+        _poly_line(out, e["pts"], P(*e.get("color", ("night", 1))))
+
+
+def _poly_line(out, pts, c):
+    for (ax, ay), (bx, by) in zip(pts, pts[1:]):
+        n = int(max(abs(bx - ax), abs(by - ay)) * S * 2) + 1
+        for i in range(n + 1):
+            t = i / n
+            put(out, px_x(ax + (bx - ax) * t), px_y(ay + (by - ay) * t), c)
 
 
 def lights_layer(p):
     cw = width_of(p)
     out = canvas(cw, CH)
-    tx0, ty0, tx1, ty1 = p["tail_lamp"]
+    tx0, ty0, tx1, ty1 = _rect_px(*p["tail_lamp"])
+    tx1 = max(tx1, tx0 + 2)
     if p.get("tail_style") == "round":
         n = p.get("tail_count", 2)
         h = (ty1 - ty0) / n
         for k in range(n):
-            _rect(out, tx0, ty0 + k * h + 0.2, tx1 + 0.6, ty0 + (k + 1) * h - 0.3,
-                  lambda x, y: P("red", 3) if (y % 2 == 0) else P("orange", 1))
+            for y in range(int(ty0 + k * h), int(ty0 + (k + 1) * h - 0.5)):
+                for x in range(tx0, tx1):
+                    put(out, x, y, P("red", 3) if (y + k) % 2 == 0 else P("orange", 1))
     else:
-        _rect(out, tx0, ty0, tx1 + 0.6, ty1, lambda x, y: P("red", 3) if (y % 2 == 0) else P("orange", 1))
-    hx0, hy0, hx1, hy1 = p["head_lamp"]
-    edge = int(round(hx1 + PAD_X)) - 1
-    _rect(out, hx0, hy0, hx1, hy1, lambda x, y: P("yellow", 2) if x == edge else P("yellow", 1))
+        for y in range(ty0, ty1):
+            for x in range(tx0, tx1):
+                put(out, x, y, P("red", 3) if (y - ty0) % 3 != 2 else P("orange", 1))
+    hx0, hy0, hx1, hy1 = _rect_px(*p["head_lamp"])
+    hx1 = max(hx1, hx0 + 2)
+    hy1 = max(hy1, hy0 + 2)
+    for y in range(hy0, hy1):
+        for x in range(hx0, hx1):
+            put(out, x, y, P("yellow", 2) if x >= hx1 - 1 or (x + y) % 3 == 0 else P("yellow", 1))
     pu = p.get("popup")
     if pu:
         x0, x1, base, top = pu
@@ -546,17 +657,56 @@ def lights_layer(p):
     return out
 
 
+def _open_spokes(p):
+    """Whether the car's own rims show what's behind them (so the brake goes in the well)."""
+    return p["rim"]["style"] in ("magnum", "fivestar", "sixspoke", "three", "mesh", "split", "turbine")
+
+
 def wells_layer(p):
+    """Dark wheel-well interiors, and behind each wheel a brake disc and a caliper: they show through
+    open spokes, and because they're on this layer they stay put while the wheel turns."""
     cw = width_of(p)
     out = canvas(cw, CH)
     body = poly_mask(cw, CH, L(p["body"]))
-    top = min(y for _, y in p["body"]) + PAD_Y
+    top = px_y(min(y for _, y in p["body"]))
+    ar_px = p["arch_r"] * S
     for cx, cy in (p["rear_wheel"], p["front_wheel"]):
-        well = disc_mask(cw, CH, cx + PAD_X, cy + PAD_Y, p["arch_r"])
+        cxp, cyp = px_x(cx), px_y(cy)
+        well = disc_mask(cw, CH, cxp, cyp, ar_px)
         m = (well >= 0.5) & (body >= 0.5)
         for y, x in zip(*np.nonzero(m)):
             if y > top:
                 out[y, x] = P("night", 0) if (y + x) % 3 else P("night", 1)
+        r_disc = p["wheel_r"] * S * 0.55
+        for y in range(int(cyp - r_disc) - 1, int(cyp + r_disc) + 2):
+            for x in range(int(cxp - r_disc) - 1, int(cxp + r_disc) + 2):
+                d = math.hypot(x + 0.5 - cxp, y + 0.5 - cyp)
+                if d < r_disc and 0 <= y < CH and 0 <= x < cw:
+                    lit = (cxp - (x + 0.5)) + (cyp - (y + 0.5)) > 0
+                    out[y, x] = P("night", 0) if d < r_disc * 0.3 else (P("steel", 3) if d > r_disc - 1.2 else (P("steel", 2) if lit else P("steel", 1)))
+        # caliper: a block hugging the disc's rear-top edge
+        cal = p.get("caliper", "red" if p["rim"].get("color") in ("silver", "black") else "steel")
+        for y in range(int(cyp - r_disc * 0.9), int(cyp - r_disc * 0.1)):
+            for x in range(int(cxp - r_disc * 0.95), int(cxp - r_disc * 0.55)):
+                if 0 <= y < CH and 0 <= x < cw:
+                    out[y, x] = P(cal, 2) if y == int(cyp - r_disc * 0.9) else P(cal, 1)
+    return out
+
+
+def shadow_layer(p):
+    """The contact shadow: a soft dark ellipse under the car, darkest under the tyres."""
+    cw = width_of(p)
+    out = canvas(cw, CH)
+    gy = px_y(GROUND)
+    cx = px_x(p["length"] / 2)
+    rx = p["length"] * S * 0.52
+    soft = ellipse_mask(cw, CH, cx, gy + 0.5, rx, 2.4)
+    core = np.zeros_like(soft)
+    for wx, _ in (p["rear_wheel"], p["front_wheel"]):
+        core = np.maximum(core, ellipse_mask(cw, CH, px_x(wx), gy + 0.3, p["wheel_r"] * S * 1.1, 1.4))
+    a = np.clip(soft * 0.55 + core * 0.4, 0, 1)
+    out[..., 0], out[..., 1], out[..., 2] = 6, 4, 14
+    out[..., 3] = (a * 255).astype(np.uint8)
     return out
 
 
@@ -570,9 +720,12 @@ RIM_COLORS = {
     "black": [P("steel", 3), P("steel", 2), P("night", 2), P("night", 1)],
 }
 
+# Between open spokes the wheel is transparent: the brake on the well layer shows through.
+GAP = object()
+
 
 def _wheel_sample(px, py, angle, p):
-    """Colour of one wheel at a point (frame-local coords around the centre), rotated by angle."""
+    """Colour of one wheel at a point (profile units around the centre), rotated by angle."""
     rim = p["rim"]
     r_tire = p["wheel_r"]
     r_rim = r_tire * rim.get("size", 0.66)
@@ -585,24 +738,27 @@ def _wheel_sample(px, py, angle, p):
     if rim["style"] == "split":
         return _split_sample(px, py, d, a, lit, r_tire, r_tire * rim.get("size", 0.72), rim.get("spokes", 8))
     if d > r_rim + 0.35:
-        # Tyre: cool dark rubber, sidewall lit from the top-left, tread edge darkest
-        if d > r_tire - 0.75:
+        # Tyre: dark rubber, the sidewall's bulge lit from the top-left, the tread's shoulder darkest
+        if d > r_tire - 0.55:
             return P("night", 0)
-        if rim.get("letters") and abs(d - (r_tire + r_rim) / 2 - 0.2) < 0.45:
-            seg = (a % (2 * math.pi)) / (2 * math.pi) * 24
-            if int(seg) % 4 == 0 and math.sin(a) > 0.3:
+        if rim.get("letters") and abs(d - (r_tire + r_rim) / 2 - 0.2) < 0.4:
+            seg = (a % (2 * math.pi)) / (2 * math.pi) * 32
+            if int(seg) % 4 != 3 and math.sin(a) > 0.2:
                 return P("steel", 4)
-        if lit > 0.6:
+        bulge = 1 - abs((d - r_rim) / (r_tire - r_rim) - 0.45) * 2
+        if lit > 0.55 and bulge > 0.3:
             return P("steel", 1)
         if lit > -0.3:
-            return P("steel", 0)
+            return P("steel", 0) if bulge > -0.2 else P("night", 1)
         return P("night", 1)
-    if d > r_rim - 0.5:                                   # rim lip
-        return cols[0] if py < -0.5 else (cols[2] if py < 1.5 else cols[3])
+    if d > r_rim - 0.45:                                  # rim lip, polished
+        return cols[0] if py < -0.4 else (cols[1] if py < 0.4 else (cols[2] if py < 1.5 else cols[3]))
     style = rim["style"]
     n = rim.get("spokes", 5)
-    if d < 1.1:
-        return P("yellow", 2) if (px < 0 and py < 0) else cols[1]
+    if d < 0.8:
+        return P("yellow", 2) if (px < 0 and py < 0) else cols[1]        # the centre cap
+    if d < 1.4:
+        return cols[2] if (int(math.degrees(a) // 72) % 2) else cols[1]  # lug nuts around it
     period = 2 * math.pi / n
     sa = (a % period) - period / 2                        # angle from the nearest spoke centre
     w = abs(sa) * d
@@ -624,17 +780,18 @@ def _wheel_sample(px, py, angle, p):
         return cols[2] if lit > 0 else cols[3]
     if style == "turbine":                                # many thin curved blades
         sa2 = ((a + d * 0.35) % period) - period / 2
-        return cols[1] if abs(sa2) * d < 0.4 else (P("night", 1) if d > 2.2 else cols[3])
+        return cols[1] if abs(sa2) * d < 0.42 else (GAP if d > 2.2 else cols[3])
     if style == "mesh":                                   # crossing fine spokes
         a1 = ((a + d * 0.25) % period) - period / 2
         a2 = ((a - d * 0.25) % period) - period / 2
-        on = abs(a1) * d < 0.32 or abs(a2) * d < 0.32
-        return (cols[0] if lit > 0 else cols[2]) if on else P("night", 1)
-    # spoked styles: magnum (wide), fivestar/sixspoke/sevenspoke, three
+        on = abs(a1) * d < 0.3 or abs(a2) * d < 0.3
+        return (cols[0] if lit > 0 else cols[2]) if on else GAP
+    # spoked styles: magnum (wide), fivestar/sixspoke, three; each spoke lit on its leading edge
     width = {"magnum": 0.75, "three": 1.2}.get(style, 0.48)
     if w < width:
-        return cols[0] if lit > 0.2 else (cols[1] if lit > -0.5 else cols[2])
-    return P("night", 1) if d > 2.4 else cols[3]
+        edge = sa < 0
+        return cols[0] if (lit > 0.2 and edge) else (cols[1] if lit > -0.5 else cols[2])
+    return GAP if d > 1.9 else cols[3]
 
 
 # True neutral blacks for the gloss-black wheel: the palette's darks are all tinted blue-purple.
@@ -659,38 +816,15 @@ def _split_sample(px, py, d, a, lit, r_tire, r_rim, n):
     sa = abs((a % period) - period / 2) / period          # 0 on a spoke's centre line, 0.5 between spokes
     if sa < 0.24:                                         # spoke wedge: black, lit edge toward the light
         return BLACK[3] if lit > 0.3 else BLACK[2]
-    return BLACK[0]
-
-
-def _mode(samples):
-    cols = [s for s in samples if s is not None]
-    if len(cols) < len(samples) * 0.5:
-        return TRANSPARENT
-    counts = {}
-    for c in cols:
-        counts[c] = counts.get(c, 0) + 1
-    return max(counts, key=counts.get)
+    return GAP
 
 
 WHEEL_PALETTE = [P("steel", i) for i in range(7)] + [P("night", 0), P("night", 1), P("night", 2), P("yellow", 2),
                                                      P("yellow", 1), P("yellow", 0), P("orange", 2), P("orange", 1)]
 
 
-def _avg_to_palette(samples):
-    cols = [s for s in samples if s is not None]
-    if len(cols) < len(samples) * 0.5:
-        return TRANSPARENT
-    avg = [sum(c[i] for c in cols) / len(cols) for i in range(3)]
-    best, bd = None, 1e9
-    for c in WHEEL_PALETTE:
-        dd = sum((c[i] - avg[i]) ** 2 for i in range(3))
-        if dd < bd:
-            best, bd = c, dd
-    return best
-
-
 def wheel_size(p):
-    s = int(math.ceil(p["wheel_r"] * 2)) + 4
+    s = int(math.ceil(p["wheel_r"] * S * 2)) + 4
     return s + (s % 2)
 
 
@@ -714,14 +848,43 @@ def wheel_frames(p):
                 samples = []
                 for sy in range(sub):
                     for sx in range(sub):
-                        px = x + (sx + 0.5) / sub - c
-                        py = y + (sy + 0.5) / sub - c
+                        ux = (x + (sx + 0.5) / sub - c) / S
+                        uy = (y + (sy + 0.5) / sub - c) / S
                         for a in angles:
-                            samples.append(_wheel_sample(px, py, a, p))
+                            samples.append(_wheel_sample(ux, uy, a, p))
                 # the split wheel keeps its own colours when blurred, so a blurred wheel matches a sharp one
-                img[y, x] = _mode(samples) if f < ROT_FRAMES or p["rim"]["style"] == "split" else _avg_to_palette(samples)
+                img[y, x] = _mode_gap(samples) if f < ROT_FRAMES or p["rim"]["style"] == "split" else _avg_gap(samples)
         frames.append(img)
     return np.concatenate(frames, axis=1)
+
+
+def _mode_gap(samples):
+    """Most common colour; an open gap between spokes stays see-through."""
+    inside = [s for s in samples if s is not None]
+    if len(inside) < len(samples) * 0.5:
+        return TRANSPARENT
+    gaps = sum(1 for s in inside if s is GAP)
+    cols = [s for s in inside if s is not GAP]
+    if gaps >= len(inside) * 0.5 or not cols:
+        return TRANSPARENT
+    counts = {}
+    for c in cols:
+        counts[c] = counts.get(c, 0) + 1
+    return max(counts, key=counts.get)
+
+
+def _avg_gap(samples):
+    inside = [s for s in samples if s is not None]
+    if len(inside) < len(samples) * 0.5:
+        return TRANSPARENT
+    cols = [P("night", 1) if s is GAP else s for s in inside]
+    avg = [sum(c[i] for c in cols) / len(cols) for i in range(3)]
+    best, bd = None, 1e9
+    for c in WHEEL_PALETTE:
+        dd = sum((c[i] - avg[i]) ** 2 for i in range(3))
+        if dd < bd:
+            best, bd = c, dd
+    return best
 
 
 # --- Visible upgrades -----------------------------------------------------------------------
@@ -749,10 +912,11 @@ def _paint_shape(p, polys, top_index=6):
     shine = np.zeros((CH, cw), dtype=np.uint8)
     for y, x in zip(*np.nonzero(solid)):
         above = y > 0 and solid[y - 1, x]
+        above2 = y > 1 and solid[y - 2, x]
         below = y < CH - 1 and solid[y + 1, x]
         left = x > 0 and solid[y, x - 1]
         right = x < cw - 1 and solid[y, x + 1]
-        i = top_index if not above else (1 if not below else 4)
+        i = top_index if not above else ((top_index - 1) if not above2 else (1 if not below else 4))
         if not left or not right:
             i = min(i, 2)
         idx[y, x] = i
@@ -762,7 +926,7 @@ def _paint_shape(p, polys, top_index=6):
 
 def wing_layers(p):
     x0, x1, deck = _deck(p)
-    d = GROUND - deck                 # deck height above ground, px
+    d = GROUND - deck                 # deck height above ground, profile units
     Yh = lambda h: GROUND - h
     out = {}
     out["wing_ducktail"] = [[(0, Yh(d)), (7, Yh(d + 0.2)), (7, Yh(d + 1.0)), (0.5, Yh(d + 1.8))]]
@@ -786,7 +950,7 @@ def scoop_layer(p):
     return _paint_shape(p, [[(cx - 5, y + 0.3), (cx - 4, y - 2.4), (cx + 4, y - 2.6), (cx + 4.4, y + 0.3)]])[0]
 
 
-def _arch_ring(cx, cy, r0, r1, lift=0.0, steps=14):
+def _arch_ring(cx, cy, r0, r1, lift=0.0, steps=18):
     """Upper half-ring around a wheel arch, from r0 to r1 (a flare's lip)."""
     outer = [(cx + r1 * math.cos(math.pi - math.pi * i / steps), cy - r1 * math.sin(math.pi * i / steps) - lift) for i in range(steps + 1)]
     inner = [(cx + r0 * math.cos(math.pi * i / steps), cy - r0 * math.sin(math.pi - math.pi * i / steps)) for i in range(steps + 1)]
@@ -836,11 +1000,11 @@ def body_part_layers(p):
     paint["rear2"] = [[(-1.0, ry - 1.0), (8, ry - 1.0), (8, ry + 1.4), (-1.0, ry + 2.0)]]
     trim["rear2"] = _fill(cw, [[(-0.6, ry + 0.8), (7, ry + 0.8), (7, ry + 2.6), (-0.6, ry + 2.6)]],
                           lambda x, y: P("steel", 2) if x % 2 == 0 else P("night", 0))
-    # hoods: vented (louvres near the windshield), cowl induction (a bulge facing the glass)
+    # hoods: vented (louvres near the windshield, the turbo glinting through), cowl induction (a bulge facing the glass)
     hx0, hx1, hy = _hood(p)
     vx = hx0 + (hx1 - hx0) * 0.25
     trim["hood1"] = _fill(cw, [[(vx + k * 2.2, hy(vx) - 0.2), (vx + k * 2.2 + 1.2, hy(vx) - 0.2), (vx + k * 2.2 + 1.2, hy(vx) + 0.8), (vx + k * 2.2, hy(vx) + 0.8)]
-                               for k in range(3)], lambda x, y: P("night", 0))
+                               for k in range(4)], lambda x, y: P("orange", 0) if (x + y) % 5 == 0 else P("night", 0))
     cx = hx0 + 1.5
     paint["hood2"] = [[(cx, hy(cx) - 2.2), (cx + 10, hy(cx + 10) - 0.4), (cx + 12, hy(cx + 12) + 0.3), (cx, hy(cx) + 0.3)]]
     # fenders: a flare lip around each arch; the widebody is thicker and runs a bulge along the side
@@ -861,9 +1025,9 @@ def body_part_layers(p):
             continue
         x0, x1, y0, y1 = xs.min(), xs.max(), ys.min(), ys.max()
         for y, x in zip(ys, xs):
-            diag = abs((x - x0) - (y - y0) * (x1 - x0) / max(1, y1 - y0)) < 0.8
+            diag = abs((x - x0) - (y - y0) * (x1 - x0) / max(1, y1 - y0)) < 1.0
             if x in (x0 + 1, x1 - 1) or diag or y == y0 + 1:
-                cage[y, x] = P("steel", 4)
+                cage[y, x] = P("steel", 4) if (x + y) % 3 else P("steel", 5)
     trim["cage"] = cage
     # window film: a mask the game darkens to taste
     tint = canvas(cw, CH)
@@ -878,14 +1042,17 @@ def body_part_layers(p):
 
 
 def trim_extra_layers(p):
-    """True-colour parts: blower through the hood, intercooler behind the nose, side pipes."""
+    """True-colour parts: blower through the hood, intercooler behind the nose, side pipes, a side
+    exit ahead of the rear wheel, and twin tips out the back. Returns the side and rear exhaust spots."""
     cw = width_of(p)
     hx0, hx1, hy = _hood(p)
     cx = hx0 + (hx1 - hx0) * 0.4
     top = hy(cx)
     blower = canvas(cw, CH)
-    _rect(blower, cx - 4, top - 4.5, cx + 4, top + 0.5, lambda x, y: P("steel", 6) if y == int(top - 4.5 + PAD_Y) else (P("steel", 4) if x % 2 else P("steel", 3)))
-    _rect(blower, cx - 3, top - 7.5, cx + 3.5, top - 4.5, lambda x, y: P("night", 1) if x == int(cx + 3.5 + PAD_X) - 1 else P("steel", 5))   # scoop hat
+    top_px = int(round(px_y(top - 4.5)))
+    _rect(blower, cx - 4, top - 4.5, cx + 4, top + 0.5, lambda x, y: P("steel", 6) if y == top_px else (P("steel", 4) if x % 2 else P("steel", 3)))
+    hat_x = int(round(px_x(cx + 3.5))) - 1
+    _rect(blower, cx - 3, top - 7.5, cx + 3.5, top - 4.5, lambda x, y: P("night", 1) if x == hat_x else P("steel", 5))   # scoop hat
     _rect(blower, cx - 5, top - 1.5, cx + 5, top + 0.5, lambda x, y: P("steel", 2))
     intercooler = canvas(cw, CH)
     ix = p["length"] - 2.4
@@ -896,7 +1063,17 @@ def trim_extra_layers(p):
     x1 = p["front_wheel"][0] - p["arch_r"] - 1
     y0 = p["rocker_y"] + 0.6
     _trim_extra(side, cw, np.full((CH, cw), 1), {"kind": "sidepipe", "rect": (x0, y0, x1, y0 + 1.8)}, p)
-    return {"blower": blower, "intercooler": intercooler, "sidepipe": side}, (x0, y0 + 0.9)
+    # side exit: a short turned-down pipe just ahead of the rear wheel
+    exit_ = canvas(cw, CH)
+    sx = p["rear_wheel"][0] + p["arch_r"] + 1.5
+    sy = p["rocker_y"] + 0.4
+    _rect(exit_, sx, sy, sx + 3.2, sy + 1.4, lambda x, y: P("steel", 5) if y == int(round(px_y(sy))) else P("steel", 3))
+    _tip(exit_, int(px_x(sx)) - 1, int(px_y(sy)))
+    dual = canvas(cw, CH)
+    for k, (ex, ey) in enumerate(p["exhaust_tips"][:1] * 2):
+        _tip(dual, int(px_x(ex)) - 1, int(px_y(ey)) + k * 3)
+    return {"blower": blower, "intercooler": intercooler, "sidepipe": side, "sideexit": exit_, "dualtips": dual}, \
+        (x0, y0 + 0.9), (sx, sy + 0.7)
 
 
 def looks_build(p):
@@ -909,10 +1086,10 @@ def looks_build(p):
     for name, img in trims.items():
         save(img, f"{base}/body_{name}_t.png")
     save(scoop_layer(p), f"{base}/scoop.png")
-    trims, side_exhaust = trim_extra_layers(p)
+    trims, side_exhaust, side_exit = trim_extra_layers(p)
     for name, img in trims.items():
         save(img, f"{base}/{name}.png")
-    return side_exhaust
+    return side_exhaust, side_exit
 
 
 RIM_STYLES = ["magnum", "rally", "fivestar", "mesh", "turbine", "phone", "three", "sixspoke", "mesh_black", "steelie_black", "split_black"]
@@ -937,43 +1114,47 @@ def decal_layers(p, idx):
     """White masks clipped to the body side; the game tints them. stripe, flames, number, checker.
     Also returns the door roundel's centre, where the game draws a crew emblem (the CREW decal)."""
     cw = width_of(p)
-    yr = p["rocker_y"] + PAD_Y
+    yr = p["rocker_y"]
     body = (idx >= 0)
     gh = poly_mask(cw, CH, L(p["greenhouse"])) >= 0.5
     out = {k: canvas(cw, CH) for k in ("stripe", "flames", "number", "checker")}
-    fx = p["front_wheel"][0] + PAD_X
-    rx = p["rear_wheel"][0] + PAD_X
-    num_cx = (p["glass"][0][0][0] + p["glass"][0][-1][0]) / 2 + PAD_X if p["glass"] else (rx + fx) / 2
+    fx = px_x(p["front_wheel"][0])
+    rx = px_x(p["rear_wheel"][0])
+    num_cx = px_x((p["glass"][0][0][0] + p["glass"][0][-1][0]) / 2) if p["glass"] else (rx + fx) / 2
     num_cy = None
     for y in range(CH):
+        ly = unit_y(y)
         for x in range(cw):
-            if not body[y, x] or (gh[y, x] and y < _interp_y(p["beltline"], x - PAD_X) + PAD_Y):
+            lx = unit_x(x)
+            if not body[y, x] or (gh[y, x] and ly < _interp_y(p["beltline"], lx)):
                 continue
-            lx = x - PAD_X + 0.5
-            yb = _interp_y(p["beltline"], lx) + PAD_Y
-            s_ = (y + 0.5 - yb) / max(1.0, yr - yb)
+            yb = _interp_y(p["beltline"], lx)
+            s_ = (ly - yb) / max(1.0, yr - yb)
             if 4 < lx < p["length"] - 4 and 0.3 < s_ < 0.42:
                 out["stripe"][y, x] = (255, 255, 255, 255)
             # flames: tongues licking back from the front arch
-            back = fx + p["arch_r"] * 0.2 - x
+            back = (fx + p["arch_r"] * 0.2 * S - x) / S
             if 0 < back < 42 and 0.28 < s_ < 0.92:
                 tongue = math.sin((s_ - 0.28) * 14.0) * 0.5 + 0.5
                 reach = 18 + 22 * tongue
                 if back < reach and (back < reach - 3 or bayer(x, y) > 0.5):
                     out["flames"][y, x] = (255, 255, 255, 255)
-            if s_ > 0.82 and 3 < lx < p["length"] - 3 and ((x // 2) + (y // 2)) % 2 == 0:
+            if s_ > 0.82 and 3 < lx < p["length"] - 3 and ((x // 3) + (y // 3)) % 2 == 0:
                 out["checker"][y, x] = (255, 255, 255, 255)
-            if num_cy is None and abs(lx - (num_cx - PAD_X)) < 0.6 and 0.45 < s_:
-                num_cy = y + 3
-    door = (int(num_cx), num_cy) if num_cy is not None else (int((rx + fx) / 2), int(yr - 6))
+            if num_cy is None and abs(x - num_cx) < 0.6 and 0.45 < s_:
+                num_cy = y + 4
+    door = (int(num_cx), num_cy) if num_cy is not None else (int((rx + fx) / 2), int(px_y(yr) - 9))
     if num_cy is not None:
         cx = int(num_cx)
-        for y in range(num_cy - 4, num_cy + 5):
-            for x in range(cx - 4, cx + 5):
-                if 0 <= y < CH and 0 <= x < cw and body[y, x] and (x - cx) ** 2 + (y - num_cy) ** 2 <= 17:
+        r2 = 38                                       # roundel radius ~6 px
+        for y in range(num_cy - 7, num_cy + 8):
+            for x in range(cx - 7, cx + 8):
+                if 0 <= y < CH and 0 <= x < cw and body[y, x] and (x - cx) ** 2 + (y - num_cy) ** 2 <= r2:
                     out["number"][y, x] = (255, 255, 255, 255)
         # the number itself is cut out of the roundel: a chunky "7"
-        for dx, dy in ((-2, -2), (-1, -2), (0, -2), (1, -2), (1, -1), (0, 0), (0, 1), (-1, 2)):
+        seven = [(-3, -3), (-2, -3), (-1, -3), (0, -3), (1, -3), (2, -3), (1, -2), (2, -2), (0, -1), (1, -1), (0, 0), (-1, 1), (0, 1),
+                 (-1, 2), (-1, 3)]
+        for dx, dy in seven:
             if 0 <= num_cy + dy < CH:
                 out["number"][num_cy + dy, cx + dx] = TRANSPARENT
     return out, door
@@ -982,18 +1163,19 @@ def decal_layers(p, idx):
 # --- Output ----------------------------------------------------------------------------------
 
 def _driver_anchor(p):
-    """Top-left of the 8x9 driver bust: on the biggest side window, toward its back, sitting low."""
+    """Top-left of the driver bust (fx/drivers.png): on the biggest side window, toward its back, sitting low."""
+    bust_h = 13
     if not p["glass"]:
         xs = [x for x, _ in p["greenhouse"]]
-        return [min(xs) + 3 + PAD_X, p["beltline"][0][1] - 9 + PAD_Y]     # roadster: just behind the screen
-    main = max(p["glass"], key=lambda g: max(x for x, _ in g) - min(x for x, _ in g))
+        return [px_x(min(xs) + 3), px_y(p["beltline"][0][1]) - bust_h]     # roadster: just behind the screen
+    main = _main_glass(p)
     x0 = min(x for x, _ in main)
     x1 = max(x for x, _ in main)
     bottom = max(y for _, y in main)
-    return [x0 + (x1 - x0) * 0.38 + PAD_X, bottom - 8.5 + PAD_Y]
+    return [px_x(x0 + (x1 - x0) * 0.38), px_y(bottom) - bust_h + 0.5]
 
 
-def sprite_json(p, side_exhaust=None, door=None):
+def sprite_json(p, side_exhaust=None, door=None, side_exit=None):
     hx0, hy0, hx1, hy1 = p["head_lamp"]
     tx0, ty0, tx1, ty1 = p["tail_lamp"]
     ex, ey = p["exhaust"]
@@ -1001,21 +1183,23 @@ def sprite_json(p, side_exhaust=None, door=None):
         "dir": f"cars/{p['id']}",
         "width": width_of(p),
         "height": CH,
-        "rearWheel": [p["rear_wheel"][0] + PAD_X, p["rear_wheel"][1] + PAD_Y],
-        "frontWheel": [p["front_wheel"][0] + PAD_X, p["front_wheel"][1] + PAD_Y],
+        "scale": S,
+        "rearWheel": [px_x(p["rear_wheel"][0]), px_y(p["rear_wheel"][1])],
+        "frontWheel": [px_x(p["front_wheel"][0]), px_y(p["front_wheel"][1])],
         "wheelSize": wheel_size(p),
         "wheelFrames": ROT_FRAMES,
         "blurFrames": BLUR_FRAMES,
         "spokes": p["rim"].get("spokes", 5),
-        "headlight": [hx1 + PAD_X, (hy0 + hy1) / 2 + PAD_Y],
-        "taillight": [tx0 + PAD_X, (ty0 + ty1) / 2 + PAD_Y],
-        "exhaust": [ex + PAD_X, ey + PAD_Y],
-        "groundY": GROUND + PAD_Y,
-        "frontX": p["length"] + PAD_X,
+        "headlight": [px_x(hx1), px_y((hy0 + hy1) / 2)],
+        "taillight": [px_x(tx0), px_y((ty0 + ty1) / 2)],
+        "exhaust": [px_x(ex), px_y(ey)],
+        "groundY": px_y(GROUND),
+        "frontX": px_x(p["length"]),
         "popup": bool(p.get("popup")),
         "driver": _driver_anchor(p),
         "wheelRadius10": int(round(p["wheel_r"] * 10)),
-        "sideExhaust": [side_exhaust[0] + PAD_X, side_exhaust[1] + PAD_Y] if side_exhaust else None,
+        "sideExhaust": [px_x(side_exhaust[0]), px_y(side_exhaust[1])] if side_exhaust else None,
+        "sideExit": [px_x(side_exit[0]), px_y(side_exit[1])] if side_exit else None,
         "door": list(door) if door else None,
     }
 
@@ -1030,6 +1214,7 @@ def build(p):
     lights = lights_layer(p)
     wells = wells_layer(p)
     wheels = wheel_frames(p)
+    shadow = shadow_layer(p)
     base = f"cars/{p['id']}"
     save(body, f"{base}/body.png")
     save(normal_layer(p, nidx), f"{base}/body_n.png")
@@ -1038,20 +1223,21 @@ def build(p):
     save(trim, f"{base}/trim.png")
     save(lights, f"{base}/lights.png")
     save(wells, f"{base}/wells.png")
+    save(shadow, f"{base}/shadow.png")
     save(wheels, f"{base}/wheel.png")
-    side_exhaust = looks_build(p)
+    side_exhaust, side_exit = looks_build(p)
     decals, door = decal_layers(p, idx)
     for name, img in decals.items():
         save(img, f"{base}/decal_{name}.png")
     with open(os.path.join(ASSETS, base, "sprite.json"), "w") as f:
-        json.dump(sprite_json(p, side_exhaust, door), f, indent=2)
-    return body, idx, trim, lights, wells, wheels, popup, pidx
+        json.dump(sprite_json(p, side_exhaust, door, side_exit), f, indent=2)
+    return body, idx, trim, lights, wells, wheels, popup, pidx, shadow
 
 
 # --- Preview (for checking the art, not used by the game) ----------------------------------
 
 def preview_image(p, layers, ramp, lit=True, bg=None):
-    body, idx, trim, lights, wells, wheels, popup, pidx = layers
+    body, idx, trim, lights, wells, wheels, popup, pidx, shadow = layers
     cw = width_of(p)
     img = np.zeros((CH, cw, 4), dtype=np.uint8)
     img[:] = bg if bg is not None else P("night", 2)
@@ -1060,11 +1246,13 @@ def preview_image(p, layers, ramp, lit=True, bg=None):
         m = src[..., 3] > 0
         img[m] = src[m]
 
+    a = shadow[..., 3:4].astype(np.float32) / 255.0
+    img[..., :3] = (img[..., :3] * (1 - a) + shadow[..., :3] * a).astype(np.uint8)
     blit(wells)
     ws = wheel_size(p)
     for (cx, cy) in (p["rear_wheel"], p["front_wheel"]):
-        fx = int(math.floor(cx + PAD_X - ws / 2))
-        fy = int(math.floor(cy + PAD_Y - ws / 2))
+        fx = int(math.floor(px_x(cx) - ws / 2))
+        fy = int(math.floor(px_y(cy) - ws / 2))
         frame = wheels[:, 0:ws]
         for y in range(ws):
             for x in range(ws):

@@ -1,45 +1,50 @@
 {
   "dir": "cars/stellar",
-  "width": 91,
-  "height": 40,
+  "width": 133,
+  "height": 56,
+  "scale": 1.5,
   "rearWheel": [
-    27,
-    29.3
+    38.5,
+    41.95
   ],
   "frontWheel": [
-    69,
-    29.3
+    101.5,
+    41.95
   ],
-  "wheelSize": 18,
+  "wheelSize": 24,
   "wheelFrames": 4,
   "blurFrames": 3,
   "spokes": 8,
   "headlight": [
-    84,
-    23.4
+    124.0,
+    33.099999999999994
   ],
   "taillight": [
-    3.8,
-    23.9
+    3.7,
+    33.849999999999994
   ],
   "exhaust": [
-    6.0,
-    30.1
+    7.0,
+    43.150000000000006
   ],
-  "groundY": 35.5,
-  "frontX": 87,
+  "groundY": 51.25,
+  "frontX": 128.5,
   "popup": false,
   "driver": [
-    40.46,
-    11.2
+    58.69,
+    15.049999999999997
   ],
   "wheelRadius10": 62,
   "sideExhaust": [
-    35.378,
-    32.5
+    51.067,
+    46.75
+  ],
+  "sideExit": [
+    51.817,
+    46.15
   ],
   "door": [
-    42,
-    28
+    61,
+    40
   ]
 }

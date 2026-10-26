@@ -1,45 +1,50 @@
 {
   "dir": "cars/overture",
-  "width": 88,
-  "height": 40,
+  "width": 128,
+  "height": 56,
+  "scale": 1.5,
   "rearWheel": [
-    19,
-    29.5
+    26.5,
+    42.25
   ],
   "frontWheel": [
-    66,
-    29.5
+    97.0,
+    42.25
   ],
-  "wheelSize": 16,
+  "wheelSize": 22,
   "wheelFrames": 4,
   "blurFrames": 3,
   "spokes": 5,
   "headlight": [
-    84.2,
-    24.1
+    124.30000000000001,
+    34.150000000000006
   ],
   "taillight": [
-    3.8,
-    23.700000000000003
+    3.7,
+    33.550000000000004
   ],
   "exhaust": [
-    6.0,
-    30.0
+    7.0,
+    43.0
   ],
-  "groundY": 35.5,
-  "frontX": 84,
+  "groundY": 51.25,
+  "frontX": 124.0,
   "popup": false,
   "driver": [
-    38.22,
-    11.0
+    55.33,
+    14.75
   ],
   "wheelRadius10": 60,
   "sideExhaust": [
-    27.14,
-    32.4
+    38.71,
+    46.599999999999994
+  ],
+  "sideExit": [
+    39.46,
+    45.99999999999999
   ],
   "door": [
-    40,
-    28
+    58,
+    40
   ]
 }

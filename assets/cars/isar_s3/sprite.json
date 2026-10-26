@@ -1,45 +1,50 @@
 {
   "dir": "cars/isar_s3",
-  "width": 91,
-  "height": 40,
+  "width": 133,
+  "height": 56,
+  "scale": 1.5,
   "rearWheel": [
-    24,
-    29.5
+    34.0,
+    42.25
   ],
   "frontWheel": [
-    70,
-    29.5
+    103.0,
+    42.25
   ],
-  "wheelSize": 16,
+  "wheelSize": 22,
   "wheelFrames": 4,
   "blurFrames": 3,
   "spokes": 10,
   "headlight": [
-    86.6,
-    24.0
+    127.89999999999999,
+    34.0
   ],
   "taillight": [
-    3.8,
-    23.7
+    3.7,
+    33.55
   ],
   "exhaust": [
-    6.0,
-    30.0
+    7.0,
+    43.0
   ],
-  "groundY": 35.5,
-  "frontX": 87,
+  "groundY": 51.25,
+  "frontX": 128.5,
   "popup": false,
   "driver": [
-    44.22,
-    10.600000000000001
+    64.33,
+    14.150000000000002
   ],
   "wheelRadius10": 60,
   "sideExhaust": [
-    32.14,
-    32.4
+    46.21,
+    46.599999999999994
+  ],
+  "sideExit": [
+    46.96,
+    45.99999999999999
   ],
   "door": [
-    46,
-    28
+    67,
+    39
   ]
 }

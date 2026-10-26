@@ -1,45 +1,50 @@
 {
   "dir": "cars/quaranta",
-  "width": 88,
-  "height": 40,
+  "width": 128,
+  "height": 56,
+  "scale": 1.5,
   "rearWheel": [
-    19,
-    29.3
+    26.5,
+    41.95
   ],
   "frontWheel": [
-    65,
-    29.3
+    95.5,
+    41.95
   ],
-  "wheelSize": 18,
+  "wheelSize": 24,
   "wheelFrames": 4,
   "blurFrames": 3,
   "spokes": 7,
   "headlight": [
-    84.2,
-    27.4
+    124.30000000000001,
+    39.099999999999994
   ],
   "taillight": [
-    3.8,
-    23.2
+    3.7,
+    32.8
   ],
   "exhaust": [
-    6.0,
-    30.3
+    7.0,
+    43.45
   ],
-  "groundY": 35.5,
-  "frontX": 84,
+  "groundY": 51.25,
+  "frontX": 124.0,
   "popup": true,
   "driver": [
-    43.6,
-    12.2
+    63.400000000000006,
+    16.549999999999997
   ],
   "wheelRadius10": 62,
   "sideExhaust": [
-    27.378,
-    32.7
+    39.067,
+    47.05
+  ],
+  "sideExit": [
+    39.817,
+    46.449999999999996
   ],
   "door": [
-    46,
-    28
+    67,
+    40
   ]
 }

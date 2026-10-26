@@ -1,45 +1,50 @@
 {
   "dir": "cars/shirasagi",
-  "width": 92,
-  "height": 40,
+  "width": 134,
+  "height": 56,
+  "scale": 1.5,
   "rearWheel": [
-    21,
-    28.9
+    29.5,
+    41.349999999999994
   ],
   "frontWheel": [
-    71,
-    28.9
+    104.5,
+    41.349999999999994
   ],
-  "wheelSize": 18,
+  "wheelSize": 24,
   "wheelFrames": 4,
   "blurFrames": 3,
   "spokes": 6,
   "headlight": [
-    88.4,
-    23.5
+    130.60000000000002,
+    33.25
   ],
   "taillight": [
-    3.8,
-    23.6
+    3.7,
+    33.400000000000006
   ],
   "exhaust": [
-    6.0,
-    29.8
+    7.0,
+    42.7
   ],
-  "groundY": 35.5,
-  "frontX": 88,
+  "groundY": 51.25,
+  "frontX": 130.0,
   "popup": false,
   "driver": [
-    45.84,
-    10.600000000000001
+    66.76,
+    14.150000000000002
   ],
   "wheelRadius10": 66,
   "sideExhaust": [
-    29.854,
-    32.2
+    42.781,
+    46.3
+  ],
+  "sideExit": [
+    43.531,
+    45.699999999999996
   ],
   "door": [
-    48,
-    28
+    70,
+    39
   ]
 }

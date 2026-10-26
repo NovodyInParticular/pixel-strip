@@ -1,45 +1,50 @@
 {
   "dir": "cars/spiral_sa",
-  "width": 86,
-  "height": 40,
+  "width": 125,
+  "height": 56,
+  "scale": 1.5,
   "rearWheel": [
-    22,
-    29.5
+    31.0,
+    42.25
   ],
   "frontWheel": [
-    66,
-    29.5
+    97.0,
+    42.25
   ],
-  "wheelSize": 16,
+  "wheelSize": 22,
   "wheelFrames": 4,
   "blurFrames": 3,
   "spokes": 5,
   "headlight": [
-    82.4,
-    26.6
+    121.60000000000001,
+    37.900000000000006
   ],
   "taillight": [
-    3.8,
-    23.8
+    3.7,
+    33.7
   ],
   "exhaust": [
-    6.0,
-    30.2
+    7.0,
+    43.3
   ],
-  "groundY": 35.5,
-  "frontX": 82,
+  "groundY": 51.25,
+  "frontX": 121.0,
   "popup": true,
   "driver": [
-    37.84,
-    11.2
+    54.760000000000005,
+    15.049999999999997
   ],
   "wheelRadius10": 60,
   "sideExhaust": [
-    30.14,
-    32.6
+    43.21,
+    46.900000000000006
+  ],
+  "sideExit": [
+    43.96,
+    46.3
   ],
   "door": [
-    40,
-    28
+    58,
+    40
   ]
 }

@@ -384,8 +384,9 @@ def poles():
 
 # --- Road ------------------------------------------------------------------------------------
 
-ROAD_W, ROAD_H = 256, 67
-FAR_LANE_Y, NEAR_LANE_Y = 22, 50     # wheel contact rows inside the road layer
+ROAD_W, ROAD_H = 256, 95
+FAR_LANE_Y, NEAR_LANE_Y = 30, 74     # wheel contact rows inside the road layer (sized for ~27 px/m cars)
+CENTRE_Y = (FAR_LANE_Y + NEAR_LANE_Y) // 2
 
 
 def road():
@@ -408,13 +409,13 @@ def road():
     hline(out, 0, ROAD_W, 5, P("steel", 4))                        # far lane edge
     for x in range(ROAD_W):                                        # centre line, slightly worn
         if RNG.random() > 0.08:
-            put(out, x, 34, P("yellow", 0))
-            put(out, x, 35, P("orange", 2) if RNG.random() > 0.3 else P("yellow", 0))
+            put(out, x, CENTRE_Y, P("yellow", 0))
+            put(out, x, CENTRE_Y + 1, P("orange", 2) if RNG.random() > 0.3 else P("yellow", 0))
     hline(out, 0, ROAD_W, ROAD_H - 9, P("steel", 4))                # near lane edge
     # puddle-ish sheen streaks reflecting neon
     for _ in range(14):
         sx, sy = _r(0, ROAD_W), _r(8, ROAD_H - 12)
-        if abs(sy - 34) > 3:
+        if abs(sy - CENTRE_Y) > 3:
             for k in range(_r(4, 12)):
                 put(out, sx + k, sy, P("night", 3) if k % 3 else P("magenta", 0))
     return out
@@ -434,7 +435,7 @@ def rubber():
 
 
 def start_line():
-    w, h = 10, ROAD_H
+    w, h = int(ROAD_H * 0.12) + 4, ROAD_H
     out = canvas(w, h)
     for y in range(3, h - 7):
         x0 = int((h - y) * 0.12)
@@ -444,7 +445,7 @@ def start_line():
 
 
 def finish_line():
-    w, h = 16, ROAD_H
+    w, h = int(ROAD_H * 0.12) + 9, ROAD_H
     out = canvas(w, h)
     for y in range(3, h - 7):
         x0 = int((h - y) * 0.12)

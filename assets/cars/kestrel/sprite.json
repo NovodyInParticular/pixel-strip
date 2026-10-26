@@ -1,45 +1,50 @@
 {
   "dir": "cars/kestrel",
-  "width": 84,
-  "height": 40,
+  "width": 122,
+  "height": 56,
+  "scale": 1.5,
   "rearWheel": [
-    21,
-    29.9
+    29.5,
+    42.849999999999994
   ],
   "frontWheel": [
-    65,
-    29.9
+    95.5,
+    42.849999999999994
   ],
-  "wheelSize": 16,
+  "wheelSize": 22,
   "wheelFrames": 4,
   "blurFrames": 3,
   "spokes": 6,
   "headlight": [
-    80.6,
-    26.700000000000003
+    118.89999999999999,
+    38.050000000000004
   ],
   "taillight": [
-    3.8,
-    24.0
+    3.7,
+    34.0
   ],
   "exhaust": [
-    6.0,
-    29.6
+    7.0,
+    42.400000000000006
   ],
-  "groundY": 35.5,
-  "frontX": 80,
+  "groundY": 51.25,
+  "frontX": 118.0,
   "popup": true,
   "driver": [
-    42.7,
-    11.0
+    62.050000000000004,
+    14.75
   ],
   "wheelRadius10": 56,
   "sideExhaust": [
-    28.664,
-    32.0
+    40.996,
+    46.0
+  ],
+  "sideExit": [
+    41.746,
+    45.4
   ],
   "door": [
-    44,
-    28
+    64,
+    39
   ]
 }

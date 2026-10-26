@@ -1,45 +1,50 @@
 {
   "dir": "cars/typhoon",
-  "width": 91,
-  "height": 40,
+  "width": 133,
+  "height": 56,
+  "scale": 1.5,
   "rearWheel": [
-    23,
-    29.1
+    32.5,
+    41.650000000000006
   ],
   "frontWheel": [
-    68,
-    29.1
+    100.0,
+    41.650000000000006
   ],
-  "wheelSize": 18,
+  "wheelSize": 24,
   "wheelFrames": 4,
   "blurFrames": 3,
   "spokes": 6,
   "headlight": [
-    87.2,
-    26.8
+    128.8,
+    38.2
   ],
   "taillight": [
-    3.8,
-    23.700000000000003
+    3.7,
+    33.550000000000004
   ],
   "exhaust": [
-    6.0,
-    30.3
+    7.0,
+    43.45
   ],
-  "groundY": 35.5,
-  "frontX": 87,
+  "groundY": 51.25,
+  "frontX": 128.5,
   "popup": true,
   "driver": [
-    38.84,
-    11.2
+    56.260000000000005,
+    15.049999999999997
   ],
   "wheelRadius10": 64,
   "sideExhaust": [
-    31.616,
-    32.7
+    45.424,
+    47.05
+  ],
+  "sideExit": [
+    46.174,
+    46.449999999999996
   ],
   "door": [
-    41,
-    28
+    59,
+    40
   ]
 }

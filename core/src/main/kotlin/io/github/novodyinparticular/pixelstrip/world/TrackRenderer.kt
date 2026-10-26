@@ -208,6 +208,6 @@ class TrackRenderer(val def: TrackDef, private val art: Art) {
     companion object {
         const val SCREEN_H = 270f
         /** The car sprite is 96 px for about 5 m of car. */
-        const val PX_PER_M = 19.2f
+        const val PX_PER_M = 28.8f
     }
 }
