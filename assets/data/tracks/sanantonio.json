@@ -11,14 +11,14 @@
     0.78
   ],
   "asphaltHaze": 0.25,
-  "roadTop": 203,
+  "roadTop": 175,
   "roadBottom": 262,
   "bloomGain": 1.5,
   "headlights": true,
   "stars": 30,
   "starsMaxTop": 115,
-  "farLaneTop": 225,
-  "nearLaneTop": 253,
+  "farLaneTop": 205,
+  "nearLaneTop": 249,
   "lampPool": [
     1.0,
     0.78,
@@ -51,25 +51,25 @@
     },
     {
       "image": "far.png",
-      "top": 66,
+      "top": 38,
       "parallax": 0.08,
       "blinkers": "blinkers.txt"
     },
     {
       "image": "mid.png",
       "glow": "mid_glow.png",
-      "top": 28,
+      "top": 0,
       "parallax": 0.2
     },
     {
       "image": "stands.png",
       "glow": "stands_glow.png",
-      "top": 133,
+      "top": 105,
       "parallax": 0.55
     },
     {
       "image": "crowd.png",
-      "top": 147,
+      "top": 119,
       "parallax": 0.55,
       "frames": 3,
       "frameTime": 0.18,
@@ -78,7 +78,7 @@
     {
       "image": "poles.png",
       "glow": "poles_glow.png",
-      "top": 57,
+      "top": 29,
       "parallax": 0.9,
       "lamp": [
         198,
@@ -87,13 +87,13 @@
     },
     {
       "image": "wall.png",
-      "top": 157,
+      "top": 129,
       "parallax": 0.9,
       "glow": "wall_glow.png"
     },
     {
       "image": "road.png",
-      "top": 203,
+      "top": 175,
       "parallax": 1.0
     }
   ],
@@ -101,34 +101,34 @@
     {
       "image": "rubber.png",
       "at": -14,
-      "top": 203
+      "top": 175
     },
     {
       "image": "start_line.png",
       "at": 0,
       "dx": -2,
-      "top": 203
+      "top": 175
     },
     {
       "image": "welcome.png",
       "glow": "welcome_glow.png",
       "at": 0,
       "dx": -70,
-      "top": 143,
+      "top": 115,
       "parallax": 0.9
     },
     {
       "image": "finish_line.png",
       "at": "finish",
       "dx": -4,
-      "top": 203
+      "top": 175
     },
     {
       "image": "finish_gantry.png",
       "glow": "finish_gantry_glow.png",
       "at": "finish",
       "dx": -28,
-      "top": 92,
+      "top": 64,
       "parallax": 0.9
     }
   ],

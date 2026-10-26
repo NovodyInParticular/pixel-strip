@@ -473,8 +473,8 @@ def road(base_a, base_b, edge, wet=False, snow=False, patches=False):
     hline(out, 0, neon.ROAD_W, 5, P("steel", 5))
     for x in range(neon.ROAD_W):
         if (x // 8) % 2 == 0 or not snow:
-            put(out, x, 34, P("yellow", 0) if not snow else P("steel", 6))
-            put(out, x, 35, P("yellow", 0) if not snow else P("steel", 6))
+            put(out, x, neon.CENTRE_Y, P("yellow", 0) if not snow else P("steel", 6))
+            put(out, x, neon.CENTRE_Y + 1, P("yellow", 0) if not snow else P("steel", 6))
     hline(out, 0, neon.ROAD_W, H_ - 9, P("steel", 5))
     if patches:
         for _ in range(6):
