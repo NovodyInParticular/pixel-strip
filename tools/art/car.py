@@ -534,7 +534,7 @@ def _windshield(out, cw, poly, dim=False):
         if dim:
             out[y, x] = P("night", 2)
         else:
-            out[y, x] = P("blue", 2) if y == top[x] else (P("night", 3) if (x + y) % 4 else P("blue", 1))
+            out[y, x] = P("night", 3) if y == top[x] else P("night", 2)
 
 
 def _chrome_bar(out, cw, poly):
