@@ -817,7 +817,9 @@ class CockpitView(
  */
 class RearView(private val white: Texture, private val paint: Color, private val widthM: Float = 1.78f, private val heightM: Float = 1.3f) {
     var braking = false
+    /** The backfire's size (0 = none), and the small nitrous flame. */
     var flame = 0f
+    var spray = false
     var smoke = 0f
 
     fun draw(b: SpriteBatch, x: Float, y: Float, k: Float, time: Float) {
@@ -851,6 +853,10 @@ class RearView(private val white: Texture, private val paint: Color, private val
         b.setColor(0.85f, 0.85f, 0.8f, 1f)
         b.draw(white, x - 0.25f * k, y + 0.36f * k, 0.5f * k, max(1f, 0.12f * k))
         // flames out the pipes on shifts and nitrous, smoke off the tyres at launch
+        if (spray) {
+            b.setColor(0.65f, 0.8f, 1f, 0.9f)
+            b.draw(white, x + w * 0.31f, y + 0.2f * k, 0.08f * k, -0.12f * k)
+        }
         if (flame > 0f) {
             b.setColor(1f, 0.55f + 0.3f * (time * 30f % 1f), 0.2f, 0.9f)
             b.draw(white, x + w * 0.3f, y + 0.18f * k, 0.12f * k, -0.25f * k * flame)

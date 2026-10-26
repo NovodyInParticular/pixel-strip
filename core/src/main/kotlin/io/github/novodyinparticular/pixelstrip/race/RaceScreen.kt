@@ -192,6 +192,7 @@ class RaceScreen(
     private var slowMo = false
     private var print = 0f
     private val flame = FloatArray(2)       // backfire timers: player, ghost
+    private val flameSize = FloatArray(2) { 1f }   // how big that backfire is: a perfect shift on boost spits a big one
 
     // Desktop screenshot autoplay
     private val shots = game.shots
@@ -450,7 +451,10 @@ class RaceScreen(
             playerView.update(dt, player.rollW, player.driveW)
             ghostView.update(dt, ghost.rollW, ghost.driveW)
             for (i in 0..1) flame[i] = max(0f, flame[i] - dt)
-            if (phase == Phase.COUNTDOWN && player.limiter && boosted(player.def) && MathUtils.random() < 0.04f) flame[0] = 0.06f   // pops on the limiter
+            if (phase == Phase.COUNTDOWN && player.limiter && boosted(player.def) && MathUtils.random() < 0.04f) {
+                flame[0] = 0.06f                                                  // pops on the limiter
+                flameSize[0] = 1f
+            }
             smokeTimer += dt
             if (smokeTimer > 1f / 60f) {
                 smokeTimer = 0f
@@ -553,8 +557,11 @@ class RaceScreen(
                     }
                     game.audio.play(Sfx.Kind.CLUNK, if (isPlayer) 0.8f else 0.35f)
                     if (boosted(car.def)) {
-                        flame[lane] = 0.14f                   // backfire through the pipes
-                        game.audio.play(Sfx.Kind.POP, if (isPlayer) 0.6f else 0.3f)
+                        // backfire through the pipes; nailing the shift on boost spits a big one
+                        val perfect = e.rating == Vehicle.Rating.PERFECT
+                        flame[lane] = if (perfect) PERFECT_FLAME_S else 0.14f
+                        flameSize[lane] = if (perfect) PERFECT_FLAME_SIZE else 1f
+                        game.audio.play(Sfx.Kind.POP, (if (isPlayer) 0.6f else 0.3f) * if (perfect) 1.4f else 1f)
                     }
                     if (!isPlayer) continue
                     shake = max(shake, 1.2f)
@@ -584,10 +591,16 @@ class RaceScreen(
         flashColor.set(c)
     }
 
-    /** Only forced induction (a turbo, a blower, or a factory turbo) spits flames: backfires, limiter pops, the spray. */
+    /** Only forced induction (a turbo, a blower, or a factory turbo) backfires: shifts, limiter pops. */
     private fun boosted(def: CarDef) = def.boostGain > 0f || def.blowerGain > 0f || def.stockTurbo
 
-    private fun flameOn(car: Vehicle, lane: Int) = boosted(car.def) && (flame[lane] > 0f || (car.nitrousActive && car.throttle > 0f))
+    /** A backfire out the pipes right now. */
+    private fun backfire(car: Vehicle, lane: Int) = boosted(car.def) && flame[lane] > 0f
+
+    /** The small steady flame while the nitrous sprays, boosted or not. */
+    private fun spraying(car: Vehicle) = car.nitrousActive && car.throttle > 0f
+
+    private fun flameOn(car: Vehicle, lane: Int) = backfire(car, lane) || spraying(car)
 
     /** Smoke and rubber from spinning tyres, heat haze off the pipes, nitrous purges while staged. */
     private fun emitCarEffects(car: Vehicle, view: CarRenderer, ground: Float, lane: Int) {
@@ -676,7 +689,8 @@ class RaceScreen(
         // Flames first: they matter most when they're on
         if (flameOn(player, 0)) {
             val (ex, ey) = playerView.exhaustAt(playerX, nearGround)
-            lights.add(ex - 6f, ey, 14f, 1f, 0.5f, 0.18f, 80f)
+            val big = if (backfire(player, 0)) flameSize[0] else 0.6f
+            lights.add(ex - 6f * big, ey, 14f * big, 1f, 0.5f, 0.18f, 80f * big)
         }
         // Streetlamps near the car
         lamps.clear()
@@ -697,10 +711,23 @@ class RaceScreen(
         if (!flameOn(car, lane)) return
         val (ex, ey) = view.exhaustAt(x, ground)
         val f = ((trackView.time * 25f).toInt() + lane) % 3
-        val nitro = car.nitrousActive
-        batch.setColor(if (nitro) 0.75f else 1f, if (nitro) 0.85f else 1f, 1f, 1f)
-        batch.draw(flameTex, ex - 18f, ey - 4f, f * 18, 0, 18, 9)
+        // the spray's small blue flame first, so a backfire always shows over it
+        if (spraying(car)) {
+            batch.setColor(0.7f, 0.82f, 1f, 1f)
+            flameSprite(ex, ey, (f + 1) % 3, NOS_FLAME_SIZE)
+        }
+        if (backfire(car, lane)) {
+            batch.color = Color.WHITE
+            flameSprite(ex, ey, f, flameSize[lane])
+        }
         batch.color = Color.WHITE
+    }
+
+    /** The flame sprite's frame [f] out of the pipe at (ex, ey), [s] times its size, licking back from the tip. */
+    private fun flameSprite(ex: Float, ey: Float, f: Int, s: Float) {
+        val fw = 18f * s
+        val fh = 9f * s
+        batch.draw(flameTex, floor(ex - fw), floor(ey + 0.5f - fh / 2f), fw, fh, f * 18, 0, 18, 9, false, false)
     }
 
     private fun draw(dt: Float) {
@@ -842,7 +869,8 @@ class RaceScreen(
 
     private fun drawCockpitScene(w: Int, h: Int, t: Float) {
         val opp = if (!solo) ghost.x else null
-        opponentRear.flame = if (flameOn(ghost, 1)) 1f else 0f
+        opponentRear.flame = if (backfire(ghost, 1)) flameSize[1] else 0f
+        opponentRear.spray = spraying(ghost)
         opponentRear.smoke = if (ghost.slipSpeed > 1.5f) (ghost.slipSpeed / 12f).coerceIn(0.3f, 1f) else 0f
         opponentRear.braking = phase == Phase.FINISHED || ghost.brake > 0f
         cockpit.draw(batch, w, h, eyeX(), opp, opponentRear, distanceM, t, shakeX, shakeY)
@@ -1202,11 +1230,15 @@ class RaceScreen(
         const val STEP = 1f / 240f
         const val VIEW_SWITCH_S = 0.6f
         const val SHIFT_JOLT = 2.5f
+        /** A perfect shift on boost: the backfire's length (s) and size; the nitrous flame's size. */
+        const val PERFECT_FLAME_S = 0.28f
+        const val PERFECT_FLAME_SIZE = 1.9f
+        const val NOS_FLAME_SIZE = 0.7f
         /** Where the hint banner's top reference sits in the cockpit view (it normally hangs from the top of the screen). */
         const val HINT_COCKPIT_TOP = 172f
         const val EYE_BACK_M = 1.9f
         const val BURNOUT_X = -9f
-        const val CAM_LEAD = 0.42f
+        const val CAM_LEAD = 0.56f
         const val TREE_DX = 16f
         const val TREE_BASE_TOP = 240f
         const val TACH_Y = 120f
