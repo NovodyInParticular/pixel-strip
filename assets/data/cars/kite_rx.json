@@ -39,7 +39,7 @@
     "charges": 0,
     "seconds": 0
   },
-  "defaultPaint": 6,
+  "defaultPaint": 0,
   "engine": {
     "layout": "i4",
     "cylinders": 4,

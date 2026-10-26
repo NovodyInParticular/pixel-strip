@@ -170,10 +170,14 @@ def photo_split(p, photo, region, body_px, glass_px):
         off_colour = (sat > 0.45) & (dh > 0.12)            # lamps, markers, badges in another colour
     else:
         same = (sat < 0.25) & (v > 0.5 * ref_v)
-        off_colour = sat > 0.45
+        off_colour = (sat > 0.45) & (v > 0.4)               # lamps are bright; a dull tint is just the paint in shadow
     black_trim = v < min(0.16, 0.4 * ref_v)                             # on a dark car, dark is mostly just paint
+    if ref_v < 0.4:
+        black_trim &= ~body_px                                          # and its sides are all paint
     # the body sides are paint unless a pixel is clearly something else; above the beltline only what matches
     paint = np.where(body_px, ~off_colour & ~black_trim, same | ((v > 0.85) & (sat < 0.3)))
+    if ref_v < 0.4:
+        paint |= ~off_colour                    # a dark car's pillars and shoulders are its paint, however dark
     paint &= region & ~glass_px
     # the silhouette's own edge is paint: a stray background pixel there would read as a hole
     pad = np.pad(region, 1)
@@ -190,6 +194,11 @@ def photo_split(p, photo, region, body_px, glass_px):
     knots = np.maximum.accumulate(knots + np.arange(6) * 1e-3)
     shade = np.interp(lum, knots, [1, 3, 4, 5, 6, 7])
     if ref_v < 0.4:
+        # a dark car's photo is mostly reflections: blur them along the panels, keep the light-to-dark fall down the side
+        sp = np.pad(shade, ((0, 0), (3, 3)), mode="edge")
+        shade = sum(sp[:, i:i + shade.shape[1]] for i in range(7)) / 7
+        rows = np.array([np.median(shade[y][paint[y]]) if paint[y].any() else 4.0 for y in range(shade.shape[0])])
+        shade = 0.8 * rows[:, None] + 0.2 * shade      # mostly the side's top-to-bottom shading, not the scenery
         shade = 4 + (shade - 4) * 0.65          # a dark car's sky reflections are harsh; any other colour would look dirty
     idx = np.clip(np.round(shade), 1, 7).astype(np.int32)
     trim = canvas(photo.shape[1], CH)

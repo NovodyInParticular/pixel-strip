@@ -105,5 +105,6 @@ Engine swaps (what each kit stands in for, and which chassis take it):
 | 572 BIG-BLOCK CRATE | Chevrolet 572 big-block crate | vortex |
 | COYOTE 5.0 V8 | Ford Coyote 5.0 | sylph_13, sylph_180, spiral_r |
 | 13B-REW SEQUENTIAL TWIN TURBO | Mazda 13B-REW (FD RX-7) | spiral_turbo, prairie |
+| 13B-T TURBO II | Mazda 13B-T (FC RX-7 Turbo II) | prairie |
 | 20B-REW 3-ROTOR TWIN TURBO | Mazda 20B-REW (Eunos Cosmo) | prairie, spiral_r, spiral_turbo |
 | 26B 4-ROTOR, BRIDGE PORTED | Mazda 26B 4-rotor (787B-style) | prairie, spiral_r, spiral_turbo |

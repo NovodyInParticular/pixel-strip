@@ -101,7 +101,9 @@ class UpgradesTest {
 
     @Test
     fun fullRaceBuildIsAMonster() {
-        val all = catalog.slots.filter { it.id != "turbo" && it.id != "final" }.associate { it.id to it.options.size - 1 }
+        // the top option of every slot that fits this car (swap kits are per platform)
+        val all = catalog.slots.filter { it.id != "turbo" && it.id != "final" }
+            .associate { s -> s.id to s.options.indices.last { it == 0 || s.options[it].carOnly.isEmpty() || "vortex" in s.options[it].carOnly } }
         val stock = pass(car("vortex"))
         val built = pass(build("vortex", all, Tune(nitrousGear = 2)))
         println("vortex stock %.2f @ %.1f -> everything %.2f @ %.1f (%.0f hp)".format(stock.quarter, stock.trapMph, built.quarter, built.trapMph, peakHp(build("vortex", all))))

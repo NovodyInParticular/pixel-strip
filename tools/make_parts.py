@@ -85,6 +85,7 @@ SWAPS = {
     "bb572": ["vortex"],
     "coyote": ["sylph_13", "sylph_180", "spiral_r"],
     "13brew": ["spiral_turbo", "prairie"],
+    "13bt": ["prairie"],
     "20b": ROTARIES,
     "26b": ROTARIES,
 }
@@ -110,6 +111,8 @@ ENGINES = {
                    layout="v8", cylinders=8, turbo=False, mass=205),
     "13brew": dict(name="13B-REW SEQUENTIAL TWIN TURBO", hp=276, peakHpRpm=6500, torqueNm=314, peakTorqueRpm=5000, redline=8000,
                    idleRpm=850, layout="rotary", cylinders=2, turbo=True, lag=0.45, spoolRpm=3000, mass=125),
+    "13bt": dict(name="13B-T TURBO II", hp=182, peakHpRpm=6500, torqueNm=248, peakTorqueRpm=3500, redline=7000,
+                 idleRpm=850, layout="rotary", cylinders=2, turbo=True, lag=0.75, spoolRpm=3200, mass=120),
     "20b": dict(name="20B-REW 3-ROTOR TWIN TURBO", hp=276, peakHpRpm=6500, torqueNm=402, peakTorqueRpm=3000, redline=8000,
                 idleRpm=850, layout="rotary", cylinders=3, turbo=True, lag=0.5, spoolRpm=2400, mass=150),
     "26b": dict(name="26B 4-ROTOR, BRIDGE PORTED", hp=520, peakHpRpm=8500, torqueNm=480, peakTorqueRpm=7000, redline=9500,
@@ -131,7 +134,7 @@ def swap(engine, price, info, brand, strength=0.0, **rules):
 
 # Swap kit names in the shop list (the engine's full name is in ENGINES)
 SHORT = {"k24": "K-SERIES", "b18c": "B18C", "h22": "H22", "rb26": "RB26", "2jz": "2JZ", "ls": "LS V8", "bb572": "572 BIG-BLOCK",
-         "coyote": "COYOTE V8", "13brew": "13B-REW", "20b": "20B 3-ROTOR", "26b": "26B 4-ROTOR"}
+         "coyote": "COYOTE V8", "13brew": "13B-REW", "13bt": "13B-T", "20b": "20B 3-ROTOR", "26b": "26B 4-ROTOR"}
 
 
 SLOTS = [
@@ -218,6 +221,7 @@ SLOTS = [
         swap("20b", 38000, "THREE ROTORS: DEEPER, SMOOTHER, MUCH MORE", "ROTOHEAD", requiresAll=[["fuel", 1], ["ecu", 2]]),
         swap("26b", 75000, "THE ULTIMATE: FOUR ROTORS TO 9,500 RPM", "ROTOHEAD",
              requiresAll=[["fuel", 2], ["ecu", 3], ["oilinject", 1]]),
+        swap("13bt", 9000, "THE FC TURBO II'S 1.3 SINGLE-TURBO ROTARY", "ROTOHEAD"),
     ]),
     # --- ROTARY: only the Wankels take these ---------------------------------------------------------
     ("porting", "PORTING", "ROTARY", [
@@ -522,7 +526,7 @@ BRANDS = {
 ENGINE_REFS = {
     "k24": "Honda K24/K20 'frankenstein' hybrid", "b18c": "Honda B18C (Integra Type R)", "h22": "Honda H22A (Prelude)",
     "rb26": "Nissan RB26DETT (Skyline GT-R)", "2jz": "Toyota 2JZ-GTE (Supra MK4)", "ls": "GM LS1 5.7", "bb572": "Chevrolet 572 big-block crate",
-    "coyote": "Ford Coyote 5.0", "13brew": "Mazda 13B-REW (FD RX-7)", "20b": "Mazda 20B-REW (Eunos Cosmo)", "26b": "Mazda 26B 4-rotor (787B-style)",
+    "coyote": "Ford Coyote 5.0", "13brew": "Mazda 13B-REW (FD RX-7)", "13bt": "Mazda 13B-T (FC RX-7 Turbo II)", "20b": "Mazda 20B-REW (Eunos Cosmo)", "26b": "Mazda 26B 4-rotor (787B-style)",
 }
 
 

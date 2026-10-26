@@ -103,7 +103,7 @@ ROSTER = [
     keep("kite_ef", 16.3, "1990 Honda Civic Si hatchback (EF); boss car of Joe \"Ground Control\", built to the user's friend's real car",
          "108 hp @ 6,000 · 100 lb-ft @ 5,000 · ~2,250 lb · FWD · 5-speed, 4.25 final", avail="boss"),
     car("kite_rx", "Kite RX", "Hikari", 1997, "90s", 30000, 182, 8200, 160, 7500, 8900, 1050, "FWD",
-        0.38, 2.62, 0.49, [3.23, 2.105, 1.458, 1.107, 0.848], 4.785, 0.298, 0.6, "i4", 4, 6, 15.1,
+        0.38, 2.62, 0.49, [3.23, 2.105, 1.458, 1.107, 0.848], 4.785, 0.298, 0.6, "i4", 4, 0, 15.1,
         "1997 Honda Civic Type R (EK9, B16B)", "185 PS @ 8,200 · 16.3 kgm @ 7,500 · ~1,050 kg · FWD · 5-speed close-ratio, 4.79 final",
         sprite="kite", vtec=5800, grip=0.93, e_inertia=0.11),
     keep("arrow", 15.1, "1997 Acura Integra Type R (DC2)", "195 hp @ 8,000 · 130 lb-ft @ 7,500 · ~2,640 lb · FWD · 5-speed close-ratio, 4.40 final",

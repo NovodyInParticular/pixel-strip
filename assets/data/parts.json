@@ -635,6 +635,16 @@
        1
       ]
      ]
+    },
+    {
+     "name": "13B-T SWAP",
+     "price": 9000,
+     "info": "THE FC TURBO II'S 1.3 SINGLE-TURBO ROTARY",
+     "brand": "ROTOHEAD",
+     "engine": "13bt",
+     "carOnly": [
+      "prairie"
+     ]
     }
    ],
    "excludes": []
@@ -2421,6 +2431,21 @@
    "lag": 0.45,
    "spoolRpm": 3000,
    "mass": 125
+  },
+  "13bt": {
+   "name": "13B-T TURBO II",
+   "hp": 182,
+   "peakHpRpm": 6500,
+   "torqueNm": 248,
+   "peakTorqueRpm": 3500,
+   "redline": 7000,
+   "idleRpm": 850,
+   "layout": "rotary",
+   "cylinders": 2,
+   "turbo": true,
+   "lag": 0.75,
+   "spoolRpm": 3200,
+   "mass": 120
   },
   "20b": {
    "name": "20B-REW 3-ROTOR TWIN TURBO",
