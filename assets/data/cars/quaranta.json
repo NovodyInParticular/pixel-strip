@@ -47,5 +47,6 @@
     "lag": 0.7,
     "spoolRpm": 3400
   },
-  "exotic": true
+  "exotic": true,
+  "cockpit": "exotic_bare"
 }

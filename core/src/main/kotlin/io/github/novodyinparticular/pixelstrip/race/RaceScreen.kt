@@ -542,6 +542,10 @@ class RaceScreen(
                 }
                 is Vehicle.Event.Shifted -> {
                     motion.kick()
+                    if (isPlayer && firstPerson) {
+                        dashView.shifted()
+                        shake = max(shake, SHIFT_JOLT)          // the cabin jolts on every shift
+                    }
                     game.audio.play(Sfx.Kind.CLUNK, if (isPlayer) 0.8f else 0.35f)
                     if (boosted(car.def)) {
                         flame[lane] = 0.14f                   // backfire through the pipes
@@ -560,6 +564,7 @@ class RaceScreen(
                     if (e.rating == Vehicle.Rating.PERFECT) popFlash(Hud.PERFECT_C, 0.25f)
                 }
                 Vehicle.Event.NitrousOn -> if (isPlayer) {
+                    if (firstPerson) dashView.sprayed()
                     hud.pop("NITROUS!", NOS_BLUE)
                     popFlash(NOS_BLUE, 0.3f)
                     shake = max(shake, 2f)
@@ -786,7 +791,7 @@ class RaceScreen(
         batch.setBlendFunctionSeparate(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA, GL20.GL_ONE, GL20.GL_ONE_MINUS_SRC_ALPHA)
         drawHud(w, h, dt)
         batch.setBlendFunctionSeparate(GL20.GL_SRC_ALPHA, GL20.GL_ONE, GL20.GL_ZERO, GL20.GL_ONE)
-        if (phase != Phase.FINISHED && phase != Phase.PHOTO) hud.drawTachGlow(batch, TACH_X, TACH_Y, player.rpm, carDef.redline, tachZone())
+        if (phase != Phase.FINISHED && phase != Phase.PHOTO && !firstPerson) hud.drawTachGlow(batch, TACH_X, TACH_Y, player.rpm, carDef.redline, tachZone())
         controls.drawGlow(batch)
         if (nosButton.visible) nosFace.drawGlow(batch, nosButton, player, nosArmed, screenTime)
         batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
@@ -837,20 +842,13 @@ class RaceScreen(
         weather.drawGlow(batch)
     }
 
-    /** Placeholder dashboard until the era cockpits are drawn: the hood, the pillars, the dash top. */
-    private fun drawDash(w: Int, h: Int) {
-        val paintC = opponentHood
-        batch.color = paintC
-        batch.draw(white, 0f, h * 0.2f, w.toFloat(), h * 0.1f)
-        batch.setColor(0.05f, 0.04f, 0.08f, 1f)
-        batch.draw(white, 0f, 0f, w.toFloat(), h * 0.22f)
-        batch.draw(white, 0f, h * 0.22f, w * 0.06f, h * 0.78f)
-        batch.draw(white, w * 0.94f, h * 0.22f, w * 0.06f, h * 0.78f)
-        batch.draw(white, 0f, h * 0.93f, w.toFloat(), h * 0.07f)
-        batch.color = Color.WHITE
-    }
+    private val dashView by lazy { CockpitDash(art, white, font, game.effective(owned), owned.parts, paintColor(owned.paint)) }
 
-    private val opponentHood by lazy { paintColor(owned.paint).cpy().mul(0.8f, 0.8f, 0.85f, 1f) }
+    private fun drawDash(w: Int, h: Int) {
+        dashView.draw(batch, w, h, player.rpm, player.v * 2.23694f, player.gear, player.limiter, player.boost, player.nitrousActive,
+            player.shiftPoints.getOrElse(player.gear) { carDef.redline }, Gdx.graphics.deltaTime, trackView.time, shakeX, shakeY,
+            cockpit.horizon(h), cockpit.focal(h))
+    }
 
     /** The gantry's ET board shows the player's time once they're through the traps. */
     private fun drawEtBoard(camPx: Float, glow: Boolean) {
@@ -924,7 +922,7 @@ class RaceScreen(
         font.draw(batch, timeText, w - 8f - font.width(timeText), h - 32f, Hud.YELLOW)
         drawDistanceBar(w, h)
 
-        if (phase != Phase.FINISHED) {
+        if (phase != Phase.FINISHED && !firstPerson) {        // in the cockpit the dash has the real gauges
             val gearText = if (player.mode == Vehicle.Mode.SHIFT) "-" else (player.gear + 1).toString()
             hud.drawTach(batch, TACH_X, TACH_Y, player.rpm, carDef.redline, tachZone(), gearText, "${player.rpm.toInt()} RPM", player.limiter, trackView.time)
             if (carDef.boostGain > 0f) drawBoost()
@@ -1171,6 +1169,7 @@ class RaceScreen(
         val DUST_AMBIENT = Color(0.62f, 0.45f, 0.32f, 1f)
         const val STEP = 1f / 240f
         const val VIEW_SWITCH_S = 0.6f
+        const val SHIFT_JOLT = 2.5f
         const val EYE_BACK_M = 1.9f
         const val BURNOUT_X = -9f
         const val CAM_LEAD = 0.42f

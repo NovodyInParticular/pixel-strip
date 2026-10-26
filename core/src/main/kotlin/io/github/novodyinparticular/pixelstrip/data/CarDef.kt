@@ -63,6 +63,8 @@ data class CarDef(
     val stockBoostGain: Float = 0f,
     /** An automatic with a torque converter: staged on the brake it loads the engine and builds boost. */
     val converter: Boolean = false,
+    /** First-person cockpit art (tools/art/cockpit.py STYLES); null = the era's. */
+    val cockpit: String? = null,
     /** Variable cam timing that switches to the high-lift lobe at this rpm (0 = none): the sound gets harder. */
     val vtecRpm: Float = 0f,
     /** Supercharger: instant extra torque share (grows a little with RPM). */
@@ -128,6 +130,8 @@ data class CarDef(
         val driver: Pair<Float, Float>?,
         /** Centre of the door roundel, where a crew emblem goes (the CREW decal). */
         val door: Pair<Float, Float>?,
+        /** Pixels per profile unit the sprite was drawn at (profiles are ~18.2 units per metre). */
+        val scale: Float = 1f,
     )
 
     companion object {
@@ -187,6 +191,7 @@ data class CarDef(
                 stockTurbo = j.get("engine")?.getBoolean("stockTurbo", false) ?: false,
                 converter = j.getBoolean("converter", false),
                 vtecRpm = j.get("engine")?.getFloat("vtecRpm", 0f) ?: 0f,
+                cockpit = j.getString("cockpit", null),
                 stockBoostGain = if (j.get("engine")?.getBoolean("stockTurbo", false) == true) STOCK_BOOST_GAIN else 0f,
                 // a factory turbo is sized to be on full boost by the torque peak
                 boostSpoolRpm = if (j.get("engine")?.getBoolean("stockTurbo", false) == true)
@@ -213,6 +218,7 @@ data class CarDef(
                     sideExhaust = s.get("sideExhaust")?.takeIf { it.isArray }?.let { it.getFloat(0) to it.getFloat(1) },
                     driver = s.get("driver")?.takeIf { it.isArray }?.let { it.getFloat(0) to it.getFloat(1) },
                     door = s.get("door")?.takeIf { it.isArray }?.let { it.getFloat(0) to it.getFloat(1) },
+                    scale = s.getFloat("scale", 1f),
                 ),
             )
         }

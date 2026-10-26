@@ -9,6 +9,7 @@ import numpy as np
 from PIL import Image
 
 import car
+import cockpit
 import fx
 import icon
 import paint
@@ -47,6 +48,7 @@ def main():
         fx.build()
         scenes.build()
         portraits.build()
+        cockpit.build()
 
     if preview_dir:
         # every car on one sheet, 3x, each in a different paint

@@ -56,8 +56,8 @@ class CockpitView(private val track: TrackDef, private val art: Art, private val
     private var stuffFor = -1f
 
     /** Horizon row (from the bottom) and focal length for a screen [h] pixels tall. */
-    private fun horizon(h: Int) = floor(h * HORIZON)
-    private fun focal(h: Int) = h * FOCAL
+    fun horizon(h: Int) = floor(h * HORIZON)
+    fun focal(h: Int) = h * FOCAL
 
     fun draw(
         batch: SpriteBatch, w: Int, h: Int, playerX: Float, opponentX: Float?, opponent: RearView?, finishM: Float,

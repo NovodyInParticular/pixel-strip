@@ -45,5 +45,6 @@
     "cylinders": 6,
     "stockTurbo": true,
     "lag": 0.75
-  }
+  },
+  "cockpit": "80s_digital"
 }

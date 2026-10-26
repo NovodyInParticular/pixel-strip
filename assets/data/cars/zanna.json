@@ -45,5 +45,6 @@
     "cylinders": 12,
     "stockTurbo": false
   },
-  "exotic": true
+  "exotic": true,
+  "cockpit": "exotic_wedge"
 }

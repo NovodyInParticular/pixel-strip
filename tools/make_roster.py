@@ -262,6 +262,10 @@ TURBO = {
     "wal": dict(lag=1.0, spoolRpm=3200),
 }
 
+# Cockpit art for the first-person view, when the era's default isn't right (tools/art/cockpit.py)
+COCKPIT = {"quaranta": "exotic_bare", "scarlatta": "exotic_wedge", "zanna": "exotic_wedge", "vortex": "80s_digital",
+           "tsunami_mk3": "80s_digital"}
+
 # Gated shifters: the exotics change gear slower than the era's default. An automatic's shift is
 # quick and never takes the clutch out: the GNX's power gap is short.
 SHIFT = {"zanna": 0.38, "scarlatta": 0.36, "quaranta": 0.33, "phantom": 0.15}
@@ -355,6 +359,8 @@ def main():
             assert d["engine"]["stockTurbo"], f"{c['id']} has no factory turbo"
             d["engine"].update(TURBO[c["id"]])
         d["price"] = PRICES[c["id"]]
+        if c["id"] in COCKPIT:
+            d["cockpit"] = COCKPIT[c["id"]]
         if c["id"] in SHIFT:
             d["shiftTime"] = SHIFT[c["id"]]
         path.write_text(json.dumps(d, indent=2) + "\n")

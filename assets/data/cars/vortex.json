@@ -45,5 +45,6 @@
     "cylinders": 8,
     "stockTurbo": false
   },
-  "dealer": true
+  "dealer": true,
+  "cockpit": "80s_digital"
 }
