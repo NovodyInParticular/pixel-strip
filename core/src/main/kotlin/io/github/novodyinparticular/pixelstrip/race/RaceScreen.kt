@@ -79,6 +79,22 @@ class RaceScreen(
     private val nosButton = controls.add(Controls.Button(intArrayOf(Input.Keys.N), "NOS", Color(0.25f, 0.4f, 0.9f, 1f)).apply { custom = true })
     private val nosFace = NosButton(font, white)
     private val distButton = controls.add(Controls.Button(intArrayOf(Input.Keys.T), "1/8 MILE", Color(0.45f, 0.2f, 0.55f, 1f)))
+    private val viewButton = controls.add(Controls.Button(intArrayOf(Input.Keys.V), "COCKPIT", Color(0.25f, 0.3f, 0.5f, 1f)))
+
+    // --- the driver's-seat view (presentation only: the race underneath is the same) -------------------
+    private var firstPerson = game.settings.cockpit || (game.shots != null && System.getProperty("pixelstrip.cockpit") == "1")
+    /** Switching views: counts down over VIEW_SWITCH_S; the view flips halfway, under a pixel dissolve. */
+    private var viewSwitch = 0f
+    private val cockpit by lazy { CockpitView(track, art, trackView, white) }
+    private val opponentRear by lazy { RearView(white, paintColor(rivalCar?.paint ?: 2)) }
+
+    /** A paint row's mid tone, read from the ramp texture (the rear view isn't drawn through the paint shader yet). */
+    private fun paintColor(row: Int): Color {
+        val pm = com.badlogic.gdx.graphics.Pixmap(Gdx.files.internal("paint/ramps.png"))
+        val c = Color(pm.getPixel(5, row.coerceIn(0, pm.height - 1)))
+        pm.dispose()
+        return c
+    }
     private val garageButton = controls.add(Controls.Button(intArrayOf(Input.Keys.G, Input.Keys.ESCAPE, Input.Keys.BACK), "GARAGE", Color(0.3f, 0.3f, 0.42f, 1f)))
 
     private lateinit var player: Vehicle
@@ -242,6 +258,11 @@ class RaceScreen(
         actionButton.apply { x = 10f; y = 10f; this.w = 84f; this.h = 46f }
         nosButton.apply { x = w - 96f; y = 78f; this.w = 86f; this.h = 78f }      // right thumb, straight above GAS
         distButton.apply { x = w / 2f - 42f; y = h - 46f; this.w = 84f; this.h = 18f }
+        viewButton.apply {
+            x = w / 2f - 42f; y = h - 68f; this.w = 84f; this.h = 18f
+            visible = (phase == Phase.BURNOUT || phase == Phase.STAGING) && viewSwitch <= 0f
+            label = if (firstPerson) "SIDE VIEW" else "COCKPIT"
+        }
         actionButton.label = when (phase) {
             Phase.BURNOUT -> "STAGE"
             Phase.STAGING, Phase.COUNTDOWN -> "LAUNCH"
@@ -275,6 +296,16 @@ class RaceScreen(
             else if (tournament != null) game.go(0) { io.github.novodyinparticular.pixelstrip.ui.TournamentScreen(game, tournament.id) }
             else game.go(2) { GarageScreen(game) }
             return
+        }
+        if (viewButton.justPressed && viewSwitch <= 0f) viewSwitch = VIEW_SWITCH_S
+        if (viewSwitch > 0f) {
+            val before = viewSwitch
+            viewSwitch -= realDt
+            if (before > VIEW_SWITCH_S / 2f && viewSwitch <= VIEW_SWITCH_S / 2f) {
+                firstPerson = !firstPerson
+                game.settings.cockpit = firstPerson
+                game.settings.save()
+            }
         }
         if (distButton.justPressed) {
             quarter = !quarter
@@ -688,30 +719,32 @@ class RaceScreen(
         Gdx.gl.glClearColor(0f, 0f, 0f, 1f)
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
         batch.begin()
-        trackView.drawSky(batch, w)
-        trackView.drawWorld(batch, camPx, w)
-        trackView.drawLights(batch, camPx, w)
-        marks.draw(batch, camPx, w, 1, farGround, 2f, track.wet)
-        marks.draw(batch, camPx, w, 0, nearGround, 3f, track.wet)
-        if (track.wet) drawReflections(playerX, ghostX, nearGround, farGround, t)
-        particles.draw(batch, camPx, front = false)
-        drawFlame(ghost, ghostView, ghostX, farGround, 1)
-        if (realOpponent) {
-            ghostView.draw(batch, ghostX, farGround, t, pitch = ghostMotion.pitch, ambient = track.ambient, lights = lights, shakeX = shakeX, shakeY = shakeY)
-        } else if (!solo) ghostView.draw(batch, ghostX, farGround, t, ghost = 0.62f, pitch = ghostMotion.pitch)
-        tree.draw(batch, treeX, treeY)
-        drawFlame(player, playerView, playerX, nearGround, 0)
-        playerView.draw(batch, playerX, nearGround, t, pitch = playerMotion.pitch, lift = playerMotion.lift,
-            ambient = track.ambient, lights = lights, shakeX = shakeX, shakeY = shakeY)
-        particles.draw(batch, camPx, front = true)
-        if (track.headlights) {
-            playerView.drawBeam(batch, playerX, nearGround, BEAM, 0.32f)
-            ghostView.drawBeam(batch, ghostX, farGround, GHOST_BEAM, 0.12f)
+        if (firstPerson) drawCockpitScene(w, h, t) else {
+            trackView.drawSky(batch, w)
+            trackView.drawWorld(batch, camPx, w)
+            trackView.drawLights(batch, camPx, w)
+            marks.draw(batch, camPx, w, 1, farGround, 2f, track.wet)
+            marks.draw(batch, camPx, w, 0, nearGround, 3f, track.wet)
+            if (track.wet) drawReflections(playerX, ghostX, nearGround, farGround, t)
+            particles.draw(batch, camPx, front = false)
+            drawFlame(ghost, ghostView, ghostX, farGround, 1)
+            if (realOpponent) {
+                ghostView.draw(batch, ghostX, farGround, t, pitch = ghostMotion.pitch, ambient = track.ambient, lights = lights, shakeX = shakeX, shakeY = shakeY)
+            } else if (!solo) ghostView.draw(batch, ghostX, farGround, t, ghost = 0.62f, pitch = ghostMotion.pitch)
+            tree.draw(batch, treeX, treeY)
+            drawFlame(player, playerView, playerX, nearGround, 0)
+            playerView.draw(batch, playerX, nearGround, t, pitch = playerMotion.pitch, lift = playerMotion.lift,
+                ambient = track.ambient, lights = lights, shakeX = shakeX, shakeY = shakeY)
+            particles.draw(batch, camPx, front = true)
+            if (track.headlights) {
+                playerView.drawBeam(batch, playerX, nearGround, BEAM, 0.32f)
+                ghostView.drawBeam(batch, ghostX, farGround, GHOST_BEAM, 0.12f)
+            }
+            drawEtBoard(camPx, false)
+            trackView.drawForeground(batch, camPx, w)
+            weather.draw(batch)
+            speedLines.draw(batch, player.v)
         }
-        drawEtBoard(camPx, false)
-        trackView.drawForeground(batch, camPx, w)
-        weather.draw(batch)
-        speedLines.draw(batch, player.v)
         batch.end()
         post.scene.end()
 
@@ -721,16 +754,18 @@ class RaceScreen(
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
         batch.begin()
         batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE)
-        trackView.drawGlow(batch, camPx, w)
-        playerView.drawGlow(batch, playerX, nearGround, playerMotion.pitch, playerMotion.lift)
-        if (realOpponent) ghostView.drawGlow(batch, ghostX, farGround, ghostMotion.pitch)
-        if (track.headlights) playerView.drawBeam(batch, playerX, nearGround, BEAM, 0.12f)
-        tree.draw(batch, treeX, treeY, bulbsOnly = true)
-        particles.drawGlow(batch, camPx)
-        drawEtBoard(camPx, true)
-        weather.drawGlow(batch)
-        drawFlame(player, playerView, playerX, nearGround, 0)
-        drawFlame(ghost, ghostView, ghostX, farGround, 1)
+        if (firstPerson) drawCockpitGlow(w, h) else {
+            trackView.drawGlow(batch, camPx, w)
+            playerView.drawGlow(batch, playerX, nearGround, playerMotion.pitch, playerMotion.lift)
+            if (realOpponent) ghostView.drawGlow(batch, ghostX, farGround, ghostMotion.pitch)
+            if (track.headlights) playerView.drawBeam(batch, playerX, nearGround, BEAM, 0.12f)
+            tree.draw(batch, treeX, treeY, bulbsOnly = true)
+            particles.drawGlow(batch, camPx)
+            drawEtBoard(camPx, true)
+            weather.drawGlow(batch)
+            drawFlame(player, playerView, playerX, nearGround, 0)
+            drawFlame(ghost, ghostView, ghostX, farGround, 1)
+        }
         batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
         batch.end()
         post.glow.end()
@@ -765,7 +800,12 @@ class RaceScreen(
         post.flashColor.set(if (weather.lightning > flash) Color(0.85f, 0.9f, 1f, 1f) else flashColor)
         post.chromatic = if (player.nitrousActive) 0.9f else 0f
         post.radialBlur = if (player.nitrousActive) 0.22f else 0f
-        post.zoom = zoom
+        post.zoom = if (firstPerson) 1f else zoom
+        if (viewSwitch > 0f && !game.transitioning) {
+            val k = 1f - kotlin.math.abs(viewSwitch / VIEW_SWITCH_S * 2f - 1f)      // up to fully covered at the flip, then back
+            post.transitionKind = 0
+            post.transition = k * k * (3f - 2f * k)
+        }
         val focusPx = if (phase == Phase.PHOTO) trackView.finishPx - camPx else playerX + carDef.sprite.width / 2f
         post.focusX = (focusPx / w).coerceIn(0.2f, 0.8f)
         post.focusY = ((nearGround + 16f) / h).coerceIn(0.1f, 0.9f)
@@ -776,6 +816,41 @@ class RaceScreen(
         post.print = print
         post.present(lut)
     }
+
+    // --- the driver's seat --------------------------------------------------------------------------
+
+    /** Where the driver's eyes are along the strip: a little behind the front of the car. */
+    private fun eyeX() = player.x - EYE_BACK_M
+
+    private fun drawCockpitScene(w: Int, h: Int, t: Float) {
+        val opp = if (!solo) ghost.x else null
+        opponentRear.flame = if (flameOn(ghost, 1)) 1f else 0f
+        opponentRear.smoke = if (ghost.slipSpeed > 1.5f) (ghost.slipSpeed / 12f).coerceIn(0.3f, 1f) else 0f
+        opponentRear.braking = phase == Phase.FINISHED || ghost.brake > 0f
+        cockpit.draw(batch, w, h, eyeX(), opp, opponentRear, distanceM, t, shakeX, shakeY)
+        weather.draw(batch)
+        drawDash(w, h)
+    }
+
+    private fun drawCockpitGlow(w: Int, h: Int) {
+        if (!solo) cockpit.drawOpponentGlow(batch, w, h, eyeX(), ghost.x, opponentRear, shakeX, shakeY)
+        weather.drawGlow(batch)
+    }
+
+    /** Placeholder dashboard until the era cockpits are drawn: the hood, the pillars, the dash top. */
+    private fun drawDash(w: Int, h: Int) {
+        val paintC = opponentHood
+        batch.color = paintC
+        batch.draw(white, 0f, h * 0.2f, w.toFloat(), h * 0.1f)
+        batch.setColor(0.05f, 0.04f, 0.08f, 1f)
+        batch.draw(white, 0f, 0f, w.toFloat(), h * 0.22f)
+        batch.draw(white, 0f, h * 0.22f, w * 0.06f, h * 0.78f)
+        batch.draw(white, w * 0.94f, h * 0.22f, w * 0.06f, h * 0.78f)
+        batch.draw(white, 0f, h * 0.93f, w.toFloat(), h * 0.07f)
+        batch.color = Color.WHITE
+    }
+
+    private val opponentHood by lazy { paintColor(owned.paint).cpy().mul(0.8f, 0.8f, 0.85f, 1f) }
 
     /** The gantry's ET board shows the player's time once they're through the traps. */
     private fun drawEtBoard(camPx: Float, glow: Boolean) {
@@ -1095,6 +1170,8 @@ class RaceScreen(
         val DUST_LIT = Color(0.95f, 0.78f, 0.52f, 1f)
         val DUST_AMBIENT = Color(0.62f, 0.45f, 0.32f, 1f)
         const val STEP = 1f / 240f
+        const val VIEW_SWITCH_S = 0.6f
+        const val EYE_BACK_M = 1.9f
         const val BURNOUT_X = -9f
         const val CAM_LEAD = 0.42f
         const val TREE_DX = 16f

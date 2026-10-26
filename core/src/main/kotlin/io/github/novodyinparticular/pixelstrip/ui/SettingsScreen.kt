@@ -19,6 +19,7 @@ class SettingsScreen(game: PixelStrip) : MenuScreen(game) {
         Row("SOUND") { if (s.sound) "ON" else "OFF" },
         Row("VIBRATION") { if (s.vibration) "ON" else "OFF" },
         Row("UNITS") { if (s.metric) "KM/H" else "MPH" },
+        Row("RACE VIEW") { if (s.cockpit) "COCKPIT" else "SIDE" },
     )
     private val toggles = rows.mapIndexed { i, r ->
         button(r.value(), BTN_TEAL) { change(i) }
@@ -40,6 +41,7 @@ class SettingsScreen(game: PixelStrip) : MenuScreen(game) {
                 if (s.vibration) game.platform.vibrate(40)
             }
             4 -> s.metric = !s.metric
+            5 -> s.cockpit = !s.cockpit
         }
         s.save()
         flash = 0.2f
