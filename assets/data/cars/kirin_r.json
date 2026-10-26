@@ -45,5 +45,6 @@
     "cylinders": 6,
     "stockTurbo": false,
     "vtecRpm": 5800
-  }
+  },
+  "rhd": true
 }

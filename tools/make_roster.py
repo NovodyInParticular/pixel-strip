@@ -262,6 +262,9 @@ TURBO = {
     "wal": dict(lag=1.0, spoolRpm=3200),
 }
 
+JAPANESE = {"Nissan", "Datsun", "Toyota", "Honda", "Acura", "Mazda", "Eunos", "Mitsubishi", "Subaru", "Lexus", "Infiniti",
+            "Suzuki", "Isuzu", "Daihatsu"}
+
 # Cockpit art for the first-person view, when the era's default isn't right (tools/art/cockpit.py)
 COCKPIT = {"quaranta": "exotic_bare", "scarlatta": "exotic_wedge", "zanna": "exotic_wedge", "vortex": "80s_digital",
            "tsunami_mk3": "80s_digital"}
@@ -361,6 +364,9 @@ def main():
         d["price"] = PRICES[c["id"]]
         if c["id"] in COCKPIT:
             d["cockpit"] = COCKPIT[c["id"]]
+        # the driver sits on the right in the Japanese cars (home-market right-hand drive), on the left in the rest
+        if c["_inspired"].split()[1] in JAPANESE:
+            d["rhd"] = True
         if c["id"] in SHIFT:
             d["shiftTime"] = SHIFT[c["id"]]
         path.write_text(json.dumps(d, indent=2) + "\n")

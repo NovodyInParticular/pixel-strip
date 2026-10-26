@@ -45,5 +45,6 @@
     "cylinders": 4,
     "stockTurbo": true,
     "lag": 0.7
-  }
+  },
+  "rhd": true
 }

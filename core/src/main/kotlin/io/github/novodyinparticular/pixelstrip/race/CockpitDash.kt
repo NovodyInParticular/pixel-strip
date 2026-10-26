@@ -16,9 +16,11 @@ import kotlin.math.min
 
 /**
  * The cockpit around the first-person view: the car's hood in its paint, the dashboard of its era
- * (tools/art/cockpit.py) with live gauges, the steering wheel, the shifter, the driver's hands, the
- * pillars and the rearview mirror. The parts show: aftermarket gauges, a nitrous bottle and its arm
- * switch, a race wheel and gloves, a cage.
+ * (tools/art/cockpit.py) with live gauges, the steering wheel, the shifter, the pillars and the
+ * rearview mirror. The driver sits on the left, or on the right in the Japanese cars ([CarDef.rhd]):
+ * the wheel is ahead of the eyes, nudged toward the door on screen, and the console, the mirror and
+ * the hood's middle are off toward the car's centre. The parts show: aftermarket gauges, a nitrous bottle and its arm
+ * switch, a race wheel, a cage.
  *
  * [parts] are the fitted parts (slot -> option) the cockpit cares about.
  */
@@ -49,13 +51,15 @@ class CockpitDash(
         style == "classic" -> "tall"
         else -> "short"
     }
-    private val styleMeta = meta.get("styles").get(style)
-    private val dash = art.tex("cockpit/dash_$style.png")
+    /** +1 when the car's centre is to the driver's right (left-hand drive), -1 when it's to the left. */
+    private val side = if (def.rhd) -1f else 1f
+    private val styleMeta = meta.get(if (def.rhd) "stylesRhd" else "styles").get(style)
+    private val dash = art.tex(if (def.rhd) "cockpit/dash_${style}_rhd.png" else "cockpit/dash_$style.png")
+    /** Where the car's middle is across the dash art. */
+    private val centreArt = styleMeta.getFloat("centre")
     private val frame = art.tex("cockpit/frame.png")
     private val wheel = art.tex("cockpit/wheel_$wheelName.png")
     private val shifter = art.tex("cockpit/shifter_$shifterKind.png")
-    private val handsTex = art.tex(if (raceInterior) "cockpit/hands_gloved.png" else "cockpit/hands.png")
-    private val hands = Array(4) { TextureRegion(handsTex, it * 32, 0, 32, 32) }
     private val turbo = def.stockTurbo || (parts["turbo"] ?: 0) > 0
     private val podGauges = style == "90s" || turbo || (parts["ecu"] ?: 0) >= 2
     private val nitrousKit = (parts["nitrous"] ?: 0) > 0
@@ -64,15 +68,16 @@ class CockpitDash(
     private val redFrom = if (style == "90s" || style == "exotic_bare") 0.8f else 0.85f
     private val tachMax = def.redline / redFrom
 
-    /** Shift hand: seconds left with the right hand on the knob; switch hand: on the nitrous switch. */
-    private var onKnob = 0f
-    private var onSwitch = 0f
+    /** Seconds left of the lever's jolt after a shift. */
+    private var nudge = 0f
     fun shifted() {
-        onKnob = SHIFT_HAND_S
+        nudge = NUDGE_S
     }
-    fun sprayed() {
-        onSwitch = SWITCH_HAND_S
-    }
+
+    /** Screen x of the dash art's left edge: the wheel sits [WHEEL_SHIFT] toward the driver's door from the middle. */
+    private fun originX(w: Int, shakeX: Float) = floor(w / 2f - side * WHEEL_SHIFT - DASH_W / 2f + shakeX)
+    /** Screen x of the car's centre line. */
+    private fun centreX(w: Int, shakeX: Float) = originX(w, shakeX) + centreArt
 
     /** How far ahead of the eyes the nose is, and the hood's height there (m): it sets where the hood ends on screen. */
     private val hoodAheadM = max(0.9f, (def.sprite.frontX - (def.sprite.driver?.first ?: def.sprite.frontX * 0.4f)) / (def.sprite.scale * 18.2f) - 0.6f)
@@ -82,12 +87,11 @@ class CockpitDash(
 
     fun draw(batch: SpriteBatch, w: Int, h: Int, rpm: Float, mph: Float, gear: Int, limiter: Boolean, boost: Float, nitrous: Boolean,
              shiftPoint: Float, dt: Float, time: Float, shakeX: Float, shakeY: Float, horizon: Float, focal: Float) {
-        onKnob = max(0f, onKnob - dt)
-        onSwitch = max(0f, onSwitch - dt)
-        val ox = floor((w - DASH_W) / 2f + shakeX)
+        nudge = max(0f, nudge - dt)
+        val ox = originX(w, shakeX)
         val oy = floor(shakeY)
 
-        drawHood(batch, w, horizon + shakeY, focal, ox)
+        drawHood(batch, w, horizon + shakeY, focal, centreX(w, shakeX))
 
         // the dash and its gauges
         batch.color = Color.WHITE
@@ -126,35 +130,18 @@ class CockpitDash(
         if (podGauges) drawPod(batch, ox, oy, boost, rpm)
         if (nitrousKit) drawNitrous(batch, ox, oy, nitrous, time)
 
-        // shifter and wheel, then the hands on them
-        val sx = ox + DASH_W / 2f + SHIFTER_DX
+        // the shifter by the console (it jolts back on a shift), then the wheel
+        val sx = ox + DASH_W / 2f + side * SHIFTER_DX - shifter.width / 2f
         batch.color = Color.WHITE
-        batch.draw(shifter, sx, oy - 6f)
-        val wr = meta.get("wheels").get(wheelName).getFloat("r")
-        val wx = ox + DASH_W / 2f - wheel.width / 2f
-        val wy = oy + WHEEL_CY - wheel.height / 2f
-        batch.draw(wheel, wx, wy)
-        val cxw = ox + DASH_W / 2f
-        val cyw = oy + WHEEL_CY
-        // left hand at ten o'clock, the right at two unless it's on the knob or the switch
-        batch.draw(hands[0], cxw - wr * 0.72f - 16f, cyw + wr * 0.62f - 16f)
-        val knob = meta.get("shifters").get(shifterKind).get("knob")
-        when {
-            onSwitch > 0f -> {
-                val sw = styleMeta.get("switches")
-                val (x, y) = at(sw.getFloat(0), sw.getFloat(1))
-                batch.draw(hands[3], x - 16f, y - 10f)
-            }
-            onKnob > 0f -> batch.draw(hands[2], sx + knob.getFloat(0) - 16f, oy - 6f + knob.getFloat(1) - 14f)
-            else -> batch.draw(hands[1], cxw + wr * 0.72f - 16f, cyw + wr * 0.62f - 16f)
-        }
-        if (cage > 0) drawCage(batch, w, h, oy)
-        batch.draw(frame, ox, oy + h - frame.height)
+        batch.draw(shifter, sx, oy - 6f - if (nudge > 0f) 2f else 0f)
+        batch.draw(wheel, ox + DASH_W / 2f - wheel.width / 2f, oy + WHEEL_CY - wheel.height / 2f)
+        if (cage > 0) drawCage(batch, w, h, oy, centreX(w, shakeX))
+        batch.draw(frame, floor(centreX(w, shakeX) - frame.width / 2f), oy + h - frame.height)
         batch.color = Color.WHITE
     }
 
     /** The hood from the dash to its front edge, in the car's paint: lit along the middle, darker at the fenders. */
-    private fun drawHood(batch: SpriteBatch, w: Int, hz: Float, f: Float, ox: Float) {
+    private fun drawHood(batch: SpriteBatch, w: Int, hz: Float, f: Float, cx: Float) {
         val drop = HOOD_DROP_M
         val front = hz - drop * f / hoodAheadM           // the row where the hood ends
         val base = DASH_TOP - 4f
@@ -164,16 +151,16 @@ class CockpitDash(
             val half = w * (0.62f - 0.18f * t)
             val c = Color(paint).mul(0.55f + 0.3f * t, 0.55f + 0.3f * t, 0.62f + 0.3f * t, 1f)
             batch.color = c
-            batch.draw(white, w / 2f - half, row.toFloat(), half * 2f, 1f)
+            batch.draw(white, cx - half, row.toFloat(), half * 2f, 1f)
             batch.color = Color(paint).lerp(Color.WHITE, 0.25f)
-            batch.draw(white, w / 2f - half * 0.18f, row.toFloat(), half * 0.36f, 1f)   // the sky's streak down the middle
+            batch.draw(white, cx - half * 0.18f, row.toFloat(), half * 0.36f, 1f)   // the sky's streak down the middle
         }
         if (def.sprite.popup) {
             // pop-up lamp pods at the front corners
             batch.color = Color(paint).mul(0.7f, 0.7f, 0.78f, 1f)
             val half = w * 0.44f
-            batch.draw(white, w / 2f - half, front - 2f, 22f, 4f)
-            batch.draw(white, w / 2f + half - 22f, front - 2f, 22f, 4f)
+            batch.draw(white, cx - half, front - 2f, 22f, 4f)
+            batch.draw(white, cx + half - 22f, front - 2f, 22f, 4f)
         }
         batch.color = Color.WHITE
     }
@@ -193,7 +180,7 @@ class CockpitDash(
 
     /** The lit things, for the bloom: needles' tips, the LCD, the shift light, VTEC, the nitrous switch; nitrous washes the dash blue. */
     fun drawGlow(batch: SpriteBatch, w: Int, rpm: Float, nitrous: Boolean, shiftPoint: Float, time: Float, shakeX: Float, shakeY: Float) {
-        val ox = floor((w - DASH_W) / 2f + shakeX)
+        val ox = originX(w, shakeX)
         val oy = floor(shakeY)
         fun at(ix: Float, iy: Float) = Pair(ox + ix, oy + DASH_H - iy)
         styleMeta.get("lcd")?.takeIf { it.isArray }?.let { r ->
@@ -255,8 +242,8 @@ class CockpitDash(
     /** The rearview mirror: the strip behind, and the opponent's headlights when you're ahead. [gap] metres back. */
     fun drawMirror(batch: SpriteBatch, w: Int, h: Int, gap: Float?, paintThem: Color, shakeX: Float, shakeY: Float) {
         val m = meta.get("frame").get("mirror")
-        val ox = floor((w - DASH_W) / 2f + shakeX)
-        val x = ox + m.getFloat(0)
+        val fx = floor(centreX(w, shakeX) - frame.width / 2f)
+        val x = fx + m.getFloat(0)
         val y = floor(shakeY) + m.getFloat(1)
         val mw = m.getFloat(2)
         val mh = m.getFloat(3)
@@ -356,35 +343,40 @@ class CockpitDash(
         batch.draw(white, x - 2f, y - 1f, 4f, 3f)
         // the bottle strapped in on the passenger side
         batch.color = NOS_BOTTLE
-        batch.draw(white, ox + DASH_W / 2f + 190f, oy + 6f, 12f, 40f)
+        val bx = ox + DASH_W / 2f + side * BOTTLE_DX - 6f
+        batch.draw(white, bx, oy + 6f, 12f, 40f)
         batch.color = NOS_BOTTLE.cpy().lerp(Color.WHITE, 0.4f)
-        batch.draw(white, ox + DASH_W / 2f + 192f, oy + 8f, 2f, 34f)
+        batch.draw(white, bx + 2f, oy + 8f, 2f, 34f)
         batch.color = Color.WHITE
     }
 
-    private fun drawCage(batch: SpriteBatch, w: Int, h: Int, oy: Float) {
+    private fun drawCage(batch: SpriteBatch, w: Int, h: Int, oy: Float, cx: Float) {
         batch.color = CAGE
         val t = if (cage >= 2) 5f else 4f
         // the main hoop's side bars up the pillars, and (full cage) a bar across the windshield's top
         for (k in 0 until h - DASH_TOP.toInt() - 18) {
             val y = oy + DASH_TOP + k
-            val inset = 46f + k * 0.28f
-            batch.draw(white, inset, y, t, 1f)
-            batch.draw(white, w - inset - t, y, t, 1f)
+            val half = CAGE_HALF - k * 0.28f                 // the hoop's sides, either side of the car's centre
+            batch.draw(white, cx - half, y, t, 1f)
+            batch.draw(white, cx + half - t, y, t, 1f)
         }
         if (cage >= 2) batch.draw(white, 0f, oy + h - 30f, w.toFloat(), t)
         batch.color = Color.WHITE
     }
 
     companion object {
-        const val DASH_W = 640f
+        const val DASH_W = 960f
         const val DASH_H = 100f
         const val DASH_TOP = 78f
         const val WHEEL_CY = 28f
-        const val SHIFTER_DX = 92f
+        const val SHIFTER_DX = 128f
+        const val BOTTLE_DX = 236f
+        /** How far toward the door the wheel sits from the screen's middle. */
+        const val WHEEL_SHIFT = 60f
+        /** Half the main hoop's width at the dash, either side of the car's centre. */
+        const val CAGE_HALF = 300f
         const val SPEEDO_MAX = 180f
-        const val SHIFT_HAND_S = 0.32f
-        const val SWITCH_HAND_S = 0.4f
+        const val NUDGE_S = 0.12f
         /** How far below the eyes the hood's front edge is (m). */
         const val HOOD_DROP_M = 0.36f
 

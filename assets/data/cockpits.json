@@ -2,214 +2,220 @@
  "styles": {
   "classic": {
    "tach": [
-    286,
+    446,
     42,
     20
    ],
    "speedo": [
-    354,
+    514,
     42,
     20
    ],
    "lcd": null,
    "small": [
     [
-     412,
+     572,
      46,
      8
     ],
     [
-     434,
+     594,
      46,
      8
     ],
     [
-     456,
+     616,
      46,
      8
     ]
    ],
    "pod": [
-    530,
+    280,
     2
    ],
    "shiftLight": [
-    320,
+    480,
     4
    ],
    "switches": [
-    440,
+    610,
     58
    ],
-   "vtec": null
+   "vtec": null,
+   "centre": 650
   },
   "80s_analog": {
    "tach": [
-    286,
+    446,
     36,
     18
    ],
    "speedo": [
-    354,
+    514,
     36,
     18
    ],
    "lcd": null,
    "small": [],
    "pod": [
-    530,
+    280,
     2
    ],
    "shiftLight": [
-    320,
+    480,
     4
    ],
    "switches": [
-    440,
+    610,
     58
    ],
-   "vtec": null
+   "vtec": null,
+   "centre": 650
   },
   "80s_digital": {
    "tach": null,
    "speedo": null,
    "lcd": [
-    257,
+    417,
     21,
-    383,
+    543,
     53
    ],
    "small": [],
    "pod": [
-    530,
+    280,
     2
    ],
    "shiftLight": [
-    320,
+    480,
     4
    ],
    "switches": [
-    440,
+    610,
     58
    ],
-   "vtec": null
+   "vtec": null,
+   "centre": 650
   },
   "90s": {
    "tach": [
-    320,
+    480,
     38,
     22
    ],
    "speedo": [
-    270,
+    430,
     44,
     17
    ],
    "lcd": null,
    "small": [
     [
-     370,
+     530,
      44,
      12
     ]
    ],
    "pod": [
-    530,
+    280,
     2
    ],
    "shiftLight": [
-    320,
+    480,
     4
    ],
    "switches": [
-    440,
+    610,
     58
    ],
    "vtec": [
-    332,
+    492,
     50
-   ]
+   ],
+   "centre": 650
   },
   "exotic_bare": {
    "tach": [
-    328,
+    488,
     32,
     17
    ],
    "speedo": [
-    294,
+    454,
     34,
     15
    ],
    "lcd": null,
    "small": [
     [
-     360,
+     520,
      36,
      11
     ]
    ],
    "pod": [
-    530,
+    280,
     2
    ],
    "shiftLight": [
-    320,
+    480,
     4
    ],
    "switches": [
-    440,
+    610,
     58
    ],
-   "vtec": null
+   "vtec": null,
+   "centre": 650
   },
   "exotic_wedge": {
    "tach": [
-    290,
+    450,
     34,
     16
    ],
    "speedo": [
-    350,
+    510,
     34,
     16
    ],
    "lcd": null,
    "small": [
     [
-     266,
+     426,
      54,
      6
     ],
     [
-     302,
+     462,
      54,
      6
     ],
     [
-     338,
+     498,
      54,
      6
     ],
     [
-     374,
+     534,
      54,
      6
     ]
    ],
    "pod": [
-    530,
+    280,
     2
    ],
    "shiftLight": [
-    320,
+    480,
     4
    ],
    "switches": [
-    440,
+    610,
     58
    ],
-   "vtec": null
+   "vtec": null,
+   "centre": 650
   }
  },
  "wheels": {
@@ -231,12 +237,231 @@
  },
  "frame": {
   "mirror": [
-   277,
+   437,
    233,
    86,
    16
   ],
   "header": 18
+ },
+ "stylesRhd": {
+  "classic": {
+   "tach": [
+    446,
+    42,
+    20
+   ],
+   "speedo": [
+    514,
+    42,
+    20
+   ],
+   "lcd": null,
+   "small": [
+    [
+     388,
+     46,
+     8
+    ],
+    [
+     366,
+     46,
+     8
+    ],
+    [
+     344,
+     46,
+     8
+    ]
+   ],
+   "pod": [
+    680,
+    2
+   ],
+   "shiftLight": [
+    480,
+    4
+   ],
+   "switches": [
+    350,
+    58
+   ],
+   "vtec": null,
+   "centre": 310
+  },
+  "80s_analog": {
+   "tach": [
+    446,
+    36,
+    18
+   ],
+   "speedo": [
+    514,
+    36,
+    18
+   ],
+   "lcd": null,
+   "small": [],
+   "pod": [
+    680,
+    2
+   ],
+   "shiftLight": [
+    480,
+    4
+   ],
+   "switches": [
+    350,
+    58
+   ],
+   "vtec": null,
+   "centre": 310
+  },
+  "80s_digital": {
+   "tach": null,
+   "speedo": null,
+   "lcd": [
+    417,
+    21,
+    543,
+    53
+   ],
+   "small": [],
+   "pod": [
+    680,
+    2
+   ],
+   "shiftLight": [
+    480,
+    4
+   ],
+   "switches": [
+    350,
+    58
+   ],
+   "vtec": null,
+   "centre": 310
+  },
+  "90s": {
+   "tach": [
+    480,
+    38,
+    22
+   ],
+   "speedo": [
+    430,
+    44,
+    17
+   ],
+   "lcd": null,
+   "small": [
+    [
+     530,
+     44,
+     12
+    ]
+   ],
+   "pod": [
+    680,
+    2
+   ],
+   "shiftLight": [
+    480,
+    4
+   ],
+   "switches": [
+    350,
+    58
+   ],
+   "vtec": [
+    492,
+    50
+   ],
+   "centre": 310
+  },
+  "exotic_bare": {
+   "tach": [
+    488,
+    32,
+    17
+   ],
+   "speedo": [
+    454,
+    34,
+    15
+   ],
+   "lcd": null,
+   "small": [
+    [
+     520,
+     36,
+     11
+    ]
+   ],
+   "pod": [
+    680,
+    2
+   ],
+   "shiftLight": [
+    480,
+    4
+   ],
+   "switches": [
+    350,
+    58
+   ],
+   "vtec": null,
+   "centre": 310
+  },
+  "exotic_wedge": {
+   "tach": [
+    450,
+    34,
+    16
+   ],
+   "speedo": [
+    510,
+    34,
+    16
+   ],
+   "lcd": null,
+   "small": [
+    [
+     426,
+     54,
+     6
+    ],
+    [
+     462,
+     54,
+     6
+    ],
+    [
+     498,
+     54,
+     6
+    ],
+    [
+     534,
+     54,
+     6
+    ]
+   ],
+   "pod": [
+    680,
+    2
+   ],
+   "shiftLight": [
+    480,
+    4
+   ],
+   "switches": [
+    350,
+    58
+   ],
+   "vtec": null,
+   "centre": 310
+  }
  },
  "shifters": {
   "tall": {
@@ -264,6 +489,6 @@
    ]
   }
  },
- "width": 640,
+ "width": 960,
  "dashHeight": 100
 }

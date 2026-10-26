@@ -44,5 +44,6 @@
     "cylinders": 2,
     "stockTurbo": true
   },
-  "dealer": true
+  "dealer": true,
+  "rhd": true
 }

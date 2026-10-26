@@ -46,5 +46,6 @@
     "stockTurbo": true,
     "lag": 0.75
   },
-  "cockpit": "80s_digital"
+  "cockpit": "80s_digital",
+  "rhd": true
 }

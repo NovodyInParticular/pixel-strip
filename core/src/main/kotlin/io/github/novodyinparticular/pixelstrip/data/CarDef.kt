@@ -63,6 +63,8 @@ data class CarDef(
     val stockBoostGain: Float = 0f,
     /** An automatic with a torque converter: staged on the brake it loads the engine and builds boost. */
     val converter: Boolean = false,
+    /** Right-hand drive: the driver sits on the right in the cockpit view (the Japanese cars). */
+    val rhd: Boolean = false,
     /** First-person cockpit art (tools/art/cockpit.py STYLES); null = the era's. */
     val cockpit: String? = null,
     /** Variable cam timing that switches to the high-lift lobe at this rpm (0 = none): the sound gets harder. */
@@ -192,6 +194,7 @@ data class CarDef(
                 converter = j.getBoolean("converter", false),
                 vtecRpm = j.get("engine")?.getFloat("vtecRpm", 0f) ?: 0f,
                 cockpit = j.getString("cockpit", null),
+                rhd = j.getBoolean("rhd", false),
                 stockBoostGain = if (j.get("engine")?.getBoolean("stockTurbo", false) == true) STOCK_BOOST_GAIN else 0f,
                 // a factory turbo is sized to be on full boost by the torque peak
                 boostSpoolRpm = if (j.get("engine")?.getBoolean("stockTurbo", false) == true)

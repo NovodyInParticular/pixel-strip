@@ -46,5 +46,6 @@
     "stockTurbo": true,
     "lag": 0.45
   },
-  "dealer": true
+  "dealer": true,
+  "rhd": true
 }

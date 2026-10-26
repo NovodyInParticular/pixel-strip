@@ -47,5 +47,6 @@
     "lag": 0.4,
     "spoolRpm": 2400
   },
-  "dealer": true
+  "dealer": true,
+  "rhd": true
 }

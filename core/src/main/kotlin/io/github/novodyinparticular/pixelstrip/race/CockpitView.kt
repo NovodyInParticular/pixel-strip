@@ -31,6 +31,8 @@ class CockpitView(private val track: TrackDef, private val art: Art, private val
     private val fog = Color(track.ambient).lerp(Color(0.25f, 0.2f, 0.35f, 1f), 0.5f)
     private val far = track.layers.firstOrNull { it.image.endsWith("far.png") }
     private val mid = track.layers.firstOrNull { it.image.endsWith("mid.png") }
+    /** The eyes across the lane (m, + right): set from the player's car. */
+    var camSide = -SEAT_SIDE
     private val sun = track.layers.firstOrNull { it.image.endsWith("sun.png") || it.image.endsWith("moon.png") }
     /** Golden-hour tracks: the low sun glares through the windshield. */
     val goldenHour = track.layers.any { it.image.endsWith("sun.png") }
@@ -111,7 +113,7 @@ class CockpitView(private val track: TrackDef, private val art: Art, private val
             val k = f / z                                      // pixels per metre across at this distance
             val band = (floor(at / BAND_M).toInt() and 1) == 0
             val y = row.toFloat()
-            fun lx(side: Float) = cx + (side - CAM_SIDE) * k
+            fun lx(side: Float) = cx + (side - camSide) * k
             // ground either side
             mix(if (band) ground else groundB, fogT)
             batch.draw(white, 0f, y, w.toFloat(), 1f)
@@ -147,12 +149,12 @@ class CockpitView(private val track: TrackDef, private val art: Art, private val
             val panel = (floor((playerX + z) / WALL_PANEL_M).toInt() and 1) == 0
             val wh = WALL_H * k
             val y = row.toFloat()
-            val rx = cx + (RIGHT_EDGE + WALL_GAP - CAM_SIDE) * k
+            val rx = cx + (RIGHT_EDGE + WALL_GAP - camSide) * k
             mix(if (panel) WALL else WALL_B, fogT)
             batch.draw(white, rx, y, w - rx, wh)
             mix(WALL_TOP, fogT)
             batch.draw(white, rx, y + wh - max(1f, 0.1f * k), w - rx, max(1f, 0.1f * k))
-            val lx = cx + (LEFT_EDGE - WALL_GAP - CAM_SIDE) * k
+            val lx = cx + (LEFT_EDGE - WALL_GAP - camSide) * k
             mix(if (panel) WALL else WALL_B, fogT)
             batch.draw(white, 0f, y, lx, wh)
             mix(WALL_TOP, fogT)
@@ -185,7 +187,7 @@ class CockpitView(private val track: TrackDef, private val art: Art, private val
     /** Where a point on the ground [z] m ahead and [side] m across lands, and the pixels per metre there. */
     private fun project(z: Float, side: Float, cx: Float, hz: Float, f: Float): Triple<Float, Float, Float> {
         val k = f / z
-        return Triple(cx + (side - CAM_SIDE) * k, hz - CAM_H * k, k)
+        return Triple(cx + (side - camSide) * k, hz - CAM_H * k, k)
     }
 
     private fun drawThing(b: SpriteBatch, t: Thing, z: Float, cx: Float, hz: Float, f: Float) {
@@ -292,7 +294,8 @@ class CockpitView(private val track: TrackDef, private val art: Art, private val
         const val FOCAL = 1.25f
         /** The driver's eye height and how far right of the lane centre it sits (left-hand drive: left). */
         const val CAM_H = 1.15f
-        const val CAM_SIDE = -0.35f
+        /** The eyes' offset from the car's centre line (m): a left-hand-drive seat; right-hand drive flips it. */
+        const val SEAT_SIDE = 0.35f
         const val LANE = 3.6f
         const val RIGHT_EDGE = 1.8f
         const val LEFT_EDGE = -LANE - 1.8f

@@ -44,5 +44,6 @@
     "layout": "i4",
     "cylinders": 4,
     "stockTurbo": true
-  }
+  },
+  "rhd": true
 }

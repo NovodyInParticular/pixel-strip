@@ -45,5 +45,6 @@
     "stockTurbo": false,
     "vtecRpm": 4800
   },
-  "dealer": true
+  "dealer": true,
+  "rhd": true
 }

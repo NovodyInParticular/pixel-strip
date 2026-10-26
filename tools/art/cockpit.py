@@ -1,5 +1,5 @@
-"""The first-person cockpit: dashboards per era, steering wheels, shifters, hands, and the
-windshield frame (pillars, header, rearview mirror). Everything is 640 wide and drawn bottom-up
+"""The first-person cockpit: dashboards per era, steering wheels, shifters, and the
+windshield frame (pillars, header, rearview mirror). Everything is 960 wide and drawn bottom-up
 over the road; the game draws the live parts on top (needles, LCD bars, shift light, VTEC lamp,
 aftermarket gauges) at the spots written to assets/data/cockpits.json.
 
@@ -14,14 +14,14 @@ Styles (a car's "cockpit" in its data, or chosen from its era):
 import json
 import math
 
-import numpy as np
 
-from common import ASSETS, P, bayer, canvas, disc_mask, poly_mask, put, save
+from common import ASSETS, P, bayer, canvas, put, save
 
-W = 640               # cockpit art width (wider than any screen; centred)
+W = 960               # cockpit art width (wider than any screen)
 DASH_H = 100          # dash canvas height, drawn from the bottom of the screen
 FRAME_H = 270
-CX = W // 2           # the driver looks straight ahead: the wheel and binnacle are centred
+CX = W // 2           # the driver's line: the wheel and the binnacle are straight ahead of the eyes
+CENTRE_DX = 170       # the car's middle (the console) is this far toward the passenger side, at dash depth
 
 STYLES = ["classic", "80s_analog", "80s_digital", "90s", "exotic_bare", "exotic_wedge"]
 
@@ -83,7 +83,9 @@ def gauge(out, cx, cy, r, bezel="chrome", face=(12, 12, 16), ticks=10, red_from=
             put(out, cx + math.cos(a) * rr, cy - math.sin(a) * rr, P("red", 3) if red else P("steel", 5))
 
 
-def dash(style):
+def dash(style, rhd=False):
+    """Drawn for a left-hand-drive car (the console to the right of the driver); [rhd] mirrors everything
+    but the gauge faces, so the dials still read the right way round."""
     out = canvas(W, DASH_H)
     look = LOOK[style]
     top_y = 22                                       # the dash's top edge
@@ -99,6 +101,15 @@ def dash(style):
         if look["trim"] == "chrome":
             for dy, c in ((4, P("steel", 6)), (5, P("steel", 4)), (6, P("steel", 2))):
                 put(out, x, y0 + dy, c)
+    # the door card at the driver's elbow: higher than the dash, a pull handle
+    door_x = CX - 250
+    for x in range(0, door_x):
+        y0 = int(top_y - 10 - (door_x - x) * 0.08)
+        for y in range(max(0, y0), DASH_H):
+            put(out, x, y, shade(_face_colour(style, x, y, 0.6), 0.75) if y > y0 + 1 else shade(rgb(look["top"]), 1.5))
+    for y in range(44, 50):
+        for x in range(door_x - 70, door_x - 20):
+            put(out, x, y, P("steel", 3) if y == 44 else (12, 12, 16, 255))
     # binnacle hood over the gauges
     if style in ("80s_analog", "80s_digital", "exotic_wedge"):
         x0, x1, y0, y1 = CX - 78, CX + 78, 6, 62
@@ -125,24 +136,42 @@ def dash(style):
     else:   # classic: gauges set straight into the painted dash
         pass
 
-    meta = {"tach": None, "speedo": None, "lcd": None, "small": [], "pod": [CX + 210, 2], "shiftLight": [CX, 4],
-            "switches": [CX + 120, 58], "vtec": None}
+    # the passenger side: a glovebox seam
+    for x in range(CX + CENTRE_DX + 70, CX + CENTRE_DX + 250):
+        put(out, x, 70, (0, 0, 0, 90))
+    meta = {"tach": None, "speedo": None, "lcd": None, "small": [], "pod": [CX - 200, 2], "shiftLight": [CX, 4],
+            "switches": [CX + 130, 58], "vtec": None}
+    if style in ("80s_analog", "80s_digital"):
+        _satellite_pods(out)
+        _square_vents(out, CX + CENTRE_DX - 30)
+    elif style == "90s":
+        _round_vents(out, CX + CENTRE_DX - 18)
+    elif style == "exotic_bare":
+        _rivets(out)
+    later = []       # gauges outside the binnacle: drawn after any mirroring, at mirrored spots
+    if style == "classic":
+        # a chrome radio in the middle of the dash
+        for y in range(56, 66):
+            for x in range(CX + CENTRE_DX - 23, CX + CENTRE_DX + 23):
+                put(out, x, y, P("steel", 5) if y == 56 else (P("steel", 3) if (x // 4) % 2 else P("steel", 2)))
+        later = [(CX + 92 + k * 22, 46, 8) for k in range(3)]
+    if rhd:
+        out = out[:, ::-1].copy()
+        meta["pod"][0] = W - meta["pod"][0]
+        meta["switches"][0] = W - meta["switches"][0]
+        later = [(W - x, y, r) for x, y, r in later]
+    for x, y, r in later:
+        gauge(out, x, y, r, "chrome", ticks=4, red_from=0.9)
+    meta["small"] = [[x, y, r] for x, y, r in later]
+    meta["centre"] = W - (CX + CENTRE_DX) if rhd else CX + CENTRE_DX
     if style == "classic":
         gauge(out, CX - 34, 42, 20, "chrome", ticks=8, red_from=0.85)
         gauge(out, CX + 34, 42, 20, "chrome", ticks=12, red_from=2)
-        for k in range(3):
-            gauge(out, CX + 92 + k * 22, 46, 8, "chrome", ticks=4, red_from=0.9)
-        meta.update(tach=[CX - 34, 42, 20], speedo=[CX + 34, 42, 20], small=[[CX + 92 + k * 22, 46, 8] for k in range(3)])
-        # a chrome radio and the glovebox line
-        for y in range(56, 66):
-            for x in range(CX + 150, CX + 196):
-                put(out, x, y, P("steel", 5) if y == 56 else (P("steel", 3) if (x // 4) % 2 else P("steel", 2)))
+        meta.update(tach=[CX - 34, 42, 20], speedo=[CX + 34, 42, 20])
     elif style == "80s_analog":
         gauge(out, CX - 34, 36, 18, "black", ticks=8, red_from=0.85, square=False)
         gauge(out, CX + 34, 36, 18, "black", ticks=12, red_from=2)
         meta.update(tach=[CX - 34, 36, 18], speedo=[CX + 34, 36, 18])
-        _satellite_pods(out)
-        _square_vents(out, CX + 150)
     elif style == "80s_digital":
         x0, y0, x1, y1 = CX - 66, 18, CX + 66, 56
         for y in range(y0, y1):
@@ -150,20 +179,16 @@ def dash(style):
                 edge = y in (y0, y1 - 1) or x in (x0, x1 - 1)
                 put(out, x, y, P("night", 2) if edge else ((14, 20, 18, 255) if (x + y) % 2 else (12, 17, 16, 255)))
         meta.update(lcd=[x0 + 3, y0 + 3, x1 - 3, y1 - 3])
-        _satellite_pods(out)
-        _square_vents(out, CX + 150)
     elif style == "90s":
         gauge(out, CX, 38, 22, "silver", ticks=9, red_from=0.8)
         gauge(out, CX - 50, 44, 17, "silver", ticks=12, red_from=2)
         gauge(out, CX + 50, 44, 12, "silver", ticks=4, red_from=0.9)
         meta.update(tach=[CX, 38, 22], speedo=[CX - 50, 44, 17], small=[[CX + 50, 44, 12]], vtec=[CX + 12, 50])
-        _round_vents(out, CX + 140)
     elif style == "exotic_bare":
         gauge(out, CX - 26, 34, 15, "black", ticks=8, red_from=0.85)
         gauge(out, CX + 8, 32, 17, "black", ticks=10, red_from=0.8)
         gauge(out, CX + 40, 36, 11, "black", ticks=4, red_from=0.9)
         meta.update(tach=[CX + 8, 32, 17], speedo=[CX - 26, 34, 15], small=[[CX + 40, 36, 11]])
-        _rivets(out)
     elif style == "exotic_wedge":
         gauge(out, CX - 30, 34, 16, "black", ticks=8, red_from=0.85, square=True)
         gauge(out, CX + 30, 34, 16, "black", ticks=12, red_from=2, square=True)
@@ -217,8 +242,8 @@ def frame():
             yy = FRAME_H - 1 - y                         # rows from the bottom
             # pillars: from the dash's ends up and inward to the header's ends
             t = yy / FRAME_H
-            left = 30 + 70 * t
-            right = W - 30 - 70 * t
+            left = 150 + 80 * t
+            right = W - 150 - 80 * t
             pillar_l = x < left and yy > 60
             pillar_r = x > right and yy > 60
             if y < header or pillar_l or pillar_r:
@@ -333,49 +358,16 @@ def shifter(kind):
     return out, {"knob": [cx, h - lever_top]}
 
 
-# --- Hands ----------------------------------------------------------------------------------
-
-SKIN = [(118, 74, 52), (160, 104, 74), (196, 140, 104)]
-GLOVE = [(20, 18, 24), (36, 34, 44), (56, 52, 66)]
-
-
-def hands(glove=False):
-    """A sheet of 32x32 hands: 0 left on the rim, 1 right on the rim, 2 right on the knob, 3 right
-    pressing a switch (a finger out)."""
-    tone = GLOVE if glove else SKIN
-    out = canvas(32 * 4, 32)
-    for f in range(4):
-        ox = f * 32
-        fist = disc_mask(32, 32, 16, 18, 9 if f < 3 else 8)
-        if f == 3:
-            finger = poly_mask(32, 32, [(18, 4), (22, 4), (22, 14), (18, 14)])
-            fist = np.maximum(fist, finger)
-        knuckles = [(9 + k * 4, 11) for k in range(4)]
-        for y in range(32):
-            for x in range(32):
-                if fist[y, x] < 0.5:
-                    continue
-                lit = (16 - x) + (18 - y) > 4
-                i = 2 if lit else (1 if (x + y) % 5 else 0)
-                for kx, ky in knuckles:
-                    if abs(x - kx) <= 1 and abs(y - ky) <= 1 and f != 3:
-                        i = 2
-                    if (x - kx) == 2 and abs(y - ky) <= 2 and f != 3:
-                        i = 0                           # the gaps between fingers
-                put(out, ox + (31 - x if f == 0 else x), y, rgb(tone[i]))
-        # a cuff at the wrist
-        for y in range(26, 32):
-            for x in range(10, 22):
-                put(out, ox + (31 - x if f == 0 else x), y, (30, 34, 70, 255) if (x + y) % 4 else (40, 46, 92, 255))
-    return out
-
-
 def build():
     meta = {"styles": {}, "wheels": {}, "frame": None}
+    meta["stylesRhd"] = {}
     for s in STYLES:
         img, m = dash(s)
         save(img, f"cockpit/dash_{s}.png")
         meta["styles"][s] = m
+        img, m = dash(s, rhd=True)
+        save(img, f"cockpit/dash_{s}_rhd.png")
+        meta["stylesRhd"][s] = m
     fr, fm = frame()
     save(fr, "cockpit/frame.png")
     meta["frame"] = fm
@@ -387,8 +379,6 @@ def build():
         img, m = shifter(k)
         save(img, f"cockpit/shifter_{k}.png")
         meta["shifters"][k] = m
-    save(hands(False), "cockpit/hands.png")
-    save(hands(True), "cockpit/hands_gloved.png")
     meta.update({"width": W, "dashHeight": DASH_H})
     with open(f"{ASSETS}/data/cockpits.json", "w") as f:
         json.dump(meta, f, indent=1)

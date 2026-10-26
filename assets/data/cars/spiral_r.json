@@ -46,5 +46,6 @@
     "stockTurbo": true,
     "lag": 0.45,
     "spoolRpm": 3000
-  }
+  },
+  "rhd": true
 }

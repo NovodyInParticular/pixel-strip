@@ -44,5 +44,6 @@
     "layout": "i6",
     "cylinders": 6,
     "stockTurbo": false
-  }
+  },
+  "rhd": true
 }

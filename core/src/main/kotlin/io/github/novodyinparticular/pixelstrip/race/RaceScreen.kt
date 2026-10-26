@@ -85,7 +85,9 @@ class RaceScreen(
     private var firstPerson = game.settings.cockpit || (game.shots != null && System.getProperty("pixelstrip.cockpit") == "1")
     /** Switching views: counts down over VIEW_SWITCH_S; the view flips halfway, under a pixel dissolve. */
     private var viewSwitch = 0f
-    private val cockpit by lazy { CockpitView(track, art, trackView, white) }
+    private val cockpit by lazy {
+        CockpitView(track, art, trackView, white).apply { camSide = if (carDef.rhd) CockpitView.SEAT_SIDE else -CockpitView.SEAT_SIDE }
+    }
     private val opponentRear by lazy { RearView(white, paintColor(rivalCar?.paint ?: 2)) }
 
     /** A paint row's mid tone, read from the ramp texture (the rear view isn't drawn through the paint shader yet). */
@@ -566,7 +568,6 @@ class RaceScreen(
                     if (e.rating == Vehicle.Rating.PERFECT) popFlash(Hud.PERFECT_C, 0.25f)
                 }
                 Vehicle.Event.NitrousOn -> if (isPlayer) {
-                    if (firstPerson) dashView.sprayed()
                     hud.pop("NITROUS!", NOS_BLUE)
                     popFlash(NOS_BLUE, 0.3f)
                     shake = max(shake, 2f)
