@@ -72,6 +72,7 @@ object Ledger {
             if (opt !in 1 until s.options) return false
             if (opt in s.rwdOnly && drivetrain != "RWD") return false
             s.carOnly[opt]?.let { if (carId !in it) return false }
+            s.requiresAll[opt]?.let { all -> if (all.any { (ns, min) -> (parts[ns] ?: 0) < min }) return false }
             val need = s.requires[opt] ?: continue
             if (need.none { (ns, min) -> (parts[ns] ?: 0) >= min }) return false
         }

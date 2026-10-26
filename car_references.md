@@ -69,3 +69,68 @@ Removed on 2026-10-25 (owners refunded, see `assets/data/retired.json`): Dominio
 Harlan Ranger GT Fastback ('67 Mustang GT 390), Crestline Corsair SS 396 ('69 Camaro SS), Dominion Piranha Hemi
 ('70 Hemi 'Cuda), Apache Warrior 389 ('64 GTO), Harlan Ranger 5.0 LX ('88 Fox Mustang), Crestline Corsair IROC 5.7
 ('88 IROC-Z), Kessler 940 Turbo ('86 944 Turbo), Raijin Zephyr 300 Turbo ('86 Z31 300ZX). Their ids are never reused.
+
+## Parts
+
+Fictional parts makers in the game and the real companies they stand in for. Never show the real names.
+
+| In-game brand | Real-world equivalents |
+|---|---|
+| AIRHAMMER | K&N, AEM (intakes) |
+| BRYDE | Bride (race seats) |
+| CALDER | Calvert Racing (bars, tubs, cages) |
+| CLEARLITE | Lexan polycarbonate windows |
+| COLLIN | Collins Adapters (RB/JZ swaps) |
+| CROWLEY | Brian Crower, Crower (cams, heads, valve springs, strokers) |
+| EXODI | Exedy, ACT (clutches, flywheels) |
+| GARNET | Garrett (turbos, ball-bearing turbos) |
+| HALTRON | Haltech (standalone ECUs, 2-step) |
+| HARLAN RACING | Ford Performance (Coyote crate engine) |
+| HASLER | Hasport (Honda swap mounts and kits) |
+| HOOKLINE | Hooker, Kooks (headers) |
+| HOOZER | Hoosier, Mickey Thompson (drag radials, slicks) |
+| IANNO | Iannetti (apex seals) |
+| INJEX | Injector Dynamics, FIC (injectors, fuel systems) |
+| KARRO | Carrillo, Dart (rods, rotating assemblies, blocks) |
+| KOBUN | HKS, Tomei, GReddy (manifolds, downpipes, intercoolers, twin-turbo kits) |
+| MOTEX | MoTeC (anti-lag) |
+| NITTAN | Nitto (street tyres) |
+| NOVUS | NOS, Nitrous Express (nitrous kits) |
+| OSAKI | OS Giken (twin-disc clutches, LSDs) |
+| PRECISE | Precision Turbo (big singles) |
+| QUAYLE | Quaife (gearboxes, dog boxes, sequentials, diffs) |
+| REFLEXA | Hondata, COBB (reflash) |
+| ROTOHEAD | Pineapple Racing, Mazdatrix (porting, oil injection, 3/4-rotor swaps) |
+| SANDHOFF | Santhuff (drag springs and shocks) |
+| SEIBAN | Seibon (carbon panels and body parts) |
+| SHAFTWORKS | The Driveshaft Shop (driveshafts, axles, short shifters) |
+| SIKKA | Sikky (LS swap kits) |
+| SPLICE | Unichip, GReddy e-Manage (piggyback ECUs) |
+| STACKWELL | Jenvey, TWM (individual throttle bodies, velocity stacks) |
+| TENNO | Tein, KW (coilovers) |
+| THUNDERBORE | Borla, MagnaFlow (exhausts) |
+| TIDEGATE | TiAL (external wastegates) |
+| TURBOZEN | Turbosmart (boost controllers, BOVs, intercoolers) |
+| VOLKER | Volk, Weld (forged wheels, beadlocks) |
+| VOLTCELL | Odyssey, Braille (light batteries) |
+| VORTRAX | Vortech, ProCharger (centrifugal superchargers) |
+| WALDEN | Walbro, Aeromotive (fuel pumps) |
+| WEYLAND | Weiand, BDS (roots blowers, big-block crate engines) |
+| WHIPSAW | Whipple (twin-screw superchargers) |
+| WISEMAN | Wiseco (forged pistons) |
+
+Engine swaps (what each kit stands in for, and which chassis take it):
+
+| Swap | Real engine | Fits |
+|---|---|---|
+| K-SERIES (K24/K20 HYBRID) | Honda K24/K20 'frankenstein' hybrid | kite, kite_ef, kite_rx, dart, arrow |
+| B18C TYPE R | Honda B18C (Integra Type R) | kite, kite_ef, kite_rx, dart |
+| H22A | Honda H22A (Prelude) | kite, kite_ef, dart |
+| RB26DETT TWIN TURBO | Nissan RB26DETT (Skyline GT-R) | sylph_13, sylph_14, sylph_15, sylph_180, zephyr_240, kaminari_c10 |
+| 2JZ-GTE TWIN TURBO | Toyota 2JZ-GTE (Supra MK4) | tsunami_mk3, pursuit, kestrel |
+| LS1 5.7 V8 | GM LS1 5.7 | spiral_sa, spiral_turbo, spiral_r, zephyr_240, zephyr_tt, kokoro, sylph_13, sylph_14, isar_s3, tsunami_mk3, phantom |
+| 572 BIG-BLOCK CRATE | Chevrolet 572 big-block crate | mammoth, condor |
+| COYOTE 5.0 V8 | Ford Coyote 5.0 | ranger_500, mamba |
+| 13B-REW SEQUENTIAL TWIN TURBO | Mazda 13B-REW (FD RX-7) | spiral_sa, spiral_turbo, prairie |
+| 20B-REW 3-ROTOR TWIN TURBO | Mazda 20B-REW (Eunos Cosmo) | prairie, spiral_r, spiral_sa, spiral_turbo |
+| 26B 4-ROTOR, BRIDGE PORTED | Mazda 26B 4-rotor (787B-style) | prairie, spiral_r, spiral_sa, spiral_turbo |

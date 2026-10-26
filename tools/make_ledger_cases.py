@@ -125,7 +125,19 @@ case("wide tyres need tubs or a widebody, and the widebody can't come off under 
      [start(), race("dash", 10000), race("kat", 20000), part("tires", 4), part("fenders", 2), part("tires", 4), part("fenders", 0)],
      refused=[3, 6], cash=two - k["fenders"][1] - k["tires"][3], cars=[kite(parts={"fenders": 2, "tires": 4})])
 case("RWD-only parts on a front-driver are refused", [start(), part("wheeliebars", 1)], refused=[1], cash=START)
-case("Joe's K-swap only fits his EF", [start(), part("swap", 4)], refused=[1], cash=START, cars=[kite()])
+SLOT = {sl: R["slots"][sl] for sl in R["slots"]}
+large = 4                      # LARGE TURBO: needs big injectors AND a reflash
+case("a big turbo needs both the fuel system and the ECU first",
+     [start(), race("dash", 10000), race("kat", 20000), race("tiny", 30000), part("turbo", large), part("fuel", 2), part("turbo", large),
+      part("ecu", 2), part("turbo", large)],
+     refused=[4, 6], cash=two + RIV["tiny"]["payout"] + level_cash(3 * WIN) - k["fuel"][1] - k["ecu"][1] - k["turbo"][large - 1],
+     cars=[kite(parts={"fuel": 2, "ecu": 2, "turbo": large})])
+case("a part another one needs can't come off under it",
+     [start(), race("dash", 10000), race("kat", 20000), race("tiny", 30000), part("fuel", 2), part("ecu", 2), part("turbo", large),
+      part("ecu", 0)],
+     refused=[7], cash=two + RIV["tiny"]["payout"] + level_cash(3 * WIN) - k["fuel"][1] - k["ecu"][1] - k["turbo"][large - 1])
+case("the rotary tree only fits rotaries", [start(), part("porting", 1)], refused=[1], cash=START, cars=[kite()])
+assert SLOT["turbo"]["requiresAll"][str(large)] == [["fuel", 2], ["ecu", 2]]
 case("unknown things are refused",
      [start(), {"type": "gift", "t": 2000}, part("rocket", 1), {"type": "part", "t": 2000, "uid": "c9", "slot": "intake", "opt": 1},
       race("nobody", 10000)], refused=[1, 2, 3, 4], cash=START)

@@ -73,6 +73,14 @@ class LedgerTest {
     }
 
     @Test
+    fun everyRivalBuildFollowsTheRules() {
+        // a boss's build comes with its prize car: if it broke a rule, its new owner could never change a part
+        val rules = built()
+        val bad = rules.rivals.filterNot { Ledger.buildValid(rules, it.car, it.parts) }.map { "${it.id} (${it.car}): ${it.parts}" }
+        assertTrue(bad.isEmpty(), "rival builds the ledger would refuse:\n" + bad.joinToString("\n"))
+    }
+
+    @Test
     fun adoptKeepsLocalTunesAndRebuildsTheGarage() {
         val rules = Rules.parse(rulesFile.readText())
         val tmp = FileHandle(File.createTempFile("adopt", ".json"))

@@ -4,10 +4,20 @@
  * cases check it.
  */
 import { CarDef, STOCK_PRESSURE, ratingFactor } from "./car";
+import * as K from "./consts";
 
-export interface Option { name: string; price: number; effects: Record<string, number> }
+/** engine: a swap kit's engine; engineType "piston"/"rotary": does nothing on the other kind; boostOnly: needs a turbo. */
+export interface Option { name: string; price: number; effects: Record<string, number>; engine?: string; engineType?: string; boostOnly: boolean }
 export interface Slot { id: string; options: Option[]; excludes: string[] }
-export interface Catalog { slots: Slot[]; byId: Map<string, Slot>; cosmeticDrag: Record<string, number[]> }
+/** PartCatalog.EngineSpec */
+export interface EngineSpec {
+  hp: number; peakHpRpm: number; torqueNm: number; peakTorqueRpm: number; redline: number; idleRpm: number;
+  layout: string; cylinders: number; turbo: boolean; vtecRpm?: number; lag?: number; spoolRpm?: number; mass: number;
+}
+export interface Catalog {
+  slots: Slot[]; byId: Map<string, Slot>; cosmeticDrag: Record<string, number[]>;
+  engines: Record<string, EngineSpec>; layoutMass: Record<string, number>;
+}
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export function parseCatalog(j: any): Catalog {
@@ -17,13 +27,43 @@ export function parseCatalog(j: any): Catalog {
     options: s.options.map((o: any) => {
       const effects: Record<string, number> = {};
       for (const [k, v] of Object.entries(o)) if (typeof v === "number" && k !== "price") effects[k] = v;
-      return { name: o.name, price: o.price, effects };
+      return { name: o.name, price: o.price, effects, engine: o.engine, engineType: o.engineType, boostOnly: o.boostOnly === true };
     }),
   }));
   const cosmeticDrag: Record<string, number[]> = {};
   for (const c of j.cosmetic) if (Array.isArray(c.dragArea)) cosmeticDrag[c.id] = c.dragArea;
-  return { slots, byId: new Map(slots.map((s) => [s.id, s])), cosmeticDrag };
+  return { slots, byId: new Map(slots.map((s) => [s.id, s])), cosmeticDrag, engines: j.engines ?? {}, layoutMass: j.layoutMass ?? {} };
 }
+
+const worksOn = (o: Option, layout: string) => o.engineType === undefined || (o.engineType === "rotary") === (layout === "rotary");
+const engineMass = (c: Catalog, layout: string, cylinders: number) => c.layoutMass[layout === "rotary" ? `rotary${cylinders}` : layout] ?? 180;
+
+/** Upgrades.swapped: a swap kit's engine in place of the car's own (power, rpm, layout, factory turbo, weight). */
+export function swapped(def: CarDef, c: Catalog, parts: Record<string, number>): CarDef {
+  const id = fitted(c, parts, "swap").engine;
+  const e = id !== undefined ? c.engines[id] : undefined;
+  if (!e) return def;
+  const big = ["v8", "v10", "v12", "flat12"].includes(e.layout);
+  return {
+    ...def,
+    hp: e.hp, peakHpRpm: e.peakHpRpm, torqueNm: e.torqueNm, peakTorqueRpm: e.peakTorqueRpm, redline: e.redline, idleRpm: e.idleRpm,
+    powerRating: "net", engineLayout: e.layout, cylinders: e.cylinders,
+    stockTurbo: e.turbo, stockBoostGain: e.turbo ? K.STOCK_BOOST_GAIN : 0,
+    boostSpoolRpm: e.turbo ? e.spoolRpm ?? Math.max(K.STOCK_SPOOL_MIN, e.peakTorqueRpm - K.BOOST_RANGE_RPM) : 0,
+    boostLag: e.turbo ? e.lag ?? K.STOCK_LAG : 0.8,
+    engineInertia: Math.round((0.06 + 0.035 * e.cylinders + (big ? 0.06 : 0)) * 100) / 100,
+    weightKg: def.weightKg + e.mass - engineMass(c, def.engineLayout, def.cylinders),
+  };
+}
+
+export const turboed = (def: CarDef, c: Catalog, parts: Record<string, number>) => def.stockTurbo || fx(c, parts, "turbo", "psi") > 0;
+
+/** Upgrades.working: the fitted option if it does anything on this (already swapped) car. */
+export function working(c: Catalog, parts: Record<string, number>, slot: string, def: CarDef): Option | null {
+  const o = fitted(c, parts, slot);
+  return worksOn(o, def.engineLayout) && (!o.boostOnly || turboed(def, c, parts)) ? o : null;
+}
+const wfx = (c: Catalog, parts: Record<string, number>, slot: string, key: string, def: CarDef) => working(c, parts, slot, def)?.effects[key] ?? 0;
 
 export function fitted(c: Catalog, parts: Record<string, number>, slot: string): Option {
   const s = c.byId.get(slot);
@@ -92,12 +132,14 @@ export interface Limits {
   antiLag: boolean;
 }
 
-export function limits(def: CarDef, c: Catalog, parts: Record<string, number>): Limits {
+export function limits(stock: CarDef, c: Catalog, parts: Record<string, number>): Limits {
+  const def = swapped(stock, c, parts);
   const ecu = Math.trunc(fx(c, parts, "ecu", "ecu"));
   const turbo = fx(c, parts, "turbo", "psi");
   const ctl = Math.trunc(fx(c, parts, "boostctl", "boostCtl"));
+  const launch = Math.trunc(fx(c, parts, "launch", "launch"));
   let rev = 0;
-  for (const s of c.slots) rev += fx(c, parts, s.id, "rev");
+  for (const s of c.slots) rev += wfx(c, parts, s.id, "rev", def);
   return {
     gearRange: BASE_RANGE + fx(c, parts, "gearbox", "tuneRange"),
     finalRange: BASE_RANGE + fx(c, parts, "final", "finalRange"),
@@ -105,8 +147,8 @@ export function limits(def: CarDef, c: Catalog, parts: Record<string, number>): 
     afr: ecu >= 2,
     limiter: ecu >= 2,
     limiterMax: def.redline + rev,
-    launchControl: ecu >= 2,
-    boostMax: turbo,
+    launchControl: launch >= 1,
+    boostMax: turbo > 0 ? turbo + fx(c, parts, "wastegate", "psiAdd") : 0,
     boostAdjustable: turbo > 0 && ctl >= 1,
     boostByGear: turbo > 0 && ctl >= 2 && ecu >= 3,
     scMax: fx(c, parts, "supercharger", "scPsi"),
@@ -114,7 +156,7 @@ export function limits(def: CarDef, c: Catalog, parts: Record<string, number>): 
     progressive: fx(c, parts, "nosctl", "progressive") > 0,
     rideHeight: fx(c, parts, "springs", "adjustable") > 0,
     shocks: fx(c, parts, "shocks", "adjustable") > 0,
-    antiLag: turbo > 0 && ecu >= 3,
+    antiLag: turboed(def, c, parts) && launch >= 2,
   };
 }
 
@@ -132,12 +174,16 @@ export const defaultAfr = (forced: boolean) => (forced ? 11.5 : 12.8);
 export const SPOOL_REF_NM = 300;
 export const spoolScale = (def: CarDef) => clamp(Math.sqrt(SPOOL_REF_NM / (def.torqueNm * ratingFactor(def))), 0.6, 1.4);
 
-export function apply(def: CarDef, c: Catalog, parts: Record<string, number>, cosmetics: Record<string, number>, tune: Tune | null): CarDef {
-  const lim = limits(def, c, parts);
+export function apply(stock: CarDef, c: Catalog, parts: Record<string, number>, cosmetics: Record<string, number>, tune: Tune | null): CarDef {
+  const lim = limits(stock, c, parts);
+  const def = swapped(stock, c, parts);
+  let lagMult = 1;
   let lo = 0, mid = 0, hi = 0, peakRpm = 0, idle = 0, weight = 0, rear = 0, grip = 0, clutch = 0, drag = 0;
   let clutchTime = 1, inertia = 1, wheelInertia = 1, shift = 1, sens = 1, transfer = 1, transferRate = 1;
   for (const slot of c.slots) {
-    const e = fitted(c, parts, slot.id).effects;
+    const w = working(c, parts, slot.id, def);       // piston parts on a rotary, a downpipe with no turbo
+    if (!w) continue;
+    const e = w.effects;
     const all = e.tq ?? 0;
     lo += all + (e.lo ?? 0);
     mid += all + (e.mid ?? 0);
@@ -156,6 +202,7 @@ export function apply(def: CarDef, c: Catalog, parts: Record<string, number>, co
     if (e.sens !== undefined) sens *= e.sens;
     if (e.transfer !== undefined) transfer *= e.transfer;
     if (e.transferRate !== undefined) transferRate *= e.transferRate;
+    if (e.lagMult !== undefined) lagMult *= e.lagMult;
   }
   for (const [id, drags] of Object.entries(c.cosmeticDrag)) {
     const style = cosmetics[id] ?? 0;
@@ -167,11 +214,12 @@ export function apply(def: CarDef, c: Catalog, parts: Record<string, number>, co
   const afr = lim.afr ? clamp(tune?.afr ?? defaultAfr(forced), AFR_MIN, AFR_MAX) : defaultAfr(forced);
   const afrDelta = afr - defaultAfr(forced);
   const powerMult = (1 + timing * TIMING_POWER) * (1 + afrDelta * AFR_POWER);
-  const knockLimit = Math.max(fx(c, parts, "internals", "strength"), fx(c, parts, "swap", "strength")) *
+  const knockLimit = Math.max(wfx(c, parts, "internals", "strength", def), wfx(c, parts, "swap", "strength", def),
+    wfx(c, parts, "apexseals", "strength", def)) *
     fx(c, parts, "fueltype", "octane") * (1 - afrDelta * AFR_KNOCK) / (1 + timing * TIMING_KNOCK);
   const fuelFlow = fitted(c, parts, "fueltype").effects.fuelFlow ?? 1;
   const stockFuel = def.hp * ratingFactor(def) * STOCK_FUEL_MARGIN;
-  const fuelHp = Math.max(stockFuel, fx(c, parts, "fuel", "fuelHp")) / fuelFlow;
+  const fuelHp = Math.max(stockFuel, wfx(c, parts, "fuel", "fuelHp", def)) / fuelFlow;
 
   const icRaw = fitted(c, parts, "intercooler").effects.icEff;
   const icEff = icRaw !== undefined ? ((parts.intercooler ?? 0) === 0 && def.stockTurbo ? STOCK_IC : icRaw) : 0.78;
@@ -230,7 +278,7 @@ export function apply(def: CarDef, c: Catalog, parts: Record<string, number>, co
     boostGain: extraPsi * PSI_GAIN * icEff,
     // an aftermarket turbo replaces a factory one, so the stock boost spools with it
     boostSpoolRpm: turbo.spool !== undefined ? turbo.spool * spoolScale(def) : def.boostSpoolRpm,
-    boostLag: turbo.lag ?? def.boostLag,
+    boostLag: (turbo.lag ?? def.boostLag) * lagMult,
     boostPsi: psi,
     boostByGear: byGear,
     blowOff: fx(c, parts, "bov", "bov") > 0,

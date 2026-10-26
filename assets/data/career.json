@@ -145,7 +145,7 @@
     {
      "id": "mika",
      "name": "MIKA",
-     "car": "spiral_r",
+     "car": "sylph_15",
      "paint": 5,
      "finish": 0,
      "parts": {
@@ -165,9 +165,10 @@
      "paint": 13,
      "finish": 0,
      "parts": {
-      "cams": 2,
+      "apexseals": 1,
       "clutch": 2,
       "diff": 2,
+      "downpipe": 2,
       "ecu": 2,
       "exhaust": 2,
       "fuel": 1,
@@ -177,8 +178,9 @@
       "intake": 2,
       "interior": 1,
       "manifold": 1,
+      "oilinject": 1,
       "panels": 1,
-      "swap": 1,
+      "porting": 2,
       "throttle": 1,
       "tires": 2
      },
@@ -398,7 +400,8 @@
       "nosctl": 1,
       "throttle": 1,
       "tires": 4,
-      "tubs": 1
+      "tubs": 1,
+      "valvesprings": 1
      },
      "cosmetics": {},
      "skill": 0.84,
@@ -415,6 +418,7 @@
      "parts": {
       "bottle": 1,
       "cams": 2,
+      "ecu": 1,
       "exhaust": 3,
       "fuel": 3,
       "fueltype": 2,
@@ -476,6 +480,7 @@
       "throttle": 2,
       "tires": 4,
       "tubs": 1,
+      "valvesprings": 1,
       "wheels": 2
      },
      "cosmetics": {

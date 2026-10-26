@@ -1,5 +1,5 @@
 {
- "version": 2,
+ "version": 3,
  "classMultiplier": {
   "STREET": 1.0,
   "SPORT": 1.6,
@@ -10,7 +10,7 @@
   {
    "id": "intake",
    "name": "AIR INTAKE",
-   "group": "ENGINE",
+   "group": "BREATHING",
    "options": [
     {
      "name": "STOCK",
@@ -20,18 +20,31 @@
     {
      "name": "COLD AIR INTAKE",
      "price": 900,
-     "info": "COOLER AIR, A LITTLE MORE EVERYWHERE",
+     "info": "COOLER AIR, MORE EVERYWHERE. YOU HEAR IT",
+     "brand": "AIRHAMMER",
      "lo": 0.01,
      "mid": 0.02,
-     "hi": 0.03
+     "hi": 0.03,
+     "growl": 0.5
     },
     {
      "name": "RAM AIR",
      "price": 2200,
      "info": "HOOD SCOOP FEEDS IT. BEST UP TOP",
+     "brand": "AIRHAMMER",
      "mid": 0.02,
      "hi": 0.05,
+     "growl": 0.6,
      "visual": "scoop"
+    },
+    {
+     "name": "SHORT RAM",
+     "price": 500,
+     "info": "CONE FILTER IN THE BAY: LOUD, SMALL GAIN",
+     "brand": "AIRHAMMER",
+     "mid": 0.01,
+     "hi": 0.02,
+     "growl": 0.7
     }
    ],
    "excludes": []
@@ -39,7 +52,7 @@
   {
    "id": "throttle",
    "name": "THROTTLE BODY",
-   "group": "ENGINE",
+   "group": "BREATHING",
    "options": [
     {
      "name": "STOCK",
@@ -50,17 +63,26 @@
      "name": "BIG BORE",
      "price": 700,
      "info": "MORE AIR AT HIGH RPM",
+     "brand": "STACKWELL",
      "mid": 0.01,
      "hi": 0.03
     },
     {
-     "name": "INDIVIDUAL THROTTLES",
+     "name": "ITBS + STACKS",
      "price": 4500,
-     "info": "ONE PER CYLINDER. SHARP, PEAKY",
+     "info": "A TRUMPET PER CYLINDER. PEAKY, AND IT HOWLS",
+     "brand": "STACKWELL",
      "lo": -0.02,
      "mid": 0.03,
      "hi": 0.07,
-     "peakRpm": 150
+     "peakRpm": 150,
+     "growl": 1.0,
+     "requiresAll": [
+      [
+       "ecu",
+       1
+      ]
+     ]
     }
    ],
    "excludes": []
@@ -68,7 +90,7 @@
   {
    "id": "manifold",
    "name": "INTAKE MANIFOLD",
-   "group": "ENGINE",
+   "group": "BREATHING",
    "options": [
     {
      "name": "STOCK",
@@ -79,6 +101,7 @@
      "name": "PORTED",
      "price": 1800,
      "info": "SMOOTHER RUNNERS",
+     "brand": "KOBUN",
      "mid": 0.02,
      "hi": 0.03
     },
@@ -86,6 +109,7 @@
      "name": "LONG RUNNER",
      "price": 3000,
      "info": "FAT MIDRANGE, FADES UP TOP",
+     "brand": "KOBUN",
      "lo": 0.05,
      "mid": 0.05,
      "hi": -0.02,
@@ -95,10 +119,144 @@
      "name": "SHORT RUNNER",
      "price": 3500,
      "info": "SOFT DOWN LOW, SCREAMS UP TOP",
+     "brand": "KOBUN",
      "lo": -0.04,
      "mid": 0.01,
      "hi": 0.08,
      "peakRpm": 250
+    }
+   ],
+   "excludes": []
+  },
+  {
+   "id": "headers",
+   "name": "HEADERS",
+   "group": "BREATHING",
+   "options": [
+    {
+     "name": "STOCK",
+     "price": 0,
+     "info": "CAST MANIFOLD"
+    },
+    {
+     "name": "SHORTY HEADERS",
+     "price": 900,
+     "info": "EASY FIT, SMALL GAIN, A LITTLE RASP",
+     "brand": "HOOKLINE",
+     "mid": 0.02,
+     "hi": 0.02,
+     "rasp": 0.4
+    },
+    {
+     "name": "LONG TUBE HEADERS",
+     "price": 2200,
+     "info": "BEST SCAVENGING. RASPY",
+     "brand": "HOOKLINE",
+     "lo": 0.01,
+     "mid": 0.04,
+     "hi": 0.05,
+     "rasp": 0.7
+    }
+   ],
+   "excludes": []
+  },
+  {
+   "id": "downpipe",
+   "name": "DOWNPIPE",
+   "group": "BREATHING",
+   "options": [
+    {
+     "name": "STOCK",
+     "price": 0,
+     "info": "FACTORY DOWNPIPE AND CAT"
+    },
+    {
+     "name": "HIGH-FLOW DOWNPIPE",
+     "price": 900,
+     "info": "TURBO CARS: SPOOLS SOONER, MORE UP TOP",
+     "brand": "KOBUN",
+     "hi": 0.03,
+     "lagMult": 0.92,
+     "loud": 0.1,
+     "boostOnly": true
+    },
+    {
+     "name": "TEST PIPE",
+     "price": 600,
+     "info": "TURBO CARS: NO CAT AT ALL. LOUD, QUICK SPOOL",
+     "brand": "KOBUN",
+     "hi": 0.05,
+     "lagMult": 0.86,
+     "loud": 0.25,
+     "rasp": 0.2,
+     "boostOnly": true
+    }
+   ],
+   "excludes": []
+  },
+  {
+   "id": "exhaust",
+   "name": "EXHAUST",
+   "group": "BREATHING",
+   "options": [
+    {
+     "name": "STOCK",
+     "price": 0,
+     "info": "FACTORY PART"
+    },
+    {
+     "name": "CAT-BACK",
+     "price": 1200,
+     "info": "FREER AND LOUDER",
+     "brand": "THUNDERBORE",
+     "hi": 0.02,
+     "loud": 0.3
+    },
+    {
+     "name": "STRAIGHT PIPE",
+     "price": 1800,
+     "info": "NO CATS, NO MUFFLERS. ROUGH AND LOUD",
+     "brand": "THUNDERBORE",
+     "mid": 0.01,
+     "hi": 0.04,
+     "loud": 0.75,
+     "rasp": 0.5
+    },
+    {
+     "name": "SIDE PIPES",
+     "price": 3000,
+     "info": "OUT THE ROCKERS. LIGHT AND LOUD",
+     "brand": "THUNDERBORE",
+     "mid": 0.01,
+     "hi": 0.04,
+     "weight": -6,
+     "loud": 0.8,
+     "rasp": 0.4,
+     "visual": "sidepipe"
+    },
+    {
+     "name": "SIDE EXIT",
+     "price": 1600,
+     "info": "EXITS BEFORE THE REAR WHEEL. SHORT, LOUD",
+     "brand": "THUNDERBORE",
+     "mid": 0.01,
+     "hi": 0.03,
+     "weight": -4,
+     "loud": 0.6,
+     "rasp": 0.3,
+     "visual": "sideexit"
+    },
+    {
+     "name": "DUAL STRAIGHT PIPES",
+     "price": 2600,
+     "info": "TWO BIG PIPES OUT THE BACK. THE LOUDEST",
+     "brand": "THUNDERBORE",
+     "mid": 0.01,
+     "hi": 0.05,
+     "weight": 3,
+     "loud": 1.0,
+     "rasp": 0.6,
+     "visual": "dual"
     }
    ],
    "excludes": []
@@ -117,17 +275,21 @@
      "name": "PORTED HEADS",
      "price": 4000,
      "info": "BIGGER PORTS, BETTER FLOW",
+     "brand": "CROWLEY",
      "mid": 0.03,
      "hi": 0.05,
-     "rev": 200
+     "rev": 200,
+     "engineType": "piston"
     },
     {
      "name": "CNC RACE HEADS",
      "price": 9000,
      "info": "MACHINED PORTS, STIFF SPRINGS",
+     "brand": "CROWLEY",
      "mid": 0.05,
      "hi": 0.09,
-     "rev": 500
+     "rev": 500,
+     "engineType": "piston"
     }
    ],
    "excludes": []
@@ -146,32 +308,76 @@
      "name": "STREET CAM",
      "price": 1500,
      "info": "MILD. KEEPS THE IDLE SMOOTH",
+     "brand": "CROWLEY",
      "lo": -0.01,
      "mid": 0.03,
      "hi": 0.05,
-     "peakRpm": 150
+     "peakRpm": 150,
+     "lope": 0.25,
+     "engineType": "piston"
     },
     {
      "name": "HOT CAM",
      "price": 3200,
      "info": "LUMPY IDLE, PULLS HARD UP TOP",
+     "brand": "CROWLEY",
      "lo": -0.05,
      "mid": 0.03,
      "hi": 0.1,
      "peakRpm": 350,
      "rev": 200,
-     "idle": 100
+     "idle": 100,
+     "lope": 0.6,
+     "engineType": "piston"
     },
     {
      "name": "RACE CAM",
      "price": 6500,
-     "info": "NO LOW END. ALL TOP END",
+     "info": "ALL TOP END, CHOPPY IDLE. NEEDS SPRINGS",
+     "brand": "CROWLEY",
      "lo": -0.12,
      "mid": 0.02,
      "hi": 0.16,
      "peakRpm": 650,
      "rev": 400,
-     "idle": 250
+     "idle": 250,
+     "lope": 1.0,
+     "requiresAll": [
+      [
+       "valvesprings",
+       1
+      ]
+     ],
+     "engineType": "piston"
+    }
+   ],
+   "excludes": []
+  },
+  {
+   "id": "valvesprings",
+   "name": "VALVE SPRINGS",
+   "group": "ENGINE",
+   "options": [
+    {
+     "name": "STOCK",
+     "price": 0,
+     "info": "FACTORY SPRINGS: FLOAT PAST REDLINE"
+    },
+    {
+     "name": "UPGRADED SPRINGS",
+     "price": 600,
+     "info": "STIFFER SPRINGS, STEEL RETAINERS. +400 RPM",
+     "brand": "CROWLEY",
+     "rev": 400,
+     "engineType": "piston"
+    },
+    {
+     "name": "DUAL SPRINGS + TI",
+     "price": 1400,
+     "info": "FOR BIG CAMS AND BIG REVS. +800 RPM",
+     "brand": "CROWLEY",
+     "rev": 800,
+     "engineType": "piston"
     }
    ],
    "excludes": []
@@ -185,93 +391,37 @@
      "name": "STOCK",
      "price": 0,
      "info": "CAST PISTONS. KNOCKS PAST ~7 PSI ON PUMP GAS",
-     "strength": 1.35
+     "strength": 1.35,
+     "engineType": "piston"
     },
     {
-     "name": "FORGED PISTONS",
+     "name": "FORGED PISTONS+RODS",
      "price": 5000,
      "info": "TAKES REAL BOOST",
+     "brand": "WISEMAN",
      "strength": 1.7,
-     "rev": 200
+     "rev": 200,
+     "engineType": "piston"
     },
     {
-     "name": "FORGED ROTATING ASSEMBLY",
+     "name": "FORGED ASSEMBLY",
      "price": 11000,
      "info": "FORGED CRANK, RODS, PISTONS",
+     "brand": "KARRO",
      "strength": 2.2,
      "rev": 500,
-     "inertia": 0.95
+     "inertia": 0.95,
+     "engineType": "piston"
     },
     {
      "name": "BILLET RACE BLOCK",
      "price": 26000,
      "info": "BUILT FOR BIG BOOST AND BIG SHOTS",
+     "brand": "KARRO",
      "strength": 3.0,
      "rev": 800,
-     "inertia": 0.92
-    }
-   ],
-   "excludes": []
-  },
-  {
-   "id": "headers",
-   "name": "HEADERS",
-   "group": "ENGINE",
-   "options": [
-    {
-     "name": "STOCK",
-     "price": 0,
-     "info": "CAST MANIFOLD"
-    },
-    {
-     "name": "SHORTY HEADERS",
-     "price": 900,
-     "info": "EASY FIT, SMALL GAIN",
-     "mid": 0.02,
-     "hi": 0.02
-    },
-    {
-     "name": "LONG TUBE HEADERS",
-     "price": 2200,
-     "info": "BEST SCAVENGING",
-     "lo": 0.01,
-     "mid": 0.04,
-     "hi": 0.05
-    }
-   ],
-   "excludes": []
-  },
-  {
-   "id": "exhaust",
-   "name": "EXHAUST",
-   "group": "ENGINE",
-   "options": [
-    {
-     "name": "STOCK",
-     "price": 0,
-     "info": "FACTORY PART"
-    },
-    {
-     "name": "CAT-BACK",
-     "price": 1200,
-     "info": "FREER AND LOUDER",
-     "hi": 0.02
-    },
-    {
-     "name": "STRAIGHT PIPE",
-     "price": 1800,
-     "info": "NO CATS, NO MUFFLERS",
-     "mid": 0.01,
-     "hi": 0.04
-    },
-    {
-     "name": "SIDE PIPES",
-     "price": 3000,
-     "info": "OUT THE ROCKERS. LIGHT AND LOUD",
-     "mid": 0.01,
-     "hi": 0.04,
-     "weight": -6,
-     "visual": "sidepipe"
+     "inertia": 0.92,
+     "engineType": "piston"
     }
    ],
    "excludes": []
@@ -290,42 +440,379 @@
      "name": "STROKER KIT",
      "price": 8000,
      "info": "MORE DISPLACEMENT, MORE TORQUE",
+     "brand": "CROWLEY",
      "tq": 0.16,
-     "weight": 5
+     "weight": 5,
+     "engineType": "piston"
     },
     {
-     "name": "BIG CRATE ENGINE",
+     "name": "BIG-BORE LONG BLOCK",
      "price": 22000,
-     "info": "BIGGER MOTOR. HEAVY ON THE NOSE",
+     "info": "THE SAME FAMILY, BORED AND STROKED. HEAVIER",
+     "brand": "KARRO",
      "tq": 0.38,
      "hi": 0.04,
      "weight": 40,
      "rear": -0.01,
-     "rev": 200
+     "rev": 200,
+     "engineType": "piston"
     },
     {
      "name": "RACE ENGINE",
      "price": 55000,
-     "info": "PURPOSE-BUILT DRAG MOTOR",
+     "info": "PURPOSE-BUILT DRAG VERSION OF YOUR ENGINE",
+     "brand": "KARRO",
      "tq": 0.62,
      "hi": 0.08,
      "weight": 30,
      "rev": 600,
-     "strength": 1.9
+     "strength": 1.9,
+     "engineType": "piston"
     },
     {
      "name": "K-SERIES SWAP",
-     "price": 30000,
-     "info": "JOE'S SPECIAL: A HIGH-REVVING HONDA HEART. ONLY FITS HIS EF",
-     "tq": 0.85,
-     "hi": 0.2,
-     "rev": 1500,
-     "peakRpm": 600,
-     "strength": 2.0,
-     "weight": 8,
+     "price": 15000,
+     "info": "THE HONDA SWAP: HIGH REVS, VTEC AT 5,500",
+     "brand": "HASLER",
+     "engine": "k24",
      "carOnly": [
-      "kite_ef"
+      "kite",
+      "kite_ef",
+      "kite_rx",
+      "dart",
+      "arrow"
+     ],
+     "strength": 1.8
+    },
+    {
+     "name": "RB26 SWAP",
+     "price": 32000,
+     "info": "THE GODZILLA SIX: TWIN TURBOS, LOVES BOOST",
+     "brand": "COLLIN",
+     "engine": "rb26",
+     "carOnly": [
+      "sylph_13",
+      "sylph_14",
+      "sylph_15",
+      "sylph_180",
+      "zephyr_240",
+      "kaminari_c10"
+     ],
+     "strength": 1.9
+    },
+    {
+     "name": "2JZ SWAP",
+     "price": 34000,
+     "info": "THE STRONGEST STOCK BOTTOM END THERE IS",
+     "brand": "COLLIN",
+     "engine": "2jz",
+     "carOnly": [
+      "tsunami_mk3",
+      "pursuit",
+      "kestrel"
+     ],
+     "strength": 2.3
+    },
+    {
+     "name": "LS V8 SWAP",
+     "price": 18000,
+     "info": "FITS EVERYTHING. A LIGHT ALLOY V8",
+     "brand": "SIKKA",
+     "engine": "ls",
+     "carOnly": [
+      "spiral_sa",
+      "spiral_turbo",
+      "spiral_r",
+      "zephyr_240",
+      "zephyr_tt",
+      "kokoro",
+      "sylph_13",
+      "sylph_14",
+      "isar_s3",
+      "tsunami_mk3",
+      "phantom"
+     ],
+     "strength": 1.6
+    },
+    {
+     "name": "572 BIG-BLOCK SWAP",
+     "price": 28000,
+     "info": "9.4 LITRES. HEAVY, ENORMOUS TORQUE",
+     "brand": "WEYLAND",
+     "engine": "bb572",
+     "carOnly": [
+      "mammoth",
+      "condor"
+     ],
+     "strength": 1.7
+    },
+    {
+     "name": "COYOTE V8 SWAP",
+     "price": 24000,
+     "info": "MODERN FOUR-CAM V8 IN A CLASSIC",
+     "brand": "HARLAN RACING",
+     "engine": "coyote",
+     "carOnly": [
+      "ranger_500",
+      "mamba"
+     ],
+     "strength": 1.6
+    },
+    {
+     "name": "B18C SWAP",
+     "price": 9000,
+     "info": "THE TYPE R HEART: SCREAMS TO 8,400",
+     "brand": "HASLER",
+     "engine": "b18c",
+     "carOnly": [
+      "kite",
+      "kite_ef",
+      "kite_rx",
+      "dart"
+     ],
+     "strength": 1.4
+    },
+    {
+     "name": "H22 SWAP",
+     "price": 8000,
+     "info": "BIG HONDA TORQUE, VTEC AT 5,500",
+     "brand": "HASLER",
+     "engine": "h22",
+     "carOnly": [
+      "kite",
+      "kite_ef",
+      "dart"
+     ],
+     "strength": 1.4
+    },
+    {
+     "name": "13B-REW SWAP",
+     "price": 16000,
+     "info": "THE FD'S SEQUENTIAL TWIN-TURBO ROTARY",
+     "brand": "ROTOHEAD",
+     "engine": "13brew",
+     "carOnly": [
+      "spiral_sa",
+      "spiral_turbo",
+      "prairie"
      ]
+    },
+    {
+     "name": "20B 3-ROTOR SWAP",
+     "price": 38000,
+     "info": "THREE ROTORS: DEEPER, SMOOTHER, MUCH MORE",
+     "brand": "ROTOHEAD",
+     "engine": "20b",
+     "carOnly": [
+      "prairie",
+      "spiral_r",
+      "spiral_sa",
+      "spiral_turbo"
+     ],
+     "requiresAll": [
+      [
+       "fuel",
+       1
+      ],
+      [
+       "ecu",
+       2
+      ]
+     ]
+    },
+    {
+     "name": "26B 4-ROTOR SWAP",
+     "price": 75000,
+     "info": "THE ULTIMATE: FOUR ROTORS TO 9,500 RPM",
+     "brand": "ROTOHEAD",
+     "engine": "26b",
+     "carOnly": [
+      "prairie",
+      "spiral_r",
+      "spiral_sa",
+      "spiral_turbo"
+     ],
+     "requiresAll": [
+      [
+       "fuel",
+       2
+      ],
+      [
+       "ecu",
+       3
+      ],
+      [
+       "oilinject",
+       1
+      ]
+     ]
+    }
+   ],
+   "excludes": []
+  },
+  {
+   "id": "porting",
+   "name": "PORTING",
+   "group": "ROTARY",
+   "options": [
+    {
+     "name": "STOCK",
+     "price": 0,
+     "info": "FACTORY PORTS"
+    },
+    {
+     "name": "STREET PORT",
+     "price": 2500,
+     "info": "BIGGER PORTS: MORE TOP END, LUMPIER IDLE",
+     "brand": "ROTOHEAD",
+     "lo": -0.02,
+     "mid": 0.03,
+     "hi": 0.07,
+     "peakRpm": 400,
+     "rev": 300,
+     "idle": 50,
+     "lope": 0.35,
+     "carOnly": [
+      "prairie",
+      "spiral_r",
+      "spiral_sa",
+      "spiral_turbo"
+     ],
+     "engineType": "rotary"
+    },
+    {
+     "name": "BRIDGE PORT",
+     "price": 5500,
+     "info": "HITS HARD UP TOP. IDLES BRAP BRAP BRAP",
+     "brand": "ROTOHEAD",
+     "lo": -0.08,
+     "mid": 0.02,
+     "hi": 0.15,
+     "peakRpm": 900,
+     "rev": 800,
+     "idle": 200,
+     "lope": 0.7,
+     "carOnly": [
+      "prairie",
+      "spiral_r",
+      "spiral_sa",
+      "spiral_turbo"
+     ],
+     "engineType": "rotary"
+    },
+    {
+     "name": "PERIPHERAL PORT",
+     "price": 11000,
+     "info": "RACE PORTS: NOTHING LOW, EVERYTHING HIGH",
+     "brand": "ROTOHEAD",
+     "lo": -0.16,
+     "hi": 0.26,
+     "peakRpm": 1500,
+     "rev": 1500,
+     "idle": 400,
+     "lope": 1.0,
+     "carOnly": [
+      "prairie",
+      "spiral_r",
+      "spiral_sa",
+      "spiral_turbo"
+     ],
+     "requiresAll": [
+      [
+       "apexseals",
+       1
+      ],
+      [
+       "oilinject",
+       1
+      ]
+     ],
+     "engineType": "rotary"
+    }
+   ],
+   "excludes": []
+  },
+  {
+   "id": "apexseals",
+   "name": "APEX SEALS",
+   "group": "ROTARY",
+   "options": [
+    {
+     "name": "STOCK",
+     "price": 0,
+     "info": "FACTORY 3-PIECE SEALS. EASY ON THE BOOST",
+     "strength": 1.25,
+     "engineType": "rotary"
+    },
+    {
+     "name": "2MM STEEL SEALS",
+     "price": 2200,
+     "info": "TAKES REAL BOOST",
+     "brand": "IANNO",
+     "strength": 1.7,
+     "carOnly": [
+      "prairie",
+      "spiral_r",
+      "spiral_sa",
+      "spiral_turbo"
+     ],
+     "engineType": "rotary"
+    },
+    {
+     "name": "CERAMIC SEALS",
+     "price": 5000,
+     "info": "FOR BIG BOOST AND BIG REVS. +500 RPM",
+     "brand": "IANNO",
+     "strength": 2.4,
+     "rev": 500,
+     "carOnly": [
+      "prairie",
+      "spiral_r",
+      "spiral_sa",
+      "spiral_turbo"
+     ],
+     "engineType": "rotary"
+    }
+   ],
+   "excludes": []
+  },
+  {
+   "id": "oilinject",
+   "name": "OIL INJECTION",
+   "group": "ROTARY",
+   "options": [
+    {
+     "name": "STOCK",
+     "price": 0,
+     "info": "FACTORY METERING PUMP"
+    },
+    {
+     "name": "OMP + PREMIX",
+     "price": 700,
+     "info": "MORE OIL TO THE SEALS. +300 RPM",
+     "brand": "ROTOHEAD",
+     "rev": 300,
+     "carOnly": [
+      "prairie",
+      "spiral_r",
+      "spiral_sa",
+      "spiral_turbo"
+     ],
+     "engineType": "rotary"
+    },
+    {
+     "name": "BILLET OIL PUMP",
+     "price": 1800,
+     "info": "FEEDS A HIGH-REVVING BUILD. +600 RPM",
+     "brand": "ROTOHEAD",
+     "rev": 600,
+     "carOnly": [
+      "prairie",
+      "spiral_r",
+      "spiral_sa",
+      "spiral_turbo"
+     ],
+     "engineType": "rotary"
     }
    ],
    "excludes": []
@@ -344,19 +831,36 @@
      "name": "UPGRADED PUMP",
      "price": 800,
      "info": "SUPPORTS ~450 HP",
+     "brand": "WALDEN",
      "fuelHp": 450
     },
     {
      "name": "BIG INJECTORS + PUMP",
      "price": 2500,
      "info": "SUPPORTS ~750 HP",
+     "brand": "INJEX",
      "fuelHp": 750
     },
     {
      "name": "RACE FUEL SYSTEM",
      "price": 6000,
      "info": "TWIN PUMPS, HUGE INJECTORS. ~1400 HP",
+     "brand": "INJEX",
      "fuelHp": 1400
+    },
+    {
+     "name": "STAGED INJECTION",
+     "price": 3500,
+     "info": "SECONDARY INJECTORS PER ROTOR. ~1000 HP",
+     "brand": "ROTOHEAD",
+     "fuelHp": 1000,
+     "carOnly": [
+      "prairie",
+      "spiral_r",
+      "spiral_sa",
+      "spiral_turbo"
+     ],
+     "engineType": "rotary"
     }
    ],
    "excludes": []
@@ -379,12 +883,19 @@
      "octane": 1.05
     },
     {
-     "name": "E85",
+     "name": "E85 CONVERSION",
      "price": 1500,
-     "info": "COOLS THE CHARGE, FIGHTS KNOCK. NEEDS 30% MORE FUEL",
+     "info": "FIGHTS KNOCK. NEEDS BIG INJECTORS",
+     "brand": "INJEX",
      "octane": 1.25,
      "fuelFlow": 1.3,
-     "tq": 0.02
+     "tq": 0.02,
+     "requiresAll": [
+      [
+       "fuel",
+       2
+      ]
+     ]
     },
     {
      "name": "RACE GAS 110",
@@ -409,22 +920,64 @@
      "name": "PIGGYBACK",
      "price": 1200,
      "info": "TIMING +/-2 DEG",
+     "brand": "SPLICE",
      "ecu": 1,
      "tq": 0.02
     },
     {
      "name": "REFLASH",
      "price": 2500,
-     "info": "TIMING, AIR/FUEL, REV LIMIT, LAUNCH CONTROL",
+     "info": "TIMING, AIR/FUEL, REV LIMIT",
+     "brand": "REFLEXA",
      "ecu": 2,
      "tq": 0.04
     },
     {
      "name": "STANDALONE",
      "price": 6000,
-     "info": "EVERYTHING. ANTI-LAG ON THE TWO-STEP",
+     "info": "EVERYTHING. BOOST BY GEAR, ANTI-LAG READY",
+     "brand": "HALTRON",
      "ecu": 3,
      "tq": 0.05
+    }
+   ],
+   "excludes": []
+  },
+  {
+   "id": "launch",
+   "name": "LAUNCH CONTROL",
+   "group": "FUEL & ECU",
+   "options": [
+    {
+     "name": "STOCK",
+     "price": 0,
+     "info": "YOUR RIGHT FOOT"
+    },
+    {
+     "name": "2-STEP LAUNCH",
+     "price": 900,
+     "info": "HOLDS THE REVS ON THE LINE. POPS AND BANGS",
+     "brand": "HALTRON",
+     "launch": 1,
+     "requiresAll": [
+      [
+       "ecu",
+       2
+      ]
+     ]
+    },
+    {
+     "name": "2-STEP + ANTI-LAG",
+     "price": 3500,
+     "info": "LEAVE ON BOOST. FLAMES WHILE STAGED",
+     "brand": "MOTEX",
+     "launch": 2,
+     "requiresAll": [
+      [
+       "ecu",
+       3
+      ]
+     ]
     }
    ],
    "excludes": []
@@ -443,45 +996,138 @@
      "name": "SMALL TURBO",
      "price": 3500,
      "info": "SPOOLS EARLY, RUNS OUT UP TOP. MAX 15 PSI",
+     "brand": "GARNET",
      "psi": 15,
      "spool": 2600,
-     "lag": 0.35
+     "lag": 0.35,
+     "whistle": 0.3
     },
     {
      "name": "MEDIUM TURBO",
      "price": 6000,
      "info": "THE ALL-ROUNDER. MAX 22 PSI",
+     "brand": "GARNET",
      "psi": 22,
      "spool": 3300,
      "lag": 0.6,
+     "whistle": 0.5,
      "visual": "intercooler"
     },
     {
      "name": "TWIN TURBOS",
      "price": 11000,
-     "info": "EARLY SPOOL AND BIG POWER. MAX 28 PSI",
+     "info": "SINGLE TO TWIN: EARLY SPOOL. MAX 28 PSI",
+     "brand": "KOBUN",
      "psi": 28,
      "spool": 3000,
      "lag": 0.55,
-     "visual": "intercooler"
+     "whistle": 0.6,
+     "visual": "intercooler",
+     "requiresAll": [
+      [
+       "fuel",
+       2
+      ],
+      [
+       "ecu",
+       2
+      ]
+     ]
     },
     {
      "name": "LARGE TURBO",
      "price": 9000,
      "info": "LAZY TO SPOOL, HUGE UP TOP. MAX 30 PSI",
+     "brand": "PRECISE",
      "psi": 30,
      "spool": 4100,
      "lag": 0.95,
-     "visual": "intercooler"
+     "whistle": 0.8,
+     "visual": "intercooler",
+     "requiresAll": [
+      [
+       "fuel",
+       2
+      ],
+      [
+       "ecu",
+       2
+      ]
+     ]
     },
     {
      "name": "88MM PRO MOD",
      "price": 18000,
      "info": "ALL OR NOTHING. MAX 40 PSI",
+     "brand": "PRECISE",
      "psi": 40,
      "spool": 5000,
      "lag": 1.4,
-     "visual": "intercooler"
+     "whistle": 1.0,
+     "visual": "intercooler",
+     "requiresAll": [
+      [
+       "fuel",
+       3
+      ],
+      [
+       "ecu",
+       3
+      ]
+     ]
+    },
+    {
+     "name": "BALL-BEARING TURBO",
+     "price": 8500,
+     "info": "SPOOLS SMALL, PULLS BIG. MAX 24 PSI",
+     "brand": "GARNET",
+     "psi": 24,
+     "spool": 3000,
+     "lag": 0.38,
+     "whistle": 0.7,
+     "visual": "intercooler",
+     "requiresAll": [
+      [
+       "fuel",
+       1
+      ],
+      [
+       "ecu",
+       2
+      ]
+     ]
+    },
+    {
+     "name": "TWIN-TO-SINGLE",
+     "price": 12000,
+     "info": "ONE BIG TURBO FOR THE TWINS. MAX 32 PSI",
+     "brand": "PRECISE",
+     "psi": 32,
+     "spool": 4000,
+     "lag": 0.8,
+     "whistle": 0.9,
+     "visual": "intercooler",
+     "carOnly": [
+      "kaminari_mk1",
+      "kaminari_mk2",
+      "kaminari_mk3",
+      "tsunami",
+      "spiral_r",
+      "typhoon",
+      "zephyr_tt",
+      "wal_awd",
+      "quaranta"
+     ],
+     "requiresAll": [
+      [
+       "fuel",
+       2
+      ],
+      [
+       "ecu",
+       2
+      ]
+     ]
     }
    ],
    "excludes": [
@@ -503,12 +1149,14 @@
      "name": "SIDE MOUNT",
      "price": 900,
      "info": "SMALL, TUCKED AWAY",
+     "brand": "KOBUN",
      "icEff": 0.86
     },
     {
      "name": "FRONT MOUNT",
      "price": 1800,
      "info": "BIG CORE IN THE BUMPER",
+     "brand": "KOBUN",
      "icEff": 0.93,
      "drag": 0.004
     },
@@ -516,6 +1164,7 @@
      "name": "AIR-TO-WATER",
      "price": 3500,
      "info": "ICE TANK. COLDEST CHARGE",
+     "brand": "TURBOZEN",
      "icEff": 0.97,
      "weight": 12
     }
@@ -537,13 +1186,44 @@
      "name": "MANUAL CONTROLLER",
      "price": 400,
      "info": "SET THE BOOST YOURSELF",
+     "brand": "TURBOZEN",
      "boostCtl": 1
     },
     {
      "name": "ELECTRONIC CONTROL",
      "price": 1500,
      "info": "BOOST BY GEAR (NEEDS STANDALONE ECU)",
+     "brand": "TURBOZEN",
      "boostCtl": 2
+    }
+   ],
+   "excludes": []
+  },
+  {
+   "id": "wastegate",
+   "name": "WASTEGATE",
+   "group": "BOOST",
+   "options": [
+    {
+     "name": "STOCK",
+     "price": 0,
+     "info": "INTERNAL WASTEGATE"
+    },
+    {
+     "name": "EXTERNAL WASTEGATE",
+     "price": 1100,
+     "info": "HOLDS BOOST FLAT: 3 PSI MORE ON TAP",
+     "brand": "TIDEGATE",
+     "psiAdd": 3
+    },
+    {
+     "name": "GATE + SCREAMER",
+     "price": 1300,
+     "info": "THE SAME, VENTED TO THE AIR. IT SCREAMS",
+     "brand": "TIDEGATE",
+     "psiAdd": 3,
+     "screamer": 1.0,
+     "loud": 0.15
     }
    ],
    "excludes": []
@@ -556,13 +1236,23 @@
     {
      "name": "NONE",
      "price": 0,
-     "info": "BOOST DIES ON EVERY SHIFT"
+     "info": "BOOST DIES ON EVERY SHIFT. FLUTTERS"
     },
     {
-     "name": "BLOW-OFF VALVE",
+     "name": "ATMOSPHERIC BOV",
      "price": 350,
-     "info": "KEEPS THE TURBO SPINNING THROUGH SHIFTS",
-     "bov": 1
+     "info": "KEEPS IT SPOOLED THROUGH SHIFTS. PSSSH",
+     "brand": "TURBOZEN",
+     "bov": 1,
+     "bovType": 1
+    },
+    {
+     "name": "RECIRCULATING BOV",
+     "price": 300,
+     "info": "KEEPS THE TURBO SPINNING, QUIETLY",
+     "brand": "TURBOZEN",
+     "bov": 1,
+     "bovType": 2
     }
    ],
    "excludes": []
@@ -580,7 +1270,8 @@
     {
      "name": "ROOTS BLOWER",
      "price": 5000,
-     "info": "INSTANT TORQUE, FADES UP TOP. 12 PSI",
+     "info": "INSTANT TORQUE, FADES UP TOP. 12 PSI. WHINES",
+     "brand": "WEYLAND",
      "scPsi": 12,
      "scType": 1,
      "visual": "blower"
@@ -589,6 +1280,7 @@
      "name": "TWIN-SCREW",
      "price": 7500,
      "info": "INSTANT AND EFFICIENT. 16 PSI",
+     "brand": "WHIPSAW",
      "scPsi": 16,
      "scType": 2,
      "visual": "blower"
@@ -596,7 +1288,8 @@
     {
      "name": "CENTRIFUGAL",
      "price": 6500,
-     "info": "BUILDS WITH RPM. 20 PSI AT REDLINE",
+     "info": "BUILDS WITH RPM TO 20 PSI. A RISING SIREN",
+     "brand": "VORTRAX",
      "scPsi": 20,
      "scType": 3
     },
@@ -604,11 +1297,18 @@
      "name": "14-71 HIGH HELIX",
      "price": 16000,
      "info": "TALL BLOWER THROUGH THE HOOD. 24 PSI",
+     "brand": "WEYLAND",
      "scPsi": 24,
      "scType": 1,
      "weight": 25,
      "drag": 0.02,
-     "visual": "blower"
+     "visual": "blower",
+     "requiresAll": [
+      [
+       "fuel",
+       2
+      ]
+     ]
     }
    ],
    "excludes": [
@@ -628,26 +1328,52 @@
     {
      "name": "DRY 75 SHOT",
      "price": 900,
-     "info": "UP TO 75 HP",
+     "info": "UP TO 75 HP. THE ECU ADDS THE FUEL",
+     "brand": "NOVUS",
      "nosHp": 75
     },
     {
      "name": "WET 150 SHOT",
      "price": 1800,
-     "info": "UP TO 150 HP",
+     "info": "UP TO 150 HP. ITS OWN FUEL",
+     "brand": "NOVUS",
      "nosHp": 150
     },
     {
      "name": "DIRECT PORT 300",
      "price": 5500,
      "info": "A NOZZLE PER CYLINDER. UP TO 300 HP",
-     "nosHp": 300
+     "brand": "NOVUS",
+     "nosHp": 300,
+     "requiresAll": [
+      [
+       "fuel",
+       1
+      ]
+     ]
     },
     {
      "name": "DUAL STAGE 500",
      "price": 12000,
      "info": "UP TO 500 HP. BRING A BUILT MOTOR",
-     "nosHp": 500
+     "brand": "NOVUS",
+     "nosHp": 500,
+     "requires": [
+      [
+       "internals",
+       1
+      ],
+      [
+       "apexseals",
+       1
+      ]
+     ],
+     "requiresAll": [
+      [
+       "fuel",
+       2
+      ]
+     ]
     }
    ],
    "excludes": []
@@ -667,12 +1393,14 @@
      "name": "15 LB",
      "price": 500,
      "info": "TWO SPRAYS",
+     "brand": "NOVUS",
      "charges": 2
     },
     {
      "name": "TWIN 15 LB",
      "price": 1200,
      "info": "THREE SPRAYS",
+     "brand": "NOVUS",
      "charges": 3,
      "weight": 10
     }
@@ -693,6 +1421,7 @@
      "name": "PROGRESSIVE",
      "price": 1500,
      "info": "RAMPS THE SHOT IN. SAVES THE TYRES",
+     "brand": "NOVUS",
      "progressive": 1
     }
    ],
@@ -712,6 +1441,7 @@
      "name": "STAGE 2 ORGANIC",
      "price": 900,
      "info": "HOLDS MORE, STILL SMOOTH",
+     "brand": "EXODI",
      "clutch": 0.4,
      "clutchTime": 0.9
     },
@@ -719,6 +1449,7 @@
      "name": "STAGE 3 PUCK",
      "price": 1600,
      "info": "GRABBY. HITS THE TYRES HARD",
+     "brand": "EXODI",
      "clutch": 0.9,
      "clutchTime": 0.7
     },
@@ -726,6 +1457,7 @@
      "name": "TWIN DISC",
      "price": 3200,
      "info": "HOLDS BIG POWER",
+     "brand": "OSAKI",
      "clutch": 1.5,
      "clutchTime": 0.8
     },
@@ -733,6 +1465,7 @@
      "name": "TRIPLE DISC SLIPPER",
      "price": 6500,
      "info": "BUILT TO SLIP ON PURPOSE",
+     "brand": "OSAKI",
      "clutch": 2.4,
      "clutchTime": 1.0
     }
@@ -753,12 +1486,14 @@
      "name": "LIGHT CHROMOLY",
      "price": 600,
      "info": "REVS QUICKER",
+     "brand": "EXODI",
      "inertia": 0.82
     },
     {
      "name": "ALUMINUM",
      "price": 1100,
      "info": "REVS FAST, BOGS EASY",
+     "brand": "EXODI",
      "inertia": 0.65
     }
    ],
@@ -778,6 +1513,7 @@
      "name": "CLOSE-RATIO",
      "price": 2500,
      "info": "TIGHTER GEARS, TUNABLE",
+     "brand": "QUAYLE",
      "shift": 0.9,
      "tuneRange": 0.1
     },
@@ -785,6 +1521,7 @@
      "name": "5-SPEED",
      "price": 4500,
      "info": "FIVE GEARS",
+     "brand": "QUAYLE",
      "gears": 5,
      "shift": 0.85,
      "tuneRange": 0.2
@@ -793,6 +1530,7 @@
      "name": "6-SPEED",
      "price": 6500,
      "info": "SIX GEARS",
+     "brand": "QUAYLE",
      "gears": 6,
      "shift": 0.8,
      "tuneRange": 0.3
@@ -801,6 +1539,7 @@
      "name": "DOG BOX",
      "price": 12000,
      "info": "STRAIGHT-CUT. NO SYNCHROS, FAST SHIFTS",
+     "brand": "QUAYLE",
      "gears": 6,
      "shift": 0.5,
      "tuneRange": 0.45
@@ -809,6 +1548,7 @@
      "name": "SEQUENTIAL",
      "price": 18000,
      "info": "PULL BACK, PULL BACK",
+     "brand": "QUAYLE",
      "gears": 6,
      "shift": 0.35,
      "tuneRange": 0.5
@@ -830,6 +1570,7 @@
      "name": "SHORT THROW",
      "price": 350,
      "info": "SHORTER THROWS",
+     "brand": "SHAFTWORKS",
      "shift": 0.88
     }
    ],
@@ -837,7 +1578,7 @@
   },
   {
    "id": "driveshaft",
-   "name": "DRIVESHAFT / AXLES",
+   "name": "DRIVESHAFT",
    "group": "DRIVETRAIN",
    "options": [
     {
@@ -849,6 +1590,7 @@
      "name": "ALUMINUM",
      "price": 700,
      "info": "LIGHTER TO SPIN UP",
+     "brand": "SHAFTWORKS",
      "wheelInertia": 0.92,
      "weight": -4
     },
@@ -856,8 +1598,30 @@
      "name": "CARBON FIBRE",
      "price": 1600,
      "info": "LIGHTEST",
+     "brand": "SHAFTWORKS",
      "wheelInertia": 0.85,
      "weight": -7
+    }
+   ],
+   "excludes": []
+  },
+  {
+   "id": "axles",
+   "name": "AXLES",
+   "group": "DRIVETRAIN",
+   "options": [
+    {
+     "name": "STOCK",
+     "price": 0,
+     "info": "FACTORY PART"
+    },
+    {
+     "name": "CHROMOLY AXLES",
+     "price": 900,
+     "info": "STRONGER, A LITTLE LIGHTER",
+     "brand": "SHAFTWORKS",
+     "wheelInertia": 0.96,
+     "weight": -2
     }
    ],
    "excludes": []
@@ -876,18 +1640,21 @@
      "name": "CLUTCH LSD",
      "price": 1200,
      "info": "BOTH WHEELS PUSH",
+     "brand": "OSAKI",
      "grip": 0.04
     },
     {
      "name": "TORSEN",
      "price": 1800,
      "info": "SMOOTH AND STRONG",
+     "brand": "QUAYLE",
      "grip": 0.05
     },
     {
      "name": "SPOOL",
      "price": 900,
      "info": "LOCKED SOLID. PURE DRAG",
+     "brand": "SHAFTWORKS",
      "grip": 0.07
     }
    ],
@@ -907,6 +1674,7 @@
      "name": "SHORTER (+8%)",
      "price": 1000,
      "info": "QUICKER OFF THE LINE",
+     "brand": "QUAYLE",
      "finalMult": 1.08,
      "finalRange": 0.08
     },
@@ -914,6 +1682,7 @@
      "name": "SHORTEST (+16%)",
      "price": 1400,
      "info": "ALL LAUNCH, LOW TOP SPEED",
+     "brand": "QUAYLE",
      "finalMult": 1.16,
      "finalRange": 0.08
     },
@@ -921,6 +1690,7 @@
      "name": "TALLER (-8%)",
      "price": 1000,
      "info": "MORE TOP END",
+     "brand": "QUAYLE",
      "finalMult": 0.92,
      "finalRange": 0.08
     },
@@ -928,6 +1698,7 @@
      "name": "QUICK-CHANGE",
      "price": 3000,
      "info": "ANY RATIO YOU LIKE",
+     "brand": "QUAYLE",
      "finalRange": 0.35
     }
    ],
@@ -947,19 +1718,22 @@
      "name": "DRAG SPRINGS",
      "price": 700,
      "info": "SOFT REAR, MORE SQUAT",
+     "brand": "SANDHOFF",
      "transfer": 1.12
     },
     {
      "name": "COILOVERS",
      "price": 2800,
      "info": "ADJUSTABLE RIDE HEIGHT",
+     "brand": "TENNO",
      "transfer": 1.08,
      "adjustable": 1
     },
     {
      "name": "LOCKED REAR",
      "price": 900,
-     "info": "STIFF REAR, NO SQUAT: THE NOSE STAYS DOWN. FRONT-DRIVE DRAG TRICK",
+     "info": "NO SQUAT, NOSE STAYS DOWN. FOR FRONT-DRIVERS",
+     "brand": "SANDHOFF",
      "transfer": 0.8
     }
    ],
@@ -979,19 +1753,22 @@
      "name": "90/10 DRAG SHOCKS",
      "price": 1100,
      "info": "FRONT LIFTS FAST, WEIGHT HITS THE REAR",
+     "brand": "SANDHOFF",
      "transferRate": 1.8
     },
     {
      "name": "DOUBLE ADJUSTABLE",
      "price": 2600,
      "info": "TUNE HOW FAST IT TRANSFERS",
+     "brand": "SANDHOFF",
      "transferRate": 1.6,
      "adjustable": 2
     },
     {
-     "name": "SLOW-RISE FRONT SHOCKS",
+     "name": "SLOW-RISE SHOCKS",
      "price": 1300,
-     "info": "THE NOSE RISES LATE: WEIGHT STAYS ON THE FRONT TYRES",
+     "info": "THE NOSE RISES LATE: WEIGHT STAYS UP FRONT",
+     "brand": "SANDHOFF",
      "transferRate": 0.55
     }
    ],
@@ -1011,6 +1788,7 @@
      "name": "TRACTION BARS",
      "price": 500,
      "info": "STOPS AXLE WRAP",
+     "brand": "CALDER",
      "grip": 0.02,
      "rwdOnly": true
     },
@@ -1018,6 +1796,7 @@
      "name": "LADDER BARS",
      "price": 1500,
      "info": "PLANTS THE REAR AXLE",
+     "brand": "CALDER",
      "grip": 0.045,
      "rwdOnly": true
     }
@@ -1038,6 +1817,7 @@
      "name": "WHEELIE BARS",
      "price": 900,
      "info": "FRONT STAYS DOWN, NO LIFTING",
+     "brand": "CALDER",
      "wheelieBars": 1,
      "weight": 8,
      "rwdOnly": true,
@@ -1060,6 +1840,7 @@
      "name": "MINI-TUBS",
      "price": 2500,
      "info": "ROOM FOR WIDE TYRES",
+     "brand": "CALDER",
      "tubs": 1,
      "weight": 6
     }
@@ -1080,6 +1861,7 @@
      "name": "6-POINT BAR",
      "price": 1500,
      "info": "STIFFER CHASSIS",
+     "brand": "CALDER",
      "grip": 0.01,
      "weight": 18,
      "visual": "cage"
@@ -1088,6 +1870,7 @@
      "name": "10-POINT CAGE",
      "price": 3500,
      "info": "STIFFEST. A RACE CAR",
+     "brand": "CALDER",
      "grip": 0.025,
      "weight": 30,
      "visual": "cage"
@@ -1111,6 +1894,7 @@
      "name": "SPORT",
      "price": 1200,
      "info": "STICKIER STREET TYRE",
+     "brand": "NITTAN",
      "grip": 0.06,
      "warm": 0.72,
      "sens": 1.0
@@ -1119,6 +1903,7 @@
      "name": "275 DRAG RADIAL",
      "price": 2400,
      "info": "STREET-LEGAL DRAG TYRE",
+     "brand": "HOOZER",
      "grip": 0.16,
      "warm": 0.8,
      "sens": 1.3
@@ -1127,6 +1912,7 @@
      "name": "315 DRAG RADIAL",
      "price": 3600,
      "info": "WIDER. NEEDS TUBS OR WIDEBODY",
+     "brand": "HOOZER",
      "grip": 0.22,
      "warm": 0.82,
      "sens": 1.4,
@@ -1145,6 +1931,7 @@
      "name": "SLICKS",
      "price": 4800,
      "info": "HUGE GRIP WHEN HOT. DO A BURNOUT",
+     "brand": "HOOZER",
      "grip": 0.32,
      "warm": 0.9,
      "sens": 1.8,
@@ -1176,6 +1963,7 @@
      "name": "FORGED LIGHTWEIGHT",
      "price": 2400,
      "info": "LESS TO SPIN UP",
+     "brand": "VOLKER",
      "wheelInertia": 0.85,
      "weight": -8
     },
@@ -1183,6 +1971,7 @@
      "name": "BEADLOCKS",
      "price": 3200,
      "info": "RUN THE PRESSURE LOW",
+     "brand": "VOLKER",
      "wheelInertia": 0.82,
      "weight": -6,
      "sens": 1.25
@@ -1210,7 +1999,47 @@
      "name": "FULL GUT",
      "price": 1800,
      "info": "ONE RACE SEAT. NOTHING ELSE",
+     "brand": "BRYDE",
      "weight": -80
+    }
+   ],
+   "excludes": []
+  },
+  {
+   "id": "seats",
+   "name": "SEATS",
+   "group": "WEIGHT",
+   "options": [
+    {
+     "name": "STOCK",
+     "price": 0,
+     "info": "FACTORY PART"
+    },
+    {
+     "name": "PASSENGER DELETE",
+     "price": 150,
+     "info": "NOBODY RIDES ALONG",
+     "weight": -16
+    }
+   ],
+   "excludes": []
+  },
+  {
+   "id": "ac",
+   "name": "AIR CONDITIONING",
+   "group": "WEIGHT",
+   "options": [
+    {
+     "name": "STOCK",
+     "price": 0,
+     "info": "FACTORY PART"
+    },
+    {
+     "name": "AC DELETE",
+     "price": 250,
+     "info": "NO COMPRESSOR TO TURN. A LITTLE FREE POWER",
+     "weight": -24,
+     "tq": 0.01
     }
    ],
    "excludes": []
@@ -1229,12 +2058,14 @@
      "name": "FIBERGLASS HOOD",
      "price": 900,
      "info": "LIGHT HOOD",
+     "brand": "SEIBAN",
      "weight": -12
     },
     {
      "name": "CARBON HOOD + TRUNK",
      "price": 3500,
      "info": "BARE CARBON",
+     "brand": "SEIBAN",
      "weight": -28,
      "visual": "carbon"
     },
@@ -1242,6 +2073,7 @@
      "name": "FULL CARBON PANELS",
      "price": 9500,
      "info": "EVERY PANEL",
+     "brand": "SEIBAN",
      "weight": -60,
      "visual": "carbon"
     }
@@ -1262,12 +2094,14 @@
      "name": "LEXAN REAR + SIDES",
      "price": 800,
      "info": "PLASTIC WINDOWS",
+     "brand": "CLEARLITE",
      "weight": -14
     },
     {
      "name": "FULL LEXAN",
      "price": 1500,
      "info": "EVEN THE WINDSHIELD",
+     "brand": "CLEARLITE",
      "weight": -22
     }
    ],
@@ -1290,16 +2124,18 @@
      "rear": 0.012
     },
     {
-     "name": "LIGHT BATTERY IN TRUNK",
+     "name": "LIGHT, IN THE TRUNK",
      "price": 800,
      "info": "LIGHTER AND REARWARD",
+     "brand": "VOLTCELL",
      "rear": 0.012,
      "weight": -11
     },
     {
-     "name": "LIGHT BATTERY, UP FRONT",
+     "name": "LIGHT, UP FRONT",
      "price": 700,
      "info": "LIGHTER, AND THE WEIGHT STAYS ON THE NOSE",
+     "brand": "VOLTCELL",
      "weight": -11
     }
    ],
@@ -1319,6 +2155,7 @@
      "name": "LIP SPOILER",
      "price": 600,
      "info": "A LITTLE LOWER, A LITTLE SLIPPERIER",
+     "brand": "SEIBAN",
      "drag": -0.005,
      "visual": "bumper1"
     },
@@ -1326,6 +2163,7 @@
      "name": "STREET BUMPER",
      "price": 1500,
      "info": "AGGRESSIVE INTAKES",
+     "brand": "SEIBAN",
      "drag": -0.008,
      "weight": -2,
      "visual": "bumper2"
@@ -1334,6 +2172,7 @@
      "name": "RACE SPLITTER",
      "price": 2800,
      "info": "FLAT SPLITTER, CANARDS",
+     "brand": "SEIBAN",
      "drag": -0.012,
      "weight": -3,
      "visual": "bumper3"
@@ -1355,6 +2194,7 @@
      "name": "SIDE SKIRTS",
      "price": 900,
      "info": "CLEANS UP THE SIDES",
+     "brand": "SEIBAN",
      "drag": -0.006,
      "visual": "skirts1"
     },
@@ -1362,6 +2202,7 @@
      "name": "RACE SKIRTS",
      "price": 1800,
      "info": "LOW AND FLAT",
+     "brand": "SEIBAN",
      "drag": -0.01,
      "visual": "skirts2"
     }
@@ -1382,6 +2223,7 @@
      "name": "REAR DIFFUSER",
      "price": 1200,
      "info": "SMOOTHS THE WAKE",
+     "brand": "SEIBAN",
      "drag": -0.006,
      "visual": "rear1"
     },
@@ -1389,6 +2231,7 @@
      "name": "RACE DIFFUSER",
      "price": 2400,
      "info": "BIG FINS",
+     "brand": "SEIBAN",
      "drag": -0.01,
      "visual": "rear2"
     }
@@ -1408,13 +2251,15 @@
     {
      "name": "VENTED HOOD",
      "price": 1200,
-     "info": "LETS THE HEAT OUT",
+     "info": "LETS THE HEAT OUT. YOU CAN SEE THE TURBO",
+     "brand": "SEIBAN",
      "visual": "hood1"
     },
     {
      "name": "COWL INDUCTION",
      "price": 1600,
      "info": "THE CLASSIC BULGE",
+     "brand": "SEIBAN",
      "hi": 0.01,
      "visual": "hood2"
     }
@@ -1435,6 +2280,7 @@
      "name": "FENDER FLARES",
      "price": 1500,
      "info": "A LITTLE WIDER",
+     "brand": "SEIBAN",
      "drag": 0.004,
      "visual": "flares"
     },
@@ -1442,6 +2288,7 @@
      "name": "WIDEBODY KIT",
      "price": 6000,
      "info": "ROOM FOR WIDE TYRES",
+     "brand": "SEIBAN",
      "drag": 0.012,
      "weight": 8,
      "visual": "widebody"
@@ -1463,6 +2310,7 @@
      "name": "DRAG CHUTE",
      "price": 1200,
      "info": "POPS AFTER THE FINISH LINE",
+     "brand": "CALDER",
      "weight": 4,
      "visual": "chute"
     }
@@ -1470,6 +2318,175 @@
    "excludes": []
   }
  ],
+ "engines": {
+  "k24": {
+   "name": "K-SERIES (K24/K20 HYBRID)",
+   "hp": 245,
+   "peakHpRpm": 7800,
+   "torqueNm": 255,
+   "peakTorqueRpm": 6200,
+   "redline": 8400,
+   "idleRpm": 850,
+   "layout": "i4",
+   "cylinders": 4,
+   "turbo": false,
+   "vtecRpm": 5500,
+   "mass": 125
+  },
+  "b18c": {
+   "name": "B18C TYPE R",
+   "hp": 195,
+   "peakHpRpm": 8000,
+   "torqueNm": 178,
+   "peakTorqueRpm": 7500,
+   "redline": 8400,
+   "idleRpm": 850,
+   "layout": "i4",
+   "cylinders": 4,
+   "turbo": false,
+   "vtecRpm": 5700,
+   "mass": 125
+  },
+  "h22": {
+   "name": "H22A",
+   "hp": 217,
+   "peakHpRpm": 7200,
+   "torqueNm": 221,
+   "peakTorqueRpm": 6700,
+   "redline": 7800,
+   "idleRpm": 800,
+   "layout": "i4",
+   "cylinders": 4,
+   "turbo": false,
+   "vtecRpm": 5500,
+   "mass": 145
+  },
+  "rb26": {
+   "name": "RB26DETT TWIN TURBO",
+   "hp": 276,
+   "peakHpRpm": 6800,
+   "torqueNm": 353,
+   "peakTorqueRpm": 4400,
+   "redline": 8000,
+   "idleRpm": 900,
+   "layout": "i6",
+   "cylinders": 6,
+   "turbo": true,
+   "lag": 0.45,
+   "mass": 230
+  },
+  "2jz": {
+   "name": "2JZ-GTE TWIN TURBO",
+   "hp": 320,
+   "peakHpRpm": 5600,
+   "torqueNm": 427,
+   "peakTorqueRpm": 4000,
+   "redline": 6800,
+   "idleRpm": 750,
+   "layout": "i6",
+   "cylinders": 6,
+   "turbo": true,
+   "lag": 0.4,
+   "spoolRpm": 2400,
+   "mass": 230
+  },
+  "ls": {
+   "name": "LS1 5.7 V8",
+   "hp": 345,
+   "peakHpRpm": 5600,
+   "torqueNm": 475,
+   "peakTorqueRpm": 4400,
+   "redline": 6400,
+   "idleRpm": 750,
+   "layout": "v8",
+   "cylinders": 8,
+   "turbo": false,
+   "mass": 200
+  },
+  "bb572": {
+   "name": "572 BIG-BLOCK CRATE",
+   "hp": 620,
+   "peakHpRpm": 5500,
+   "torqueNm": 881,
+   "peakTorqueRpm": 4400,
+   "redline": 6200,
+   "idleRpm": 850,
+   "layout": "v8",
+   "cylinders": 8,
+   "turbo": false,
+   "mass": 310
+  },
+  "coyote": {
+   "name": "COYOTE 5.0 V8",
+   "hp": 435,
+   "peakHpRpm": 6500,
+   "torqueNm": 542,
+   "peakTorqueRpm": 4250,
+   "redline": 7000,
+   "idleRpm": 700,
+   "layout": "v8",
+   "cylinders": 8,
+   "turbo": false,
+   "mass": 205
+  },
+  "13brew": {
+   "name": "13B-REW SEQUENTIAL TWIN TURBO",
+   "hp": 276,
+   "peakHpRpm": 6500,
+   "torqueNm": 314,
+   "peakTorqueRpm": 5000,
+   "redline": 8000,
+   "idleRpm": 850,
+   "layout": "rotary",
+   "cylinders": 2,
+   "turbo": true,
+   "lag": 0.45,
+   "spoolRpm": 3000,
+   "mass": 125
+  },
+  "20b": {
+   "name": "20B-REW 3-ROTOR TWIN TURBO",
+   "hp": 276,
+   "peakHpRpm": 6500,
+   "torqueNm": 402,
+   "peakTorqueRpm": 3000,
+   "redline": 8000,
+   "idleRpm": 850,
+   "layout": "rotary",
+   "cylinders": 3,
+   "turbo": true,
+   "lag": 0.5,
+   "spoolRpm": 2400,
+   "mass": 150
+  },
+  "26b": {
+   "name": "26B 4-ROTOR, BRIDGE PORTED",
+   "hp": 520,
+   "peakHpRpm": 8500,
+   "torqueNm": 480,
+   "peakTorqueRpm": 7000,
+   "redline": 9500,
+   "idleRpm": 1100,
+   "layout": "rotary",
+   "cylinders": 4,
+   "turbo": false,
+   "mass": 185
+  }
+ },
+ "layoutMass": {
+  "i4": 140,
+  "i6": 220,
+  "v6": 175,
+  "v8": 230,
+  "v10": 280,
+  "v12": 270,
+  "flat4": 135,
+  "flat6": 190,
+  "flat12": 260,
+  "rotary2": 115,
+  "rotary3": 150,
+  "rotary4": 185
+ },
  "cosmetic": [
   {
    "id": "rims",

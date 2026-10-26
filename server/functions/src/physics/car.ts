@@ -34,6 +34,9 @@ export interface CarDef {
   powerRating: string;
   nitrous: Nitrous;
   stockTurbo: boolean;
+  /** For swaps: what sits in the bay ("rotary" counts rotors as cylinders). */
+  engineLayout: string;
+  cylinders: number;
   // from parts and tunes (parts.ts)
   boostGain: number;
   boostSpoolRpm: number;
@@ -108,6 +111,8 @@ export function parseCar(j: any): CarDef {
     powerRating: j.powerRating ?? "net",
     nitrous: j.nitrous ? { hp: j.nitrous.hp, charges: j.nitrous.charges, seconds: j.nitrous.seconds } : { hp: 0, charges: 0, seconds: 0 },
     stockTurbo: j.engine?.stockTurbo === true,
+    engineLayout: typeof j.engine?.layout === "string" ? j.engine.layout : "v8",
+    cylinders: typeof j.engine?.cylinders === "number" ? j.engine.cylinders : 8,
     boostGain: 0,
     // a factory turbo is sized to be on full boost by the torque peak
     boostSpoolRpm: j.engine?.stockTurbo === true ? (typeof j.engine.spoolRpm === "number" ? j.engine.spoolRpm : Math.max(K.STOCK_SPOOL_MIN, num("peakTorqueRpm") - K.BOOST_RANGE_RPM)) : 0,

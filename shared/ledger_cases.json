@@ -1002,7 +1002,162 @@
   }
  },
  {
-  "name": "Joe's K-swap only fits his EF",
+  "name": "a big turbo needs both the fuel system and the ECU first",
+  "entries": [
+   {
+    "type": "start",
+    "t": 1000,
+    "car": "kite"
+   },
+   {
+    "type": "race",
+    "t": 10000,
+    "uid": "c1",
+    "rival": "dash",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "race",
+    "t": 20000,
+    "uid": "c1",
+    "rival": "kat",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "race",
+    "t": 30000,
+    "uid": "c1",
+    "rival": "tiny",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "part",
+    "t": 2000,
+    "uid": "c1",
+    "slot": "turbo",
+    "opt": 4
+   },
+   {
+    "type": "part",
+    "t": 2000,
+    "uid": "c1",
+    "slot": "fuel",
+    "opt": 2
+   },
+   {
+    "type": "part",
+    "t": 2000,
+    "uid": "c1",
+    "slot": "turbo",
+    "opt": 4
+   },
+   {
+    "type": "part",
+    "t": 2000,
+    "uid": "c1",
+    "slot": "ecu",
+    "opt": 2
+   },
+   {
+    "type": "part",
+    "t": 2000,
+    "uid": "c1",
+    "slot": "turbo",
+    "opt": 4
+   }
+  ],
+  "expect": {
+   "cash": 4000,
+   "cars": [
+    {
+     "uid": "c1",
+     "car": "kite",
+     "parts": {
+      "fuel": 2,
+      "ecu": 2,
+      "turbo": 4
+     }
+    }
+   ],
+   "refused": [
+    4,
+    6
+   ]
+  }
+ },
+ {
+  "name": "a part another one needs can't come off under it",
+  "entries": [
+   {
+    "type": "start",
+    "t": 1000,
+    "car": "kite"
+   },
+   {
+    "type": "race",
+    "t": 10000,
+    "uid": "c1",
+    "rival": "dash",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "race",
+    "t": 20000,
+    "uid": "c1",
+    "rival": "kat",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "race",
+    "t": 30000,
+    "uid": "c1",
+    "rival": "tiny",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "part",
+    "t": 2000,
+    "uid": "c1",
+    "slot": "fuel",
+    "opt": 2
+   },
+   {
+    "type": "part",
+    "t": 2000,
+    "uid": "c1",
+    "slot": "ecu",
+    "opt": 2
+   },
+   {
+    "type": "part",
+    "t": 2000,
+    "uid": "c1",
+    "slot": "turbo",
+    "opt": 4
+   },
+   {
+    "type": "part",
+    "t": 2000,
+    "uid": "c1",
+    "slot": "ecu",
+    "opt": 0
+   }
+  ],
+  "expect": {
+   "cash": 4000,
+   "refused": [
+    7
+   ]
+  }
+ },
+ {
+  "name": "the rotary tree only fits rotaries",
   "entries": [
    {
     "type": "start",
@@ -1013,8 +1168,8 @@
     "type": "part",
     "t": 2000,
     "uid": "c1",
-    "slot": "swap",
-    "opt": 4
+    "slot": "porting",
+    "opt": 1
    }
   ],
   "expect": {

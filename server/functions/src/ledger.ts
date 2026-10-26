@@ -12,6 +12,8 @@ export interface SlotRule {
   requires: Record<string, [string, number][]>;
   rwdOnly: number[];
   carOnly: Record<string, string[]>;
+  /** option -> every one of [slot, min option] must be fitted too. */
+  requiresAll?: Record<string, [string, number][]>;
 }
 export interface RivalRule {
   id: string; payout: number; boss: boolean;
@@ -178,6 +180,8 @@ export function buildValid(r: Rules, carId: string, parts: Record<string, number
     if (s.rwdOnly.includes(opt) && drivetrain !== "RWD") return false;
     const only = has(s.carOnly, String(opt)) ? s.carOnly[String(opt)] : undefined;
     if (only && !only.includes(carId)) return false;
+    const all = s.requiresAll && has(s.requiresAll, String(opt)) ? s.requiresAll[String(opt)] : undefined;
+    if (all && all.some(([ns, min]) => (parts[ns] ?? 0) < min)) return false;
     const need = has(s.requires, String(opt)) ? s.requires[String(opt)] : undefined;
     if (need && !need.some(([ns, min]) => (parts[ns] ?? 0) >= min)) return false;
   }

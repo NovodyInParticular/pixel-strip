@@ -169,4 +169,56 @@ class UpgradesTest {
         assertTrue(light.weightKg < car("mammoth").weightKg - 150f)
         assertTrue(light.rearWeight > car("mammoth").rearWeight)
     }
+
+    private fun opt(slot: String, name: String) = catalog.slot(slot).options.indexOfFirst { it.name == name }.also { assertTrue(it > 0, "$slot $name") }
+
+    @Test
+    fun aSwapPutsInTheWholeEngine() {
+        val ae86 = car("kestrel")
+        val swapped = build("kestrel", mapOf("swap" to opt("swap", "2JZ SWAP")))
+        assertEquals("i6", swapped.engineLayout, "it sounds like a straight six now")
+        assertTrue(swapped.stockTurbo && swapped.stockBoostGain > 0f, "the 2JZ brings its turbos")
+        assertTrue(swapped.weightKg > ae86.weightKg + 50f, "an iron six weighs more than the 4A-GE: ${ae86.weightKg} -> ${swapped.weightKg}")
+        assertTrue(peakHp(swapped) > peakHp(ae86) * 2f, "${peakHp(ae86)} -> ${peakHp(swapped)} hp")
+        val rx7 = build("spiral_sa", mapOf("swap" to opt("swap", "26B 4-ROTOR SWAP")))
+        assertEquals("rotary" to 4, rx7.engineLayout to rx7.cylinders)
+        assertTrue(rx7.redline >= 9500f)
+    }
+
+    @Test
+    fun pistonPartsDoNothingOnARotaryAndViceVersa() {
+        val stock = peakHp(car("spiral_sa"))
+        assertEquals(stock, peakHp(build("spiral_sa", mapOf("cams" to 3, "valvesprings" to 1, "heads" to 2))), "cams on a Wankel")
+        assertTrue(peakHp(build("spiral_sa", mapOf("porting" to 2))) > stock * 1.05f, "a bridge port does work")
+        // once an LS goes in, the cams count and the porting doesn't
+        val ls = mapOf("swap" to opt("swap", "LS V8 SWAP"))
+        assertTrue(peakHp(build("spiral_sa", ls + mapOf("cams" to 2))) > peakHp(build("spiral_sa", ls)))
+        assertEquals(peakHp(build("spiral_sa", ls)), peakHp(build("spiral_sa", ls + mapOf("porting" to 2))))
+    }
+
+    @Test
+    fun portingTradesLowEndForTopEnd() {
+        val stock = car("spiral_turbo")
+        val peri = build("spiral_turbo", mapOf("porting" to 3, "apexseals" to 1, "oilinject" to 1))
+        val low = { d: CarDef -> DragMath.crankTorque(d, 2500f) }
+        assertTrue(low(peri) < low(stock), "less low end")
+        assertTrue(peri.redline > stock.redline + 1500f && peri.peakHpRpm > stock.peakHpRpm + 1000f, "revs higher, peaks later")
+        assertTrue(peakHp(peri) > peakHp(stock) * 1.15f)
+    }
+
+    @Test
+    fun aDownpipeNeedsATurbo() {
+        val pipe = mapOf("downpipe" to 2)
+        assertEquals(peakHp(car("kokoro")), peakHp(build("kokoro", pipe)), "nothing to do on an NA Miata")
+        assertTrue(build("halberd_6", pipe).boostLag < car("halberd_6").boostLag, "spools the Evo sooner")
+    }
+
+    @Test
+    fun launchControlAndAntiLagArePartsNow() {
+        val ecu = mapOf("ecu" to 3)
+        assertTrue(!Upgrades.limits(car("halberd_6"), catalog, ecu).launchControl, "a standalone alone has no 2-step")
+        assertTrue(Upgrades.limits(car("halberd_6"), catalog, ecu + mapOf("launch" to 1)).launchControl)
+        assertTrue(Upgrades.limits(car("halberd_6"), catalog, ecu + mapOf("launch" to 2)).antiLag, "factory turbo cars get anti-lag")
+        assertTrue(!Upgrades.limits(car("kokoro"), catalog, ecu + mapOf("launch" to 2)).antiLag, "no turbo, no anti-lag")
+    }
 }

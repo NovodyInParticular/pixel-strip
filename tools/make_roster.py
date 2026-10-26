@@ -362,6 +362,8 @@ def main():
     (ROOT / "assets" / "data" / "roster.json").write_text(json.dumps(ids, indent=2) + "\n")
 
     ref = ROOT / "car_references.md"
+    parts = ref.read_text().split("\n## Parts\n", 1)          # tools/make_parts.py owns that section
+    tail = "\n## Parts\n" + parts[1] if len(parts) > 1 else ""
     ref.write_text(
         "# Car references (internal)\n\n"
         "Maps each fictional in-game car to its real-world inspiration. Base stats in\n"
@@ -375,7 +377,7 @@ def main():
         "Removed on 2026-10-25 (owners refunded, see `assets/data/retired.json`): Dominion Vandal R/T ('69 Charger R/T),\n"
         "Harlan Ranger GT Fastback ('67 Mustang GT 390), Crestline Corsair SS 396 ('69 Camaro SS), Dominion Piranha Hemi\n"
         "('70 Hemi 'Cuda), Apache Warrior 389 ('64 GTO), Harlan Ranger 5.0 LX ('88 Fox Mustang), Crestline Corsair IROC 5.7\n"
-        "('88 IROC-Z), Kessler 940 Turbo ('86 944 Turbo), Raijin Zephyr 300 Turbo ('86 Z31 300ZX). Their ids are never reused.\n")
+        "('88 IROC-Z), Kessler 940 Turbo ('86 944 Turbo), Raijin Zephyr 300 Turbo ('86 Z31 300ZX). Their ids are never reused.\n" + tail)
     print(f"{len(ROSTER)} cars written")
 
 

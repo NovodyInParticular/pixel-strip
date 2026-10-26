@@ -33,7 +33,7 @@ class PhysicsCasesTest {
         Case("mammoth stock", "mammoth", emptyMap(), null),
         Case("kite stock, eighth mile", "kite", emptyMap(), null, quarter = false),
         Case("mammoth bolt-ons on slicks", "mammoth", mapOf("intake" to 2, "headers" to 2, "exhaust" to 2, "cams" to 2, "heads" to 1, "tires" to 4, "tubs" to 1), null),
-        Case("mammoth turbo, launch control, timing", "mammoth", supported + mapOf("turbo" to 3, "tires" to 3, "tubs" to 1),
+        Case("mammoth turbo, launch control, timing", "mammoth", supported + mapOf("turbo" to 3, "tires" to 3, "tubs" to 1, "launch" to 1),
             Tune(boostPsi = 20f, launchRpm = 3600f, timing = 2f)),
         Case("joe's K-swap on nitrous", "kite_ef", supported + mapOf("swap" to 4, "turbo" to 3, "nitrous" to 2, "bottle" to 1, "gearbox" to 3),
             Tune(boostPsi = 25f, nitrousGear = 2)),
@@ -44,6 +44,12 @@ class PhysicsCasesTest {
         Case("spiral rotary with wheelie bars", "spiral_r", mapOf("wheeliebars" to 1, "springs" to 1, "shocks" to 2, "tires" to 2), Tune(shockRate = 0.9f)),
         Case("red light", "mammoth", emptyMap(), null, launchClock = -0.5f),
         Case("phantom stock: the converter builds boost on the brake", "phantom", emptyMap(), null),
+        Case("kestrel 2JZ swap, ball-bearing turbo, test pipe, external gate", "kestrel",
+            supported + mapOf("swap" to 6, "turbo" to 6, "downpipe" to 2, "wastegate" to 1, "tires" to 2), Tune(boostPsi = 24f)),
+        Case("spiral R bridge port, ceramic seals, anti-lag", "spiral_r",
+            supported + mapOf("ecu" to 3, "porting" to 2, "apexseals" to 2, "oilinject" to 1, "launch" to 2, "turbo" to 6, "tires" to 3, "tubs" to 1),
+            Tune(boostPsi = 22f, launchRpm = 5200f)),
+        Case("spiral SA 26B four-rotor", "spiral_sa", supported + mapOf("ecu" to 3, "oilinject" to 1, "swap" to 14, "tires" to 2), null),
         Case("halberd stock: a factory turbo spools off the line", "halberd_6", emptyMap(), null),
     )
 

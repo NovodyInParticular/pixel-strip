@@ -70,6 +70,8 @@ class Rules(
         val options: Int, val excludes: List<String>, val requires: Map<Int, List<Pair<String, Int>>>, val rwdOnly: List<Int>,
         /** option -> the only cars it fits. */
         val carOnly: Map<Int, List<String>>,
+        /** option -> every one of these (slot, min option) must be fitted too. */
+        val requiresAll: Map<Int, List<Pair<String, Int>>> = emptyMap(),
     )
     class CosmeticRule(val price: Long, val styles: Int)
     class RivalRule(
@@ -103,6 +105,9 @@ class Rules(
                 })
                 so.addChild("rwdOnly", arr(s.rwdOnly.map { JsonValue(it.toLong()) }))
                 so.addChild("carOnly", obj().also { co -> for ((opt, ids) in s.carOnly.toSortedMap()) co.addChild(opt.toString(), arr(ids.map { JsonValue(it) })) })
+                so.addChild("requiresAll", obj().also { ro ->
+                    for ((opt, all) in s.requiresAll.toSortedMap()) ro.addChild(opt.toString(), arr(all.map { (sl, min) -> arr(listOf(JsonValue(sl), JsonValue(min.toLong()))) }))
+                })
             })
         })
         root.addChild("cosmetics", obj().also { o ->
@@ -192,6 +197,7 @@ class Rules(
                     s.options.withIndex().filter { it.value.requires.isNotEmpty() }.associate { it.index to it.value.requires },
                     s.options.withIndex().filter { it.value.rwdOnly }.map { it.index },
                     s.options.withIndex().filter { it.value.carOnly.isNotEmpty() }.associate { it.index to it.value.carOnly },
+                    s.options.withIndex().filter { it.value.requiresAll.isNotEmpty() }.associate { it.index to it.value.requiresAll },
                 )
             },
             cosmetics = catalog.cosmetics.associate { it.id to CosmeticRule(it.price.toLong(), it.styles.size) },
@@ -238,6 +244,7 @@ class Rules(
                         s.get("requires").associate { r -> r.name.toInt() to r.map { it.getString(0) to it.getInt(1) } },
                         s.get("rwdOnly").asIntArray().toList(),
                         s.get("carOnly").associate { c -> c.name.toInt() to c.asStringArray().toList() },
+                        s.get("requiresAll")?.associate { r -> r.name.toInt() to r.map { it.getString(0) to it.getInt(1) } } ?: emptyMap(),
                     )
                 },
                 cosmetics = j.get("cosmetics").associate { it.name to CosmeticRule(it.getLong("price"), it.getInt("styles")) },

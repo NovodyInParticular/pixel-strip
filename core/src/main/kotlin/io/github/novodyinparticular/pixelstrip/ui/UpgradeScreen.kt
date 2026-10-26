@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.Color
 import io.github.novodyinparticular.pixelstrip.PixelStrip
 import io.github.novodyinparticular.pixelstrip.data.CarDef
 import io.github.novodyinparticular.pixelstrip.data.PartCatalog
+import io.github.novodyinparticular.pixelstrip.data.Upgrades
 import io.github.novodyinparticular.pixelstrip.race.CarLooks
 import io.github.novodyinparticular.pixelstrip.race.DragMath
 import kotlin.math.floor
@@ -14,7 +15,9 @@ import kotlin.math.min
 /**
  * The parts shop, in the garage with the car up on the lift. Flip through the groups; the slots
  * of a group are on the left, the selected slot's options on the right with their price (or
- * OWNED / FITTED) and why one can't go on. Picking an option previews it on the stats.
+ * OWNED / FITTED) and why one can't go on. Picking an option previews it on the stats, with a
+ * line of what it does: horsepower, torque, weight, where in the rev range, and how it sounds.
+ * Parts that can't fit this car (another platform's swap, the rotary tree on a piston car) are hidden.
  */
 class UpgradeScreen(game: PixelStrip) : MenuScreen(game) {
     private val bg = art.tex("scenes/garage.png")
@@ -25,7 +28,8 @@ class UpgradeScreen(game: PixelStrip) : MenuScreen(game) {
     private val catalog: PartCatalog = game.parts
     private val stock = game.car(owned.carId)
     private val stockClass = game.economy.classFor(DragMath.perfectPass(stock).quarter)
-    private val groups = (catalog.slots.map { it.group } + LOOKS).distinct()
+    private fun fits(o: PartCatalog.Option) = o.carOnly.isEmpty() || stock.id in o.carOnly
+    private val groups = (catalog.slots.filter { s -> s.options.drop(1).any { fits(it) } }.map { it.group } + LOOKS).distinct()
     private var group = 0
     private var slotSel = 0
     private var optSel = 0
@@ -35,9 +39,19 @@ class UpgradeScreen(game: PixelStrip) : MenuScreen(game) {
     private val prevGroup = button("<", Color(BTN_PURPLE), keys = intArrayOf(Input.Keys.Q, Input.Keys.LEFT)) { pickGroup(-1) }
     private val nextGroup = button(">", Color(BTN_PURPLE), keys = intArrayOf(Input.Keys.E, Input.Keys.RIGHT)) { pickGroup(1) }
     private val slotButtons = List(MAX_SLOTS) { i -> button("", BTN_GREY) { pickSlot(i) } }
-    private val optButtons = List(MAX_OPTIONS) { i -> button("", BTN_GREY) { optSel = i } }
+    private val optButtons = List(MAX_OPTIONS) { i -> button("", BTN_GREY) { row()?.let { r -> visible(r).getOrNull(i)?.let { optSel = it } } } }
     private val buy = button("BUY", BTN_RED, big = true, keys = intArrayOf(Input.Keys.ENTER)) { purchase() }
     private val back = button("BACK", BTN_GREY, keys = intArrayOf(Input.Keys.B)) { onBack() }
+
+    init {
+        // desktop shots: -Dpixelstrip.pick=SLOT:OPTION opens the shop on that part
+        game.shots?.let { System.getProperty("pixelstrip.pick") }?.split(":")?.let { (slot, opt) ->
+            val sl = catalog.slot(slot)
+            group = groups.indexOf(sl.group)
+            slotSel = rows().indexOfFirst { it is Row.Part && it.slot.id == slot }
+            optSel = opt.toInt()
+        }
+    }
 
     /** A slot (performance or body part) or a cosmetic, with its choices as plain names. */
     private sealed class Row(val name: String) {
@@ -46,7 +60,13 @@ class UpgradeScreen(game: PixelStrip) : MenuScreen(game) {
     }
 
     private fun rows(): List<Row> = if (groups[group] == LOOKS) catalog.cosmetics.map { Row.Look(it) }
-    else catalog.slots.filter { it.group == groups[group] }.map { Row.Part(it) }
+    else catalog.slots.filter { s -> s.group == groups[group] && s.options.drop(1).any { fits(it) } }.map { Row.Part(it) }
+
+    /** The options this car can take, as indices into the slot (the factory part always shows). */
+    private fun visible(r: Row): List<Int> = when (r) {
+        is Row.Part -> r.slot.options.indices.filter { it == 0 || fits(r.slot.options[it]) }
+        is Row.Look -> r.c.styles.indices.toList()
+    }
 
     private fun row() = rows().getOrNull(slotSel)
 
@@ -101,6 +121,10 @@ class UpgradeScreen(game: PixelStrip) : MenuScreen(game) {
     private fun blocker(): String? {
         val r = row() as? Row.Part ?: return null
         val next = preview()?.first ?: return null
+        val o = r.slot.options[optSel]
+        val engine = Upgrades.swapped(stock, catalog, next)
+        if (!o.worksOn(engine.engineLayout)) return if (o.engineType == "rotary") "ROTARY ENGINES ONLY" else "DOES NOTHING ON A ROTARY"
+        if (o.boostOnly && !Upgrades.turboed(engine, catalog, next)) return "DOES NOTHING WITHOUT A TURBO"
         return catalog.blocker(r.slot, optSel, next, stock.drivetrain, stock.id)
             // fitting this would leave another fitted part without what it needs
             ?: next.entries.firstNotNullOfOrNull { (s, o) -> catalog.slotOrNull(s)?.let { catalog.blocker(it, o, next, stock.drivetrain, stock.id) }?.let { "${catalog.slot(s).name} $it" } }
@@ -138,7 +162,7 @@ class UpgradeScreen(game: PixelStrip) : MenuScreen(game) {
             b.label = ""
         }
         val r = row()
-        val n = r?.let { optionCount(it) } ?: 0
+        val n = r?.let { visible(it).size } ?: 0
         optButtons.forEachIndexed { i, b ->
             b.visible = i < n
             b.x = w - 178f
@@ -213,8 +237,10 @@ class UpgradeScreen(game: PixelStrip) : MenuScreen(game) {
             }
         }
         val r = row() ?: return
-        for (i in 0 until min(optionCount(r), MAX_OPTIONS)) {
-            val b = optButtons[i]
+        val shown = visible(r)
+        for (k in 0 until min(shown.size, MAX_OPTIONS)) {
+            val b = optButtons[k]
+            val i = shown[k]
             val sel = i == optSel
             if (sel) panel(b.x - 2f, b.y - 2f, b.w + 4f, b.h + 4f, YELLOW, 0f)
             val ty = b.y + if (b.h < 15f) 3f else 4f
@@ -247,13 +273,66 @@ class UpgradeScreen(game: PixelStrip) : MenuScreen(game) {
         }
         // below the lift, between BACK and the stats
         val mid = (72f + w - 148f) / 2f
+        if (r is Row.Part && optSel > 0) {
+            val o = r.slot.options[optSel]
+            val what = o.engine?.let { catalog.engines[it]?.name } ?: o.name
+            font.drawCentered(batch, (o.brand?.let { "$it  " } ?: "") + what, mid, 60f, YELLOW)
+            effectLine(o, def, after)?.let { font.drawCentered(batch, it, mid, 50f, CYAN) }
+        }
         info?.let { (text, color) -> font.drawCentered(batch, text, mid, 40f, color) }
         if (r is Row.Part && optSel > 0 && r.slot.excludes.any { (owned.parts[it] ?: 0) > 0 }) {
             font.drawCentered(batch, "REMOVES THE " + r.slot.excludes.joinToString { catalog.slot(it).name }, mid, 30f, ORANGE)
         }
         warning(after ?: def)?.let { font.drawCentered(batch, it, mid, 20f, RED) }
-        if ((r?.let { optionCount(it) } ?: 0) <= LONG_LIST) carStats(def, w - 144f, 42f, after)
+        if ((r?.let { visible(it).size } ?: 0) <= LONG_LIST) carStats(def, w - 144f, 42f, after)
         if (installed > 0f) font.drawCentered(batch, "INSTALLED!", w / 2f - 12f, h / 2f + 30f, GREEN, if (installed > 1.25f) 3 else 2)
+    }
+
+    /** Peak crank horsepower and torque on the dyno. */
+    private fun peaks(d: CarDef): Pair<Float, Float> {
+        var hp = 0f
+        var nm = 0f
+        var rpm = d.idleRpm
+        while (rpm <= d.redline) {
+            val t = DragMath.crankTorque(d, rpm)
+            hp = maxOf(hp, t * rpm / 7127f * 0.986f)
+            nm = maxOf(nm, t)
+            rpm += 100f
+        }
+        return hp to nm
+    }
+
+    /** "+24 HP  +31 NM  -12 KG  TOP END  RASPY": what the option changes against what's fitted now. */
+    private fun effectLine(o: PartCatalog.Option, now: CarDef, after: CarDef?): String? {
+        val bits = ArrayList<String>()
+        if (after != null) {
+            val (hp0, nm0) = peaks(now)
+            val (hp1, nm1) = peaks(after)
+            val dh = (hp1 - hp0).toInt()
+            val dn = (nm1 - nm0).toInt()
+            val dk = (after.weightKg - now.weightKg).toInt()
+            if (dh != 0) bits.add("%+d HP".format(dh))
+            if (dn != 0) bits.add("%+d NM".format(dn))
+            if (dk != 0) bits.add("%+d KG".format(dk))
+            if (after.redline - now.redline >= 100f) bits.add("+${(after.redline - now.redline).toInt()} RPM")
+        }
+        val fx = o.effects
+        val lo = (fx["lo"] ?: 0f) + (fx["tq"] ?: 0f)
+        val hi = (fx["hi"] ?: 0f) + (fx["tq"] ?: 0f)
+        when {
+            o.engine != null -> catalog.engines[o.engine]?.let { bits.add(it.layout.replace("rotary", "${it.cylinders}-ROTOR").uppercase() + " SOUND") }
+            hi > lo + 0.04f -> bits.add("TOP END")
+            lo > hi + 0.02f -> bits.add("LOW END")
+        }
+        if ((fx["loud"] ?: 0f) >= 0.5f) bits.add("LOUD") else if ((fx["loud"] ?: 0f) > 0f) bits.add("LOUDER")
+        if ((fx["rasp"] ?: 0f) > 0f) bits.add("RASPY")
+        if ((fx["lope"] ?: 0f) >= 0.5f) bits.add("LUMPY IDLE")
+        if ((fx["growl"] ?: 0f) > 0f) bits.add("INTAKE GROWL")
+        if ((fx["whistle"] ?: 0f) > 0f) bits.add("WHISTLE")
+        if ((fx["screamer"] ?: 0f) > 0f) bits.add("SCREAMS")
+        when ((fx["bovType"] ?: 0f).toInt()) { 1 -> bits.add("PSSSH"); 2 -> bits.add("QUIET") }
+        when ((fx["scType"] ?: 0f).toInt()) { 1, 2 -> bits.add("WHINE"); 3 -> bits.add("SIREN") }
+        return bits.takeIf { it.isNotEmpty() }?.take(4)?.joinToString("  ")
     }
 
     /** What's holding this build back on the dyno, if anything. */

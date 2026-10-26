@@ -23,7 +23,15 @@ Done so far:
 - Title screen, first-launch starter pick, garage, dealership, settings, local save, pixel
   transitions (dissolve, wipe, garage door)
 
-- Parts: 46 slots and over a hundred real parts (`tools/make_parts.py` documents every effect).
+- Parts: 55 slots and 151 real aftermarket parts from fictional makers (`tools/make_parts.py`
+  documents every effect; `car_references.md` maps each brand and swap to the real thing). Engine
+  swaps put a whole engine in (power, rpm, layout and sound, turbo, weight) and only fit the chassis
+  people really swap them into: K-series, B18C and H22 Hondas, RB26 and 2JZ sixes, LS, 572
+  big-block and Coyote V8s, and for the rotaries the 13B-REW, 20B 3-rotor and 26B 4-rotor. The
+  rotaries have their own tree (street, bridge and peripheral porting, apex seals, oil injection);
+  piston parts do nothing on them and the other way round. Some parts need others first (a big
+  turbo needs injectors and an ECU, a race cam valve springs: `requiresAll` in both ledgers); 2-step
+  and anti-lag are parts. The shop shows what each part does: HP, torque, weight, rpm, and how it sounds.
   Cams, heads and manifolds reshape the torque curve; turbos come in sizes (spool vs top end),
   superchargers in types, nitrous in shot sizes; boost and nitrous are held back by the knock
   limit (bottom end, fuel octane, timing, air/fuel) and the fuel system's capacity, so big power
@@ -184,7 +192,7 @@ brake, stage, launch, shifts, nitrous, by physics step) is recorded (`RunRecorde
 finish the server replays it with its TypeScript port of the physics (`server/functions/src/physics`)
 on the car and tune it holds for the race. The replay's reaction time and ET decide the race; the
 phone's own times are never used. Both sides run `shared/physics_cases.json` (written by
-`PhysicsCasesTest`): the port agrees with the game within a few milliseconds.
+`PhysicsCasesTest`): the port agrees with the game within three physics steps (1/240 s each; the game runs in 32-bit floats, the port in doubles).
 
 What the replay can't prove: the race clock at the launch comes from the phone (it depends on
 when the other car staged), so a modified client could claim a perfect light, and a bot could
