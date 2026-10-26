@@ -31,6 +31,18 @@ class CockpitView(private val track: TrackDef, private val art: Art, private val
     private val fog = Color(track.ambient).lerp(Color(0.25f, 0.2f, 0.35f, 1f), 0.5f)
     private val far = track.layers.firstOrNull { it.image.endsWith("far.png") }
     private val mid = track.layers.firstOrNull { it.image.endsWith("mid.png") }
+    private val sun = track.layers.firstOrNull { it.image.endsWith("sun.png") || it.image.endsWith("moon.png") }
+    /** Golden-hour tracks: the low sun glares through the windshield. */
+    val goldenHour = track.layers.any { it.image.endsWith("sun.png") }
+
+    /** Where the sun (or moon) is on screen: its centre. */
+    fun sunAt(w: Int, h: Int): Pair<Float, Float>? {
+        val s = sun ?: return null
+        val tex = art.tex(s.image)
+        // low over the skyline, a little right of the road, sinking as you race like the side view's
+        val rise = (SUN_RISE - trackView.time * s.sink).coerceAtLeast(-tex.height / 3f)
+        return w * SUN_X to horizon(h) + rise + tex.height / 2f
+    }
 
     /** What lines the strip: a pole every 25 m, stands and a wall, the distance boards, the tree, the finish. */
     fun things(finishM: Float): List<Thing> {
@@ -74,6 +86,11 @@ class CockpitView(private val track: TrackDef, private val art: Art, private val
 
         // sky and the city on the horizon (the side view's own layers, standing on the horizon line)
         trackView.drawSky(batch, w)
+        sun?.let { s ->
+            val tex = art.tex(s.image)
+            val (sx, sy) = sunAt(w, h)!!
+            batch.draw(tex, sx - tex.width / 2f, sy - tex.height / 2f)
+        }
         for (l in listOfNotNull(far, mid)) {
             val tex = art.tex(l.image)
             val y = hz - 2f - (if (l === mid) 0f else 3f)
@@ -234,6 +251,25 @@ class CockpitView(private val track: TrackDef, private val art: Art, private val
         }
     }
 
+    /** Low sun through the glass: a bloom on the sun, a streak across the screen, a few ghost discs. */
+    fun drawGlare(b: SpriteBatch, w: Int, h: Int, time: Float) {
+        val (sx, sy) = sunAt(w, h) ?: return
+        val flicker = 0.85f + 0.15f * kotlin.math.sin(time * 1.7f)
+        b.setColor(1f, 0.8f, 0.5f, 0.55f * flicker)
+        b.draw(white, sx - 16f, sy - 16f, 32f, 32f)
+        b.setColor(1f, 0.75f, 0.45f, 0.18f * flicker)
+        b.draw(white, 0f, sy - 1f, w.toFloat(), 3f)
+        val cx = w / 2f
+        val cy = h / 2f
+        for ((k, a) in listOf(0.4f to 0.16f, 0.9f to 0.1f, 1.4f to 0.08f)) {
+            val gx = sx + (cx - sx) * k * 2f
+            val gy = sy + (cy - sy) * k * 2f
+            b.setColor(1f, 0.6f, 0.3f, a * flicker)
+            b.draw(white, gx - 6f * k, gy - 6f * k, 12f * k, 12f * k)
+        }
+        b.color = Color.WHITE
+    }
+
     /** The opponent's lit tail lamps, for the bloom pass. */
     fun drawOpponentGlow(b: SpriteBatch, w: Int, h: Int, playerX: Float, opponentX: Float, car: RearView, shakeX: Float, shakeY: Float) {
         val z = opponentX - playerX
@@ -249,6 +285,8 @@ class CockpitView(private val track: TrackDef, private val art: Art, private val
     }
 
     companion object {
+        const val SUN_X = 0.66f
+        const val SUN_RISE = 46f
         /** Horizon as a share of the screen height from the bottom, focal length as a share of it. */
         const val HORIZON = 0.56f
         const val FOCAL = 1.25f

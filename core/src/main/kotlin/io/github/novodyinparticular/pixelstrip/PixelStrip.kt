@@ -222,7 +222,7 @@ class PixelStrip(val platform: Platform, val shots: ShotPlan? = null, private va
         "tournament" -> io.github.novodyinparticular.pixelstrip.ui.TournamentScreen(this)
         "ranks" -> io.github.novodyinparticular.pixelstrip.ui.LeaderboardScreen(this)
         "boss" -> career.rivals.first { it.id == "joe" }.let { RaceScreen(this, it.track, save.selectedCar()!!, rival = it) }
-        null -> if (shots != null) RaceScreen(this, System.getProperty("pixelstrip.track") ?: "neon_city", save.selectedCar()!!) else TitleScreen(this)
+        null -> if (shots != null) RaceScreen(this, System.getProperty("pixelstrip.track") ?: "neon_city", save.selectedCar()!!, pinkSlip = System.getProperty("pixelstrip.pink") == "1") else TitleScreen(this)
         else -> TitleScreen(this)
     }
 

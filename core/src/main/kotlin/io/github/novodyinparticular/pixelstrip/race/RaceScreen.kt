@@ -259,7 +259,7 @@ class RaceScreen(
         nosButton.apply { x = w - 96f; y = 78f; this.w = 86f; this.h = 78f }      // right thumb, straight above GAS
         distButton.apply { x = w / 2f - 42f; y = h - 46f; this.w = 84f; this.h = 18f }
         viewButton.apply {
-            x = w / 2f - 42f; y = h - 68f; this.w = 84f; this.h = 18f
+            x = 10f; y = h - 52f; this.w = 84f; this.h = 18f            // top-left, under the track name
             visible = (phase == Phase.BURNOUT || phase == Phase.STAGING) && viewSwitch <= 0f
             label = if (firstPerson) "SIDE VIEW" else "COCKPIT"
         }
@@ -520,6 +520,8 @@ class RaceScreen(
         flash = max(0f, flash - dt * 2.2f)
         if (player.spinning && player.slipSpeed > 6f) shake = max(shake, 0.6f)
         if (player.limiter && phase == Phase.COUNTDOWN) shake = max(shake, 0.4f)
+        // in the cockpit the cabin shakes harder the faster it goes
+        if (firstPerson && phase == Phase.RACING) shake = max(shake, 0.35f + player.v / 45f)
         if (phase == Phase.PHOTO) shake = 0f
     }
 
@@ -803,8 +805,10 @@ class RaceScreen(
         post.crt = game.settings.crt
         post.flash = max(flash * 0.45f, weather.lightning * 0.55f)
         post.flashColor.set(if (weather.lightning > flash) Color(0.85f, 0.9f, 1f, 1f) else flashColor)
-        post.chromatic = if (player.nitrousActive) 0.9f else 0f
-        post.radialBlur = if (player.nitrousActive) 0.22f else 0f
+        post.chromatic = if (player.nitrousActive) (if (firstPerson) 1.2f else 0.9f) else 0f
+        // in the cockpit the edges blur with speed, and nitrous pulls everything into a tunnel
+        post.radialBlur = if (firstPerson) (0.1f * (player.v / 70f) * (player.v / 70f) + if (player.nitrousActive) 0.38f else 0f).coerceAtMost(0.55f)
+            else if (player.nitrousActive) 0.22f else 0f
         post.zoom = if (firstPerson) 1f else zoom
         if (viewSwitch > 0f && !game.transitioning) {
             val k = 1f - kotlin.math.abs(viewSwitch / VIEW_SWITCH_S * 2f - 1f)      // up to fully covered at the flip, then back
@@ -814,9 +818,16 @@ class RaceScreen(
         val focusPx = if (phase == Phase.PHOTO) trackView.finishPx - camPx else playerX + carDef.sprite.width / 2f
         post.focusX = (focusPx / w).coerceIn(0.2f, 0.8f)
         post.focusY = ((nearGround + 16f) / h).coerceIn(0.1f, 0.9f)
-        post.hazeY0 = (TrackRenderer.SCREEN_H - track.roadBottom) / h
-        post.hazeY1 = (TrackRenderer.SCREEN_H - track.roadTop) / h
-        post.hazeAmp = track.asphaltHaze
+        if (firstPerson) {
+            // heat off the hood once the engine's working
+            post.hazeY0 = CockpitDash.DASH_TOP / h
+            post.hazeY1 = (CockpitDash.DASH_TOP + 26f) / h
+            post.hazeAmp = 0.7f * (player.rpm / carDef.redline).coerceIn(0f, 1f)
+        } else {
+            post.hazeY0 = (TrackRenderer.SCREEN_H - track.roadBottom) / h
+            post.hazeY1 = (TrackRenderer.SCREEN_H - track.roadTop) / h
+            post.hazeAmp = track.asphaltHaze
+        }
         post.time = t
         post.print = print
         post.present(lut)
@@ -834,12 +845,24 @@ class RaceScreen(
         opponentRear.braking = phase == Phase.FINISHED || ghost.brake > 0f
         cockpit.draw(batch, w, h, eyeX(), opp, opponentRear, distanceM, t, shakeX, shakeY)
         weather.draw(batch)
+        if (track.wet || track.weather == "rain") dashView.drawRain(batch, w, h, Gdx.graphics.deltaTime, player.v * 2.23694f)
         drawDash(w, h)
+        val behind = if (!solo) player.x - ghost.x else null
+        dashView.drawMirror(batch, w, h, behind?.takeIf { it > 0f }, opponentRearPaint, shakeX, shakeY)
+        if (pinkSlip && pinkDark() > 0f) dashView.drawPinkDark(batch, w, h, pinkDark())
     }
+
+    private val opponentRearPaint by lazy { paintColor(rivalCar?.paint ?: 2) }
+
+    /** Pink slips: dark in the cabin until the tree starts counting down. */
+    private fun pinkDark() = if (phase == Phase.BURNOUT || phase == Phase.STAGING) 1f else if (phase == Phase.COUNTDOWN) (1f - phaseTime).coerceAtLeast(0f) else 0f
 
     private fun drawCockpitGlow(w: Int, h: Int) {
         if (!solo) cockpit.drawOpponentGlow(batch, w, h, eyeX(), ghost.x, opponentRear, shakeX, shakeY)
         weather.drawGlow(batch)
+        if (cockpit.goldenHour) cockpit.drawGlare(batch, w, h, trackView.time)
+        dashView.drawGlow(batch, w, player.rpm, player.nitrousActive, player.shiftPoints.getOrElse(player.gear) { carDef.redline }, trackView.time, shakeX, shakeY)
+        if (pinkSlip && pinkDark() > 0f) dashView.drawPinkSpots(batch, w, h, trackView.time, pinkDark())
     }
 
     private val dashView by lazy { CockpitDash(art, white, font, game.effective(owned), owned.parts, paintColor(owned.paint)) }
