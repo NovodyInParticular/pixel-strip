@@ -16,6 +16,8 @@ class Controls(private val post: PostFx, private val font: PixelFont, private va
         var w = 0f
         var h = 0f
         var visible = true
+        /** Drawn by its owner (the nitrous bottle), not as a plain button. */
+        var custom = false
         var down = false
             internal set
         var justPressed = false
@@ -51,7 +53,7 @@ class Controls(private val post: PostFx, private val font: PixelFont, private va
 
     fun draw(batch: SpriteBatch) {
         for (b in buttons) {
-            if (!b.visible) continue
+            if (!b.visible || b.custom) continue
             val sink = floor(b.pressAnim * 2f)
             val x = floor(b.x)
             val y = floor(b.y)
@@ -75,7 +77,7 @@ class Controls(private val post: PostFx, private val font: PixelFont, private va
     /** Pressed buttons glow. */
     fun drawGlow(batch: SpriteBatch) {
         for (b in buttons) {
-            if (!b.visible || b.pressAnim < 0.05f) continue
+            if (!b.visible || b.custom || b.pressAnim < 0.05f) continue
             batch.setColor(b.face.r, b.face.g, b.face.b, 0.7f * b.pressAnim)
             batch.draw(white, b.x - 2f, b.y, b.w + 4f, b.h + 2f)
         }

@@ -76,7 +76,8 @@ class RaceScreen(
 
     private val gasButton = controls.add(Controls.Button(intArrayOf(Input.Keys.UP, Input.Keys.W), "GAS", Color(0.82f, 0.18f, 0.32f, 1f), big = true))
     private val actionButton = controls.add(Controls.Button(intArrayOf(Input.Keys.SPACE, Input.Keys.ENTER), "STAGE", Color(0.13f, 0.6f, 0.62f, 1f), big = true))
-    private val nosButton = controls.add(Controls.Button(intArrayOf(Input.Keys.N), "NOS", Color(0.25f, 0.4f, 0.9f, 1f)))
+    private val nosButton = controls.add(Controls.Button(intArrayOf(Input.Keys.N), "NOS", Color(0.25f, 0.4f, 0.9f, 1f)).apply { custom = true })
+    private val nosFace = NosButton(font, white)
     private val distButton = controls.add(Controls.Button(intArrayOf(Input.Keys.T), "1/8 MILE", Color(0.45f, 0.2f, 0.55f, 1f)))
     private val garageButton = controls.add(Controls.Button(intArrayOf(Input.Keys.G, Input.Keys.ESCAPE, Input.Keys.BACK), "GARAGE", Color(0.3f, 0.3f, 0.42f, 1f)))
 
@@ -229,12 +230,14 @@ class RaceScreen(
         captureShots()
     }
 
+    private val nosArmed get() = phase == Phase.RACING && player.hasLeft
+
     private fun layoutControls() {
         val w = post.width.toFloat()
         val h = post.height.toFloat()
         gasButton.apply { x = w - 96f; y = 10f; this.w = 86f; this.h = 58f }
         actionButton.apply { x = 10f; y = 10f; this.w = 84f; this.h = 46f }
-        nosButton.apply { x = 10f; y = 62f; this.w = 64f; this.h = 24f }
+        nosButton.apply { x = w - 96f; y = 78f; this.w = 86f; this.h = 78f }      // right thumb, straight above GAS
         distButton.apply { x = w / 2f - 42f; y = h - 46f; this.w = 84f; this.h = 18f }
         actionButton.label = when (phase) {
             Phase.BURNOUT -> "STAGE"
@@ -243,8 +246,8 @@ class RaceScreen(
             Phase.FINISHED -> if (online != null) "LOBBY" else if (tournament != null) "BOARD" else if (rival == null) "AGAIN" else if (wonPrize) "CLAIM" else "MAP"
         }
         actionButton.visible = phase != Phase.STAGING && phase != Phase.PHOTO
-        nosButton.visible = phase == Phase.RACING && player.def.nitrous.charges > 0 && player.hasLeft
-        nosButton.label = "NOS x${player.nitrousCharges}"
+        // shown (dimmed) from staging so the thumb finds it before the green; it only sprays once the car has left
+        nosButton.visible = player.def.nitrous.charges > 0 && (phase == Phase.STAGING || phase == Phase.COUNTDOWN || phase == Phase.RACING)
         distButton.visible = phase == Phase.BURNOUT && rival == null && online == null && tournament == null
         distButton.label = if (quarter) "1/4 MILE" else "1/8 MILE"
         gasButton.visible = phase != Phase.FINISHED && phase != Phase.PHOTO
@@ -742,6 +745,7 @@ class RaceScreen(
         batch.setBlendFunctionSeparate(GL20.GL_SRC_ALPHA, GL20.GL_ONE, GL20.GL_ZERO, GL20.GL_ONE)
         if (phase != Phase.FINISHED && phase != Phase.PHOTO) hud.drawTachGlow(batch, TACH_X, TACH_Y, player.rpm, carDef.redline, tachZone())
         controls.drawGlow(batch)
+        if (nosButton.visible) nosFace.drawGlow(batch, nosButton, player, nosArmed, screenTime)
         batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
         batch.end()
         post.ui.end()
@@ -867,6 +871,7 @@ class RaceScreen(
         }
         hud.drawPops(batch, w, dt)
         controls.draw(batch)
+        if (nosButton.visible) nosFace.draw(batch, nosButton, player, nosArmed, screenTime)
     }
 
     private fun drawTireTemp(w: Int, h: Int) {

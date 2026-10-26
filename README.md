@@ -79,7 +79,7 @@ Next: cash packs (Play Billing).
 |---|---|---|
 | GAS (right) | Up / W | Hold: burnout in the box, rev while staged, throttle in the run |
 | Left button | Space | STAGE after the burnout, LAUNCH on green, SHIFT during the run |
-| NOS | N | Spray (best once the tyres hook, 2nd gear on) |
+| NOS (right, above GAS) | N | One tap fires the whole shot; the meter drains as it sprays, then the next charge (if any) is ready. Best once the tyres hook, 2nd gear on |
 | 1/8 MILE | T | Toggle 1/8 or 1/4 mile before staging |
 
 Rev into the tach's green zone while the ambers count down. Too low bogs, too high spins.
