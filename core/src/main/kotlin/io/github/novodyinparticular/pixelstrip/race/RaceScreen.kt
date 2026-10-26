@@ -548,7 +548,7 @@ class RaceScreen(
 
     /** Smoke and rubber from spinning tyres, heat haze off the pipes, nitrous purges while staged. */
     private fun emitCarEffects(car: Vehicle, view: CarRenderer, ground: Float, lane: Int) {
-        val s = carDef.sprite
+        val s = car.def.sprite
         val canvasX = car.x * PX_PER_M - s.frontX
         // rubber on the track under the driven tyres: a patch while it spins in place, a streak while it moves
         val driven = when (car.def.drivetrain) {
@@ -574,19 +574,24 @@ class RaceScreen(
         } else lastMark[lane] = Float.NaN
         val speedPx = car.v * PX_PER_M
         if ((track.weather == "rain" || track.weather == "sand") && car.v > 4f) {
-            // a rooster tail off the rear tyres: mist on the wet, dust on the dry
+            // a rooster tail off the driven tyres: mist on the wet, dust on the dry
             val dust = track.weather == "sand"
             val chance = (car.v / 30f).coerceIn(0.2f, 0.8f)
-            if (MathUtils.random() < chance) particles.smoke(canvasX + s.rearWheel.first - 6f, ground + 1f, 0.25f,
+            if (MathUtils.random() < chance) particles.smoke(canvasX + driven.random() - 6f, ground + 1f, 0.25f,
                 if (dust) DUST_LIT else MIST_LIT, if (dust) DUST_AMBIENT else MIST_AMBIENT, 0.45f, carry = speedPx * 0.7f)
         }
         if (car.slipSpeed >= 1.5f) {
-            val wheelX = canvasX + s.rearWheel.first
+            // smoke comes off whichever tyres are spinning: the fronts on FWD, the rears on RWD, both on AWD
+            // (an AWD car shares the same puffs between its axles rather than smoking twice as hard)
             val heat = (car.slipSpeed / 20f).coerceIn(0.2f, 1f)
             val n = if (car.slipSpeed > 12f) 3 else 1
             val linger = if (car.mode == Vehicle.Mode.BURNOUT) 1.6f else 1f
-            repeat(n) { particles.smoke(wheelX - 4f, ground + 2f, heat, SMOKE_LIT, SMOKE_AMBIENT, linger) }
-            if (car.mode == Vehicle.Mode.BURNOUT) particles.haze(wheelX, ground + 6f, 0.8f)
+            val first = MathUtils.random(driven.size - 1)
+            repeat(n) { i ->
+                val wheelX = canvasX + driven[(first + i) % driven.size]
+                particles.smoke(wheelX - 4f, ground + 2f, heat, SMOKE_LIT, SMOKE_AMBIENT, linger)
+            }
+            if (car.mode == Vehicle.Mode.BURNOUT) for (wheel in driven) particles.haze(canvasX + wheel, ground + 6f, 0.8f / driven.size)
         }
         val (ex, ey) = view.exhaustAt(canvasX, ground)
         if (car.hasLeft && car.throttle > 0f || car.mode == Vehicle.Mode.BURNOUT && car.throttle > 0f) {
@@ -598,7 +603,7 @@ class RaceScreen(
         if (purgeWindow) repeat(2) { particles.purge(canvasX + s.frontX - 14f, ground + 22f) }
     }
 
-    private fun carCanvasX(v: Vehicle) = v.x * PX_PER_M - carDef.sprite.frontX
+    private fun carCanvasX(v: Vehicle) = v.x * PX_PER_M - v.def.sprite.frontX
 
     /** A win: confetti over the screen, and on a clear night, fireworks over the stands. */
     private fun celebrate() {
