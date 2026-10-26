@@ -8,6 +8,8 @@ from the rear bumper (nose to the right, like the sprites), h in metres above th
   python3 -I tools/art/photo_ref.py grid ID OUT.png        the photo with a pixel grid, to read wheel centres
   python3 -I tools/art/photo_ref.py metres ID OUT.png      the photo in metres with a 0.1 m grid, to read a profile
   python3 -I tools/art/photo_ref.py overlay ID OUT.png     the same with the car's current profile drawn over it
+  python3 -I tools/art/photo_ref.py cache [ID ...]          shrink the photos to sprite size into photo_src/ (what car.py
+                                                            paints the sprites from; the build never reads ~/Pictures)
 """
 import json
 import math
@@ -154,7 +156,36 @@ def overlay(ref, img, cid):
             poly(pts, (255, 160, 0, 255), close=True, width=1)
 
 
+def sprite_photo(ref, cid):
+    """The photo at sprite resolution, aligned pixel for pixel with the car's sprite canvas."""
+    sys.path.insert(0, str(HERE))
+    import car
+    import roster
+    from real_cars import M
+    p = next(q for q in roster.ROSTER if q["id"] == cid)
+    ph, _, _ = to_metres(ref)
+    k = car.S * M                                    # sprite px per metre
+    sm = np.asarray(ph.resize((round(ph.width * k / PPM), round(ph.height * k / PPM)), Image.BOX))
+    cw = car.width_of(p)
+    out = np.zeros((car.CH, cw, 4), dtype=np.uint8)
+    for y in range(car.CH):
+        hm = (car.GROUND - car.unit_y(y)) / M
+        sy = int(round(sm.shape[0] - 0.5 - hm * k))
+        for x in range(cw):
+            sx = int(round((car.unit_x(x) / M + 0.2) * k - 0.5))
+            if 0 <= sx < sm.shape[1] and 0 <= sy < sm.shape[0]:
+                out[y, x, :3] = sm[sy, sx]
+                out[y, x, 3] = 255
+    return out
+
+
 def main():
+    if sys.argv[1] == "cache":
+        (HERE / "photo_src").mkdir(exist_ok=True)
+        for cid in sys.argv[2:] or list(REFS["cars"]):
+            Image.fromarray(sprite_photo(REFS["cars"][cid], cid)).save(HERE / "photo_src" / f"{cid}.png")
+            print(f"photo_src/{cid}.png")
+        return
     mode, cid, out = sys.argv[1:4]
     ref = REFS["cars"][cid]
     if mode == "grid":

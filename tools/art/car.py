@@ -25,7 +25,7 @@ import os
 
 import numpy as np
 
-from common import ASSETS, P, TRANSPARENT, bayer, canvas, disc_mask, edges, ellipse_mask, poly_mask, put, save
+from common import ASSETS, P, PALETTE, TRANSPARENT, bayer, canvas, disc_mask, edges, ellipse_mask, poly_mask, put, save
 
 S = 1.5                       # pixels per profile unit (~27 px/m)
 PAD_X, PAD_Y = 4, 4
@@ -90,6 +90,7 @@ def _paint_extras_mask(p, cw):
 
 
 PAINTED = {"wing", "ducktail", "roof_spoiler", "lip"}
+PHOTO_EXTRAS = {"glass_text"}        # drawn over a photo-coloured car too (stickers the photo doesn't have)
 
 
 def _tone(s, crease_t, hot, flat, x, y):
@@ -120,6 +121,94 @@ def _tone(s, crease_t, hot, flat, x, y):
     return 1
 
 
+PHOTO_SRC = os.path.join(os.path.dirname(os.path.abspath(__file__)), "photo_src")
+_PAL = np.array([c[:3] for cols in PALETTE.values() for c in cols], dtype=np.float32)
+
+
+def photo_of(p):
+    """The car's reference photo at sprite size (tools/art/photo_ref.py cache), or None to draw it procedurally."""
+    f = os.path.join(PHOTO_SRC, f"{p['id']}.png")
+    if not os.path.exists(f):
+        return None
+    from PIL import Image
+    a = np.asarray(Image.open(f).convert("RGBA"))
+    return a if a.shape[:2] == (CH, width_of(p)) else None
+
+
+def _hsv(rgb):
+    r, g, b = (rgb[..., i] / 255.0 for i in range(3))
+    mx, mn = np.maximum(np.maximum(r, g), b), np.minimum(np.minimum(r, g), b)
+    d = mx - mn
+    h = np.zeros_like(mx)
+    nz = d > 1e-6
+    rm, gm = nz & (mx == r), nz & (mx == g) & (mx != r)
+    bm = nz & ~rm & ~gm
+    h[rm] = ((g - b)[rm] / d[rm]) % 6
+    h[gm] = (b - r)[gm] / d[gm] + 2
+    h[bm] = (r - g)[bm] / d[bm] + 4
+    return h / 6.0, np.where(mx > 0, d / np.maximum(mx, 1e-6), 0), mx
+
+
+def photo_split(p, photo, region, body_px, glass_px):
+    """Splits the photo inside the car into paint and the rest. Paint gets a ramp index from the photo's own
+    light and shade (so any colour still repaints it); glass gets the game's dark glass tones from the photo's
+    light and shade (the seats, pillars and frames stay readable, the scenery behind doesn't); everything else
+    (lamps, black trim, chrome, grille) keeps the photo's colour, snapped to the palette.
+    Returns (paint mask, ramp index, trim RGBA)."""
+    rgb = photo[..., :3].astype(np.float32)
+    h, sat, v = _hsv(rgb)
+    sample = body_px & region & ~glass_px
+    ref_s = float(np.median(sat[sample])) if sample.any() else 0.0
+    ref_v = float(np.median(v[sample])) if sample.any() else 0.6
+    coloured = ref_s > 0.25
+    if coloured:
+        w = sat[sample]
+        ang = h[sample] * 2 * np.pi
+        ref_h = (np.arctan2((np.sin(ang) * w).sum(), (np.cos(ang) * w).sum()) / (2 * np.pi)) % 1.0
+        dh = np.abs((h - ref_h + 0.5) % 1.0 - 0.5)
+        same = (dh < 0.08) & (sat > 0.3 * ref_s)
+        off_colour = (sat > 0.45) & (dh > 0.12)            # lamps, markers, badges in another colour
+    else:
+        same = (sat < 0.25) & (v > 0.5 * ref_v)
+        off_colour = sat > 0.45
+    black_trim = v < min(0.16, 0.4 * ref_v)                             # on a dark car, dark is mostly just paint
+    # the body sides are paint unless a pixel is clearly something else; above the beltline only what matches
+    paint = np.where(body_px, ~off_colour & ~black_trim, same | ((v > 0.85) & (sat < 0.3)))
+    paint &= region & ~glass_px
+    # the silhouette's own edge is paint: a stray background pixel there would read as a hole
+    pad = np.pad(region, 1)
+    edge = region & ~(pad[:-2, 1:-1] & pad[2:, 1:-1] & pad[1:-1, :-2] & pad[1:-1, 2:])
+    paint |= edge & ~glass_px
+    lum = rgb @ np.array([0.3, 0.59, 0.11], dtype=np.float32)
+    # soften the photo's reflections a little so panels read as panels, not noise
+    lp = np.pad(lum, 1, mode="edge")
+    lum = (2 * lum + lp[:-2, 1:-1] + lp[2:, 1:-1] + lp[1:-1, :-2] + lp[1:-1, 2:]) / 6
+    # the photo's light and shade relative to its own paint: the typical panel sits mid-ramp (4), the darkest
+    # reflections go toward 1 and only the real highlights reach the top shades
+    ref = paint & body_px if (paint & body_px).any() else paint
+    knots = np.percentile(lum[ref], [2, 25, 50, 80, 97, 99.5]) if ref.any() else np.array([0, 60, 120, 180, 230, 250])
+    knots = np.maximum.accumulate(knots + np.arange(6) * 1e-3)
+    shade = np.interp(lum, knots, [1, 3, 4, 5, 6, 7])
+    if ref_v < 0.4:
+        shade = 4 + (shade - 4) * 0.65          # a dark car's sky reflections are harsh; any other colour would look dirty
+    idx = np.clip(np.round(shade), 1, 7).astype(np.int32)
+    trim = canvas(photo.shape[1], CH)
+    rest = region & ~paint & ~glass_px
+    if rest.any():
+        q = rgb[rest]
+        near = ((q[:, None, :] - _PAL[None, :, :]) ** 2).sum(2).argmin(1)
+        trim[rest, :3] = _PAL[near].astype(np.uint8)
+        trim[rest, 3] = 255
+    g = region & glass_px
+    if g.any():
+        gl = lum[g]
+        lo, hi = np.percentile(gl, [5, 95])
+        t = np.clip((gl - lo) / max(1.0, hi - lo), 0, 1)
+        tones = [P("night", 0), P("night", 1), P("night", 2), P("night", 3), P("blue", 1), P("blue", 2)]
+        trim[g] = np.array(tones, dtype=np.uint8)[np.minimum(5, (t * 6).astype(int))]
+    return paint, idx, trim
+
+
 def body_layer(p):
     cw = width_of(p)
     body = poly_mask(cw, CH, L(p["body"]))
@@ -129,6 +218,10 @@ def body_layer(p):
     gh = poly_mask(cw, CH, L(p["greenhouse"]))
     glass = _glass_union(p, cw)
     gh = np.minimum(gh, 1 - (glass >= 0.5))
+    for cut in p.get("cutouts", []):            # open roofs: see-through, nothing drawn
+        c = poly_mask(cw, CH, L(cut))
+        gh = np.minimum(gh, 1 - c)
+        body = np.minimum(body, 1 - c)
     extras = _paint_extras_mask(p, cw)
 
     solid_b = body >= 0.5
@@ -231,6 +324,16 @@ def body_layer(p):
                 if nb and y < CH * 0.6:   # only soften the upper curves; the bottom stays crisp
                     idx[y, x] = max(0, max(nb) - 3)
 
+    photo = photo_of(p)
+    if photo is not None:
+        region = (solid | (glass >= 0.5) | (poly_mask(cw, CH, L(p["windshield"])) >= 0.5)) & (photo[..., 3] > 0)
+        for cut in p.get("cutouts", []):
+            region &= poly_mask(cw, CH, L(cut)) < 0.5
+        paint, pidx, trim = photo_split(p, photo, region, solid_b, (glass >= 0.5) | (poly_mask(cw, CH, L(p["windshield"])) >= 0.5))
+        keep_edge = idx == 0                            # the dark bottom edge stays
+        idx = np.where(region & ~keep_edge, np.where(paint, pidx, np.maximum(1, idx)), idx)
+        idx[region & (idx < 0)] = 1
+        p["_photo_trim"] = trim
     return _encode(idx, shine), idx
 
 
@@ -340,6 +443,15 @@ def _rect_px(x0, y0, x1, y1):
 def trim_layer(p, idx):
     cw = width_of(p)
     out = canvas(cw, CH)
+    if p.get("_photo_trim") is not None:
+        # drawn from the photo: its glass, lamps, trim and badges are already there
+        out[:] = p["_photo_trim"]
+        for ex, ey in p["exhaust_tips"]:
+            _tip(out, int(px_x(ex)), int(px_y(ey)))
+        for e in p.get("extras", []):
+            if e["kind"] in PHOTO_EXTRAS:
+                _trim_extra(out, cw, idx, e, p)
+        return out
     for k, g in enumerate(p["glass"]):
         _glass(out, cw, g, p, tint_dark=(k > 0 and p.get("dark_quarters", False)), main=(g is _main_glass(p)))
     _windshield(out, cw, p["windshield"])
