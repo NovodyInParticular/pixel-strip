@@ -96,6 +96,9 @@ class PixelStrip(val platform: Platform, val shots: ShotPlan? = null, private va
     /** How one of your cars looks, with your crew's emblem for the CREW decal. */
     fun looks(car: OwnedCar) = io.github.novodyinparticular.pixelstrip.race.CarLooks.of(car, parts, cloud.badge?.emblem)
 
+    /** How one of your cars sounds: the sound tags of its parts (what works on its engine). */
+    fun sound(car: OwnedCar) = io.github.novodyinparticular.pixelstrip.audio.EngineSound.of(parts, car.parts, effective(car))
+
     /** The car as it drives: stock stats + installed parts + the active tune. */
     fun effective(car: OwnedCar): CarDef = effectiveWith(car.carId, car.parts, car.cosmetics, car.tune)
 
@@ -161,7 +164,12 @@ class PixelStrip(val platform: Platform, val shots: ShotPlan? = null, private va
             val c = save.addCar(startCar ?: "mammoth", car(startCar ?: "mammoth").defaultPaint)
             if (shots.loaded) {
                 // a pro-mod blower build: the top option everywhere except turbo, plus tubs for the slicks
-                for (s in parts.slots) if (s.id != "turbo" && s.id != "final") c.parts[s.id] = s.options.size - 1
+                val stockDef = car(c.carId)
+                for (s in parts.slots) if (s.id != "turbo" && s.id != "final") {
+                    val top = s.options.indices.last { it == 0 || s.options[it].carOnly.isEmpty() || c.carId in s.options[it].carOnly }
+                    if (top > 0) c.parts[s.id] = top
+                }
+                if (stockDef.drivetrain != "RWD") c.parts.remove("wheeliebars")
                 if (car(c.carId).drivetrain != "RWD") { c.parts.remove("bars"); c.parts.remove("wheeliebars") }
                 c.cosmetics.putAll(mapOf("wing" to 3, "rims" to 4, "underglow" to 2, "finish" to 4, "decal" to 2, "decalColor" to 6, "tint" to 1))
             }

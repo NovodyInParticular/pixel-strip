@@ -46,6 +46,11 @@ class GarageScreen(game: PixelStrip) : MenuScreen(game) {
 
     private val sell = button("SELL", Color(0.35f, 0.3f, 0.2f, 1f)) { sellTapped() }
 
+    // --- hear the build: hold REV to rev it to the limiter, hold 2-STEP to sit on the launch limiter ---
+    private val rev = button("REV", Color(0.7f, 0.2f, 0.15f, 1f), keys = intArrayOf(Input.Keys.R)) {}
+    private val twoStep = button("2-STEP", Color(0.75f, 0.4f, 0.1f, 1f), keys = intArrayOf(Input.Keys.F)) {}
+    private var revRpm = 0f
+
     // --- daily reward pop-up -------------------------------------------------------------------
     private var daily: io.github.novodyinparticular.pixelstrip.net.Daily.Status? = null
     private var dailyBusy = false
@@ -147,6 +152,8 @@ class GarageScreen(game: PixelStrip) : MenuScreen(game) {
         }
         settings.label = "SETUP"
         prev.apply { x = w / 2f - 96f; y = 52f; this.w = 22f; this.h = 22f; visible = save.cars.size > 1 }
+        rev.apply { x = 8f; y = h - 84f; this.w = 44f; this.h = 16f }
+        twoStep.apply { x = 56f; y = h - 84f; this.w = 56f; this.h = 16f; visible = game.effective(owned).launchControl > 0f || (owned.parts["launch"] ?: 0) > 0 }
         sell.apply {
             x = w - 52f; y = h - 58f; this.w = 44f; this.h = 14f; visible = save.cars.size > 1
             label = if (confirmSell > 0f) "SURE?" else "SELL"
@@ -173,10 +180,18 @@ class GarageScreen(game: PixelStrip) : MenuScreen(game) {
             for (b in controls.buttons) b.visible = false
         }
         confirmSell = (confirmSell - dt).coerceAtLeast(0f)
-        // the car on the lift idles, with a lumpy little blip every few seconds
-        val blip = if ((time % 5f) in 2f..2.35f) 0.6f else 0f
+        // the car on the lift idles (with a little blip every few seconds), or revs while REV is held
         val d = game.effective(owned)
-        game.audio.engine(0, d, d.idleRpm + blip * 2600f, 0.04f + blip, owned.parts["exhaust"] ?: 0, 0.3f)
+        val launch = if (d.launchControl > 0f) d.launchControl else io.github.novodyinparticular.pixelstrip.race.DragMath.launchRpm(d, 1.25f)
+        val holdTwoStep = twoStep.visible && twoStep.down
+        val revving = rev.down || holdTwoStep
+        val top = if (holdTwoStep) launch else d.redline
+        if (revRpm < d.idleRpm) revRpm = d.idleRpm
+        revRpm = if (revving) minOf(top, revRpm + REV_UP * dt) else maxOf(d.idleRpm, revRpm - REV_DOWN * dt)
+        val onLimiter = revving && revRpm >= top - 1f
+        val blip = if (!revving && revRpm <= d.idleRpm + 1f && (time % 5f) in 2f..2.35f) 0.6f else 0f
+        game.audio.engine(0, d, revRpm + blip * 2600f, if (revving) 1f else 0.04f + blip, game.sound(owned), if (revving) 0.6f else 0.3f,
+            limiter = onLimiter && !holdTwoStep, twoStep = onLimiter && holdTwoStep)
         lights.clear()
         val w = post.width
         for (i in LAMPS.indices) lights.add(lampX(w, i), LAMP_Y, 60f, 1f, 0.82f, 0.55f, 210f)
@@ -329,6 +344,9 @@ class GarageScreen(game: PixelStrip) : MenuScreen(game) {
         const val LAMP_Y = 270f - 58f
         const val GROUND = 270f - 232f
         val AMBIENT = Color(0.5f, 0.48f, 0.66f, 1f)
+        /** Free-revving on the lift, rpm per second up and down. */
+        const val REV_UP = 7000f
+        const val REV_DOWN = 4500f
         private val KEY_TAG = Color(0.93f, 0.86f, 0.62f, 1f)
         private val KEY_TAG_SHADE = Color(0.7f, 0.6f, 0.38f, 1f)
         private val KEY_RING = Color(0.7f, 0.72f, 0.78f, 1f)

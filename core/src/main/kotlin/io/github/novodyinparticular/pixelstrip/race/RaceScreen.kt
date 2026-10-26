@@ -98,6 +98,9 @@ class RaceScreen(
         rivalCar?.let { looks = CarLooks.of(it, game.parts, online?.them?.crew?.emblem) }
         if (rival?.driver == "joe") driver = 1
     }
+    private val playerSound = game.sound(owned)
+    private val ghostSound = game.sound(rivalCar ?: owned)
+
     /** A real car in the far lane (a career rival or another player), not the practice hologram. */
     private val realOpponent = rival != null || online != null
     /** Where the opponent's car is drawn, eased toward what their phone reports. */
@@ -392,8 +395,8 @@ class RaceScreen(
 
         // Sound: both engines from the live physics, the crowd with the action, music under it all
         val audio = game.audio
-        audio.engine(0, player, owned.parts["exhaust"] ?: 0, 0.9f)
-        if (!solo) audio.engine(1, ghost, rivalCar?.parts?.get("exhaust") ?: 0, 0.5f) else audio.synth.engines[1].active = false
+        audio.engine(0, player, playerSound, 0.9f)
+        if (!solo) audio.engine(1, ghost, ghostSound, 0.5f) else audio.synth.engines[1].active = false
         audio.synth.crowd = if (phase == Phase.RACING) 0.25f + 0.6f * min(1f, player.v / 40f) else 0.15f
         audio.music(if (rival?.boss == true) "boss" else track.song, if (phase == Phase.RACING) 0.12f else 0.3f)
         audio.synth.rain = if (track.weather == "rain") 0.5f else 0f

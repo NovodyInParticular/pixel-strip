@@ -54,10 +54,16 @@ Done so far:
   Sunset Coast, Summit Airfield (snow), Dusk Speedway '77; each with its own grip, weather and
   song; and San Antonio, Joe's home strip, where his boss race always runs and which is open to
   quick races, rivals, online matchmaking and tournaments like the rest.
-- Audio, all synthesized: engines from the live physics (per-cylinder firing for I4, I6, V6, V8,
-  V10, V12, flat-4 with its unequal-header burble, flat-6, flat-12 and rotary; a VTEC-style cam
-  crossover that hardens the note; turbo, blower, limiter, nitrous, tyre squeal), effects, crowd,
-  and chiptune music per screen and track
+- Audio, all synthesized (`audio/EngineVoice.kt`): engines from the live physics, a pulse per
+  firing at the exact firing frequency for I4, I6, V6, crossplane V8, V10, V12, flat-4 (unequal
+  headers), flat-6, flat-12 and 2-, 3- and 4-rotor rotaries. A rotary braps at idle (rougher with
+  each porting stage) and sharpens into a buzz up top; Hondas harden at their VTEC crossover. The
+  parts are heard: exhaust volume and rasp, cam lope at idle, intake growl, turbo whistle by size,
+  vent-to-atmosphere or recirculating blow-off (or the flutter with none), the wastegate screamer,
+  roots whine or a centrifugal siren, 2-step and anti-lag bangs while staged, crackle on a lift with
+  a loud exhaust, the limiter bouncing. REV and 2-STEP in the garage, and the dyno, to hear a build.
+  `SynthTest` measures each of these and writes `build/engine-demo.wav`. Effects, crowd, chiptune
+  music per screen and track
 - Factory turbos spool: off boost an engine makes about 70% of its rated torque, and it comes on
   boost from just below its torque peak. Staged with the clutch in an engine has no load, so it
   barely builds boost; anti-lag on the two-step does, and so does an automatic brake-torqued
