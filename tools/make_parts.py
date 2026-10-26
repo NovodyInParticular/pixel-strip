@@ -490,6 +490,12 @@ COSMETIC = [
     {"id": "wing", "name": "SPOILER", "group": "LOOKS", "styles": ["stock", "ducktail", "gt", "drag"], "price": 3000, "dragArea": [0, 0.004, 0.012, 0.02]},
     {"id": "tint", "name": "WINDOW TINT", "group": "LOOKS", "styles": ["none", "light", "limo"], "price": 400},
     {"id": "underglow", "name": "UNDERGLOW", "group": "LOOKS", "styles": ["off", "cyan", "magenta", "green", "orange", "purple"], "price": 1500},
+    # Inside the car: what you see from the seat (the cockpit view, race/CockpitDash.kt). No effect on the run.
+    {"id": "tach", "name": "TACHOMETER", "group": "INTERIOR", "styles": ["stock", "monster_5in", "column_pod", "led_bar"], "price": 600},
+    {"id": "gauges", "name": "PILLAR GAUGES", "group": "INTERIOR", "styles": ["none", "boost", "boost_afr", "triple"], "price": 450},
+    {"id": "shiftlight", "name": "SHIFT LIGHT", "group": "INTERIOR", "styles": ["none", "dash_led", "led_strip", "pro_light"], "price": 350},
+    {"id": "knob", "name": "SHIFT KNOB", "group": "INTERIOR", "styles": ["stock", "cue_ball", "billet", "titanium", "drag_tee"], "price": 150},
+    {"id": "steering", "name": "STEERING WHEEL", "group": "INTERIOR", "styles": ["stock", "deep_dish", "suede_race", "wood_classic", "drag_small"], "price": 900},
 ]
 
 # Fictional parts makers and the real companies they stand in for (car_references.md)

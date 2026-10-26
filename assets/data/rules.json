@@ -4024,7 +4024,12 @@
 	"rims": { "price": 2500, "styles": 12 },
 	"wing": { "price": 3000, "styles": 4 },
 	"tint": { "price": 400, "styles": 3 },
-	"underglow": { "price": 1500, "styles": 6 }
+	"underglow": { "price": 1500, "styles": 6 },
+	"tach": { "price": 600, "styles": 4 },
+	"gauges": { "price": 450, "styles": 4 },
+	"shiftlight": { "price": 350, "styles": 4 },
+	"knob": { "price": 150, "styles": 5 },
+	"steering": { "price": 900, "styles": 5 }
 },
 "colors": 14,
 "colorPrice": 1500,

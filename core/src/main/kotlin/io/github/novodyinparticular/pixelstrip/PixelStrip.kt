@@ -172,6 +172,11 @@ class PixelStrip(val platform: Platform, val shots: ShotPlan? = null, private va
                 if (stockDef.drivetrain != "RWD") c.parts.remove("wheeliebars")
                 if (car(c.carId).drivetrain != "RWD") { c.parts.remove("bars"); c.parts.remove("wheeliebars") }
                 c.cosmetics.putAll(mapOf("wing" to 3, "rims" to 4, "underglow" to 2, "finish" to 4, "decal" to 2, "decalColor" to 6, "tint" to 1))
+                // -Dpixelstrip.look=ID:STYLE,ID:STYLE: cosmetics by style name (the cockpit's interior mods)
+                System.getProperty("pixelstrip.look")?.split(",")?.forEach { kv ->
+                    val (id, style) = kv.split(":")
+                    parts.cosmetics.firstOrNull { it.id == id }?.let { c.cosmetics[id] = it.styles.indexOf(style).coerceAtLeast(0) }
+                }
             }
             // -Dpixelstrip.beaten=ID,ID: rivals already beaten (barn finds show after their boss)
             save.beaten.clear()

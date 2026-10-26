@@ -183,7 +183,7 @@ def dash(style, rhd=False):
         gauge(out, CX, 38, 22, "silver", ticks=9, red_from=0.8)
         gauge(out, CX - 50, 44, 17, "silver", ticks=12, red_from=2)
         gauge(out, CX + 50, 44, 12, "silver", ticks=4, red_from=0.9)
-        meta.update(tach=[CX, 38, 22], speedo=[CX - 50, 44, 17], small=[[CX + 50, 44, 12]], vtec=[CX + 12, 50])
+        meta.update(tach=[CX, 38, 22], speedo=[CX - 50, 44, 17], small=[[CX + 50, 44, 12]])
     elif style == "exotic_bare":
         gauge(out, CX - 26, 34, 15, "black", ticks=8, red_from=0.85)
         gauge(out, CX + 8, 32, 17, "black", ticks=10, red_from=0.8)
@@ -195,6 +195,14 @@ def dash(style, rhd=False):
         for k in range(4):
             gauge(out, CX - 54 + k * 36, 54, 6, "black", ticks=3, red_from=0.9, square=True)
         meta.update(tach=[CX - 30, 34, 16], speedo=[CX + 30, 34, 16], small=[[CX - 54 + k * 36, 54, 6] for k in range(4)])
+    # VTEC: in the top-right corner of the cluster, over the rightmost gauge's shoulder
+    dials = [g for g in (meta["tach"], meta["speedo"]) if g] + [g for g in meta["small"] if abs(g[0] - CX) < 90]
+    if meta["lcd"]:
+        right, top = meta["lcd"][2], meta["lcd"][1] - 10      # on the hood over the LCD, clear of its bars
+    else:
+        right = max(g[0] + g[2] for g in dials)
+        top = min(g[1] - g[2] for g in dials)
+    meta["vtec"] = [right - 23, top + 7]
     return out, meta
 
 
@@ -274,6 +282,10 @@ WHEELS = {
                       spoke="black", hub=24),
     "race_suede": dict(r=64, thick=7, spokes=[90, 180, 270], rim=[(20, 18, 24), (32, 30, 38), (44, 42, 52)],
                        spoke="drilled", hub=10, dish=True),
+    "deep_dish": dict(r=66, thick=7, spokes=[90, 180, 270], rim=[(14, 14, 18), (26, 26, 32), (40, 40, 48)],
+                      spoke="chrome", hub=16, dish=True),
+    "drag_small": dict(r=54, thick=5, spokes=[90, 180, 270], rim=[(22, 22, 26), (36, 36, 42), (52, 52, 60)],
+                       spoke="drilled", hub=9),
     "exotic_small": dict(r=62, thick=6, spokes=[90, 180, 270], rim=[(30, 22, 18), (48, 36, 30), (70, 54, 44)],
                          spoke="black", hub=14),
 }

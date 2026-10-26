@@ -19,6 +19,7 @@ import io.github.novodyinparticular.pixelstrip.save.RunRecord
 import io.github.novodyinparticular.pixelstrip.ui.GarageScreen
 import io.github.novodyinparticular.pixelstrip.data.TrackDef
 import io.github.novodyinparticular.pixelstrip.gfx.Lights
+import io.github.novodyinparticular.pixelstrip.ui.UpgradeScreen
 import io.github.novodyinparticular.pixelstrip.world.TrackRenderer
 import io.github.novodyinparticular.pixelstrip.world.TrackRenderer.Companion.PX_PER_M
 import java.util.zip.Deflater
@@ -794,7 +795,7 @@ class RaceScreen(
         batch.setBlendFunctionSeparate(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA, GL20.GL_ONE, GL20.GL_ONE_MINUS_SRC_ALPHA)
         drawHud(w, h, dt)
         batch.setBlendFunctionSeparate(GL20.GL_SRC_ALPHA, GL20.GL_ONE, GL20.GL_ZERO, GL20.GL_ONE)
-        if (phase != Phase.FINISHED && phase != Phase.PHOTO && !firstPerson) hud.drawTachGlow(batch, TACH_X, TACH_Y, player.rpm, carDef.redline, tachZone())
+        if (phase != Phase.FINISHED && phase != Phase.PHOTO) hud.drawTachGlow(batch, TACH_X, TACH_Y, player.rpm, carDef.redline, tachZone())
         controls.drawGlow(batch)
         if (nosButton.visible) nosFace.drawGlow(batch, nosButton, player, nosArmed, screenTime)
         batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
@@ -867,11 +868,15 @@ class RaceScreen(
         if (pinkSlip && pinkDark() > 0f) dashView.drawPinkSpots(batch, w, h, trackView.time, pinkDark())
     }
 
-    private val dashView by lazy { CockpitDash(art, white, font, game.effective(owned), owned.parts, paintColor(owned.paint)) }
+    private val dashView by lazy {
+        val interior = game.parts.cosmetics.filter { it.group == UpgradeScreen.INTERIOR }
+            .associate { it.id to it.styles[(owned.cosmetics[it.id] ?: 0).coerceIn(0, it.styles.size - 1)] }
+        CockpitDash(art, white, font, game.effective(owned), owned.parts, paintColor(owned.paint), interior)
+    }
 
     private fun drawDash(w: Int, h: Int) {
         dashView.draw(batch, w, h, player.rpm, player.v * 2.23694f, player.gear, player.limiter, player.boost, player.nitrousActive,
-            player.shiftPoints.getOrElse(player.gear) { carDef.redline }, Gdx.graphics.deltaTime, trackView.time, shakeX, shakeY,
+            player.shiftPoints.getOrElse(player.gear) { carDef.redline }, tachZone(), Gdx.graphics.deltaTime, trackView.time, shakeX, shakeY,
             cockpit.horizon(h), cockpit.focal(h))
     }
 
@@ -947,7 +952,7 @@ class RaceScreen(
         font.draw(batch, timeText, w - 8f - font.width(timeText), h - 32f, Hud.YELLOW)
         drawDistanceBar(w, h)
 
-        if (phase != Phase.FINISHED && !firstPerson) {        // in the cockpit the dash has the real gauges
+        if (phase != Phase.FINISHED) {
             val gearText = if (player.mode == Vehicle.Mode.SHIFT) "-" else (player.gear + 1).toString()
             hud.drawTach(batch, TACH_X, TACH_Y, player.rpm, carDef.redline, tachZone(), gearText, "${player.rpm.toInt()} RPM", player.limiter, trackView.time)
             if (carDef.boostGain > 0f) drawBoost()

@@ -19,14 +19,19 @@ import kotlin.math.min
  * (tools/art/cockpit.py) with live gauges, the steering wheel, the shifter, the pillars and the
  * rearview mirror. The driver sits on the left, or on the right in the Japanese cars ([CarDef.rhd]):
  * the wheel is ahead of the eyes, nudged toward the door on screen, and the console, the mirror and
- * the hood's middle are off toward the car's centre. The parts show: aftermarket gauges, a nitrous bottle and its arm
- * switch, a race wheel, a cage.
+ * the hood's middle are off toward the car's centre. The parts show: a nitrous bottle and its arm
+ * switch, a race wheel with a race interior, a cage; and the interior mods from the shop's INTERIOR
+ * tab ([interior], cosmetic id -> style): an aftermarket tach (monster pedestal, column pod, LED bar),
+ * pillar gauges, a shift light, a shift knob, a steering wheel.
+ *
+ * The tach always marks the window that matters: the launch rpm while staged, each gear's shift
+ * point while racing (green dead on, amber close).
  *
  * [parts] are the fitted parts (slot -> option) the cockpit cares about.
  */
 class CockpitDash(
     private val art: Art, private val white: Texture, private val font: PixelFont, private val def: CarDef,
-    private val parts: Map<String, Int>, private val paint: Color,
+    private val parts: Map<String, Int>, private val paint: Color, private val interior: Map<String, String> = emptyMap(),
 ) {
     private val meta: JsonValue = JsonReader().parse(Gdx.files.internal("data/cockpits.json"))
     private val pixel = TextureRegion(white)
@@ -38,7 +43,13 @@ class CockpitDash(
     }
     private val exotic = style.startsWith("exotic")
     private val raceInterior = (parts["interior"] ?: 0) >= 2 || (parts["cage"] ?: 0) >= 2
-    private val wheelName = when {
+    private val wheelName = when (interior["steering"]) {
+        "deep_dish" -> "deep_dish"
+        "suede_race" -> "race_suede"
+        "wood_classic" -> "classic_thin"
+        "drag_small" -> "drag_small"
+        else -> null
+    } ?: when {
         raceInterior -> "race_suede"
         style == "classic" -> "classic_thin"
         style.startsWith("80s") -> "80s_four"
@@ -60,8 +71,17 @@ class CockpitDash(
     private val frame = art.tex("cockpit/frame.png")
     private val wheel = art.tex("cockpit/wheel_$wheelName.png")
     private val shifter = art.tex("cockpit/shifter_$shifterKind.png")
-    private val turbo = def.stockTurbo || (parts["turbo"] ?: 0) > 0
-    private val podGauges = style == "90s" || turbo || (parts["ecu"] ?: 0) >= 2
+    private val podCount = when (interior["gauges"]) {
+        "boost" -> 1
+        "boost_afr" -> 2
+        "triple" -> 3
+        else -> 0
+    }
+    private val tachKind = interior["tach"] ?: "stock"
+    private val shiftLight = interior["shiftlight"] ?: "none"
+    private val knob = interior["knob"] ?: "stock"
+    /** The aftermarket tach's dial: a round ten thousand, or more for the screamers. */
+    private val afterMax = max(10000f, kotlin.math.ceil(def.redline * 1.12f / 1000f) * 1000f)
     private val nitrousKit = (parts["nitrous"] ?: 0) > 0
     private val cage = parts["cage"] ?: 0
     /** Red zone of the tach art (as a share of the dial); the dial is scaled so the car's own redline lands there. */
@@ -86,7 +106,7 @@ class CockpitDash(
     fun dashTop() = DASH_TOP
 
     fun draw(batch: SpriteBatch, w: Int, h: Int, rpm: Float, mph: Float, gear: Int, limiter: Boolean, boost: Float, nitrous: Boolean,
-             shiftPoint: Float, dt: Float, time: Float, shakeX: Float, shakeY: Float, horizon: Float, focal: Float) {
+             shiftPoint: Float, zone: Hud.Zone?, dt: Float, time: Float, shakeX: Float, shakeY: Float, horizon: Float, focal: Float) {
         nudge = max(0f, nudge - dt)
         val ox = originX(w, shakeX)
         val oy = floor(shakeY)
@@ -100,6 +120,7 @@ class CockpitDash(
         styleMeta.get("tach")?.takeIf { it.isArray }?.let { g ->
             val (x, y) = at(g.getFloat(0), g.getFloat(1))
             if (def.engineLayout == "rotary") rotaryBand(batch, x, y, g.getFloat(2))
+            zoneArc(batch, x, y, g.getFloat(2) - 5f, tachMax, zone)
             needle(batch, x, y, g.getFloat(2) - 3f, min(1.02f, rpm / tachMax), if (limiter) LIMIT_RED else NEEDLE)
         }
         styleMeta.get("speedo")?.takeIf { it.isArray }?.let { g ->
@@ -112,29 +133,28 @@ class CockpitDash(
             val (x, y) = at(g.getFloat(0), g.getFloat(1))
             needle(batch, x, y, g.getFloat(2) - 2f, 0.45f + 0.03f * (g.getFloat(0) % 3f), NEEDLE)
         }
-        // VTEC: the lamp lights over the crossover
-        if (def.vtecRpm > 0f) {
-            val v = styleMeta.get("vtec")?.takeIf { it.isArray }
-            val (x, y) = if (v != null) at(v.getFloat(0), v.getFloat(1)) else at(DASH_W / 2f + 70f, 66f)
-            font.draw(batch, "VTEC", x, y, if (rpm > def.vtecRpm) VTEC_ON else VTEC_OFF, 1, null)
-        }
-        // the shift light up on the binnacle: blinks at the shift point
-        if (style == "90s" || style == "80s_digital") {
-            val sl = styleMeta.get("shiftLight")
-            val (x, y) = at(sl.getFloat(0), sl.getFloat(1))
-            val on = rpm >= shiftPoint * 0.97f && (time * 12f).toInt() % 2 == 0
-            batch.color = if (on) SHIFT_ON else SHIFT_OFF
-            batch.draw(white, x - 4f, y - 2f, 8f, 3f)
-        }
-        // A-pillar pod: boost and air/fuel
-        if (podGauges) drawPod(batch, ox, oy, boost, rpm)
+        // A-pillar pod: boost, air/fuel, oil pressure
+        if (podCount > 0) drawPod(batch, ox, oy, boost, rpm)
         if (nitrousKit) drawNitrous(batch, ox, oy, nitrous, time)
 
-        // the shifter by the console (it jolts back on a shift), then the wheel
+        // aftermarket tach and shift light on top of the column, behind the wheel's rim
+        drawAfterTach(batch, ox, oy, rpm, zone, shiftPoint, limiter, time)
+        drawShiftLight(batch, ox, oy, rpm, shiftPoint, time, glow = false)
+
+        // the shifter by the console (it jolts back on a shift), its knob, then the wheel
         val sx = ox + DASH_W / 2f + side * SHIFTER_DX - shifter.width / 2f
+        val sy = oy - 6f - if (nudge > 0f) 2f else 0f
         batch.color = Color.WHITE
-        batch.draw(shifter, sx, oy - 6f - if (nudge > 0f) 2f else 0f)
+        batch.draw(shifter, sx, sy)
+        drawKnob(batch, sx, sy)
+        batch.color = Color.WHITE
         batch.draw(wheel, ox + DASH_W / 2f - wheel.width / 2f, oy + WHEEL_CY - wheel.height / 2f)
+        // VTEC: the lamp lights over the crossover (drawn over the rim, which would otherwise cross it)
+        if (def.vtecRpm > 0f) {
+            val v = styleMeta.get("vtec")
+            val (x, y) = at(v.getFloat(0), v.getFloat(1))          // the cluster's top-right corner
+            font.draw(batch, "VTEC", x, y, if (rpm > def.vtecRpm) VTEC_ON else VTEC_OFF, 1, null)
+        }
         if (cage > 0) drawCage(batch, w, h, oy, centreX(w, shakeX))
         batch.draw(frame, floor(centreX(w, shakeX) - frame.width / 2f), oy + h - frame.height)
         batch.color = Color.WHITE
@@ -188,17 +208,13 @@ class CockpitDash(
             batch.draw(white, ox + r.getFloat(0), oy + DASH_H - r.getFloat(3), r.getFloat(2) - r.getFloat(0), r.getFloat(3) - r.getFloat(1))
         }
         if (def.vtecRpm > 0f && rpm > def.vtecRpm) {
-            val v = styleMeta.get("vtec")?.takeIf { it.isArray }
-            val (x, y) = if (v != null) at(v.getFloat(0), v.getFloat(1)) else at(DASH_W / 2f + 70f, 66f)
+            val v = styleMeta.get("vtec")
+            val (x, y) = at(v.getFloat(0), v.getFloat(1))
             batch.setColor(1f, 0.55f, 0.1f, 0.8f)
             batch.draw(white, x - 2f, y - 2f, 26f, 11f)
         }
-        if ((style == "90s" || style == "80s_digital") && rpm >= shiftPoint * 0.97f && (time * 12f).toInt() % 2 == 0) {
-            val sl = styleMeta.get("shiftLight")
-            val (x, y) = at(sl.getFloat(0), sl.getFloat(1))
-            batch.setColor(1f, 0.2f, 0.15f, 1f)
-            batch.draw(white, x - 8f, y - 5f, 16f, 9f)
-        }
+        drawShiftLight(batch, ox, oy, rpm, shiftPoint, time, glow = true)
+        if (tachKind == "led_bar") drawLedBar(batch, ox, oy, rpm, shiftPoint, time, glow = true)
         if (nitrous) {
             val k = 0.25f + 0.1f * kotlin.math.sin(time * 18f)
             batch.setColor(0.3f, 0.6f, 1f, k)
@@ -285,6 +301,183 @@ class CockpitDash(
         batch.color = Color.WHITE
     }
 
+    /** The window that matters on a dial of [max] rpm: amber close to it, green dead on. */
+    private fun zoneArc(batch: SpriteBatch, x: Float, y: Float, r: Float, max: Float, zone: Hud.Zone?) {
+        zone ?: return
+        var rr = zone.center * (1f - zone.good)
+        val step = max / 400f
+        while (rr <= zone.center * (1f + zone.good)) {
+            val perfect = kotlin.math.abs(rr - zone.center) <= zone.center * zone.perfect
+            batch.color = if (perfect) ZONE_PERFECT else ZONE_GOOD
+            val a = Math.toRadians((225f - 270f * (rr / max)).toDouble())
+            val cx = x + kotlin.math.cos(a).toFloat() * r
+            val cy = y + kotlin.math.sin(a).toFloat() * r
+            batch.draw(white, cx - 1f, cy - 1f, 2f, 2f)
+            rr += step
+        }
+        batch.color = Color.WHITE
+    }
+
+    /** Screen spot of a point on the dash art, [iy] down from its top (negative: up above the dash, on the column). */
+    private fun spot(ox: Float, oy: Float, ix: Float, iy: Float) = Pair(ox + ix, oy + DASH_H - iy)
+
+    /** The aftermarket tach: a monster on a pedestal over the column, a small column pod, or an LED bar on the binnacle. */
+    private fun drawAfterTach(batch: SpriteBatch, ox: Float, oy: Float, rpm: Float, zone: Hud.Zone?, shiftPoint: Float, limiter: Boolean, time: Float) {
+        when (tachKind) {
+            "monster_5in", "column_pod" -> {
+                val big = tachKind == "monster_5in"
+                val r = if (big) 17f else 10f
+                val (x, y) = spot(ox, oy, DASH_W / 2f + (if (big) 0f else side * 36f), if (big) -12f else 6f)
+                batch.color = PEDESTAL
+                batch.draw(white, x - 3f, y - r - 6f, 6f, 8f)
+                disc(batch, x, y, r + 2f, BEZEL_LIT, BEZEL_DARK)
+                disc(batch, x, y, r, if (big) TACH_FACE_WHITE else TACH_FACE_BLACK, if (big) TACH_FACE_WHITE else TACH_FACE_BLACK)
+                // ticks every thousand, the redline on
+                val tick = if (big) TACH_TICK_DARK else TACH_TICK_LIGHT
+                var k = 0f
+                while (k <= afterMax) {
+                    val red = k >= def.redline
+                    val a = Math.toRadians((225f - 270f * (k / afterMax)).toDouble())
+                    batch.color = if (red) RED_TICK else tick
+                    batch.draw(white, x + kotlin.math.cos(a).toFloat() * (r - 2f) - 0.5f, y + kotlin.math.sin(a).toFloat() * (r - 2f) - 0.5f, 1f, 1f)
+                    k += 1000f
+                }
+                zoneArc(batch, x, y, r - 4f, afterMax, zone)
+                needle(batch, x, y, r - 2f, min(1.02f, rpm / afterMax), if (limiter) LIMIT_RED else NEEDLE)
+                if (big && shiftLight == "none") {
+                    // the monster's own shift light on top
+                    val on = rpm >= shiftPoint * 0.97f && (time * 12f).toInt() % 2 == 0
+                    batch.color = if (on) SHIFT_ON else SHIFT_OFF
+                    batch.draw(white, x - 3f, y + r + 2f, 6f, 4f)
+                }
+            }
+            "led_bar" -> drawLedBar(batch, ox, oy, rpm, shiftPoint, time, glow = false)
+        }
+        batch.color = Color.WHITE
+    }
+
+    /** Sixteen LEDs across the top of the binnacle: green, yellow, then red to the shift point, all flashing past it. */
+    private fun drawLedBar(batch: SpriteBatch, ox: Float, oy: Float, rpm: Float, shiftPoint: Float, time: Float, glow: Boolean) {
+        val (x0, y) = spot(ox, oy, DASH_W / 2f - 40f, -2f)
+        val n = 16
+        val from = shiftPoint * 0.45f
+        val lit = (((rpm - from) / (shiftPoint - from)) * n).toInt().coerceIn(0, n)
+        val flash = rpm >= shiftPoint && (time * 14f).toInt() % 2 == 0
+        if (!glow) {
+            batch.color = LED_HOUSING
+            batch.draw(white, x0 - 2f, y - 2f, n * 5f + 3f, 7f)
+        }
+        for (i in 0 until n) {
+            val on = i < lit && (rpm < shiftPoint || flash)
+            val c = when {
+                rpm >= shiftPoint -> SHIFT_BLUE
+                i >= n - 3 -> SHIFT_ON
+                i >= n - 7 -> LED_YELLOW
+                else -> LED_GREEN
+            }
+            if (glow && !on) continue
+            batch.color = if (on) c else LED_OFF
+            batch.draw(white, x0 + i * 5f, y, 4f, 3f)
+        }
+        batch.color = Color.WHITE
+    }
+
+    /** The bought shift light: a single LED on the binnacle, a sequential strip over it, or a big pro light on the dash. */
+    private fun drawShiftLight(batch: SpriteBatch, ox: Float, oy: Float, rpm: Float, shiftPoint: Float, time: Float, glow: Boolean) {
+        val blink = rpm >= shiftPoint * 0.97f && (time * 12f).toInt() % 2 == 0
+        when (shiftLight) {
+            "dash_led" -> {
+                val sl = styleMeta.get("shiftLight")
+                val (x, y) = spot(ox, oy, sl.getFloat(0), sl.getFloat(1))
+                if (glow) {
+                    if (!blink) return
+                    batch.setColor(1f, 0.2f, 0.15f, 1f)
+                    batch.draw(white, x - 8f, y - 5f, 16f, 9f)
+                } else {
+                    batch.color = if (blink) SHIFT_ON else SHIFT_OFF
+                    batch.draw(white, x - 4f, y - 2f, 8f, 3f)
+                }
+            }
+            "led_strip" -> {
+                val (x0, y) = spot(ox, oy, DASH_W / 2f - 18f, if (tachKind == "led_bar") -10f else -4f)
+                val steps = 8
+                for (i in 0 until steps) {
+                    val at = shiftPoint * (0.86f + 0.02f * i)
+                    val on = rpm >= at && (rpm < shiftPoint || blink)
+                    val c = if (i < 3) LED_GREEN else if (i < 6) LED_YELLOW else SHIFT_ON
+                    if (glow && !on) continue
+                    if (!glow) {
+                        batch.color = LED_HOUSING
+                        batch.draw(white, x0 + i * 5f - 1f, y - 1f, 5f, 5f)
+                    }
+                    batch.color = if (on) c else LED_OFF
+                    batch.draw(white, x0 + i * 5f, y, 3f, 3f)
+                }
+            }
+            "pro_light" -> {
+                val (x, y) = spot(ox, oy, DASH_W / 2f + side * 52f, -8f)
+                if (glow) {
+                    if (!blink) return
+                    batch.setColor(1f, 0.2f, 0.15f, 1f)
+                    batch.draw(white, x - 10f, y - 10f, 20f, 20f)
+                } else {
+                    batch.color = PEDESTAL
+                    batch.draw(white, x - 2f, y - 12f, 4f, 6f)
+                    disc(batch, x, y, 7f, BEZEL_LIT, BEZEL_DARK)
+                    disc(batch, x, y, 5f, if (blink) SHIFT_ON else SHIFT_OFF, if (blink) SHIFT_ON else SHIFT_OFF)
+                }
+            }
+        }
+        batch.color = Color.WHITE
+    }
+
+    /** The knob on the lever, over the shifter art's own: a cue ball, billet aluminium, burnt titanium, a drag T-handle. */
+    private fun drawKnob(batch: SpriteBatch, sx: Float, sy: Float) {
+        if (knob == "stock") return
+        val k = meta.get("shifters").get(shifterKind).get("knob")
+        val x = sx + k.getFloat(0)
+        val y = sy + k.getFloat(1)
+        when (knob) {
+            "cue_ball" -> {
+                disc(batch, x, y, 7f, CUE_LIT, CUE_DARK)
+                batch.color = CUE_SPOT
+                batch.draw(white, x - 2f, y, 4f, 4f)
+            }
+            "billet" -> {
+                for (r in 0 until 12) {
+                    batch.color = if (r % 4 == 0) BILLET_DARK else if (r > 7) BILLET_LIT else BILLET
+                    batch.draw(white, x - 5f, y - 6f + r, 10f, 1f)
+                }
+            }
+            "titanium" -> {
+                for (r in -6..6) {
+                    val half = kotlin.math.sqrt((36f - r * r).coerceAtLeast(0f))
+                    batch.color = TITANIUM[((r + 6) * TITANIUM.size / 13).coerceIn(0, TITANIUM.size - 1)]
+                    batch.draw(white, x - half, y + r, half * 2f, 1f)
+                }
+            }
+            "drag_tee" -> {
+                batch.color = BILLET
+                batch.draw(white, x - 1f, y - 6f, 3f, 10f)
+                batch.color = BILLET_LIT
+                batch.draw(white, x - 9f, y + 3f, 19f, 4f)
+                batch.color = BILLET_DARK
+                batch.draw(white, x - 9f, y + 3f, 19f, 1f)
+            }
+        }
+        batch.color = Color.WHITE
+    }
+
+    /** A filled disc, lit from the top-left ([lit]) to [dark]. */
+    private fun disc(batch: SpriteBatch, x: Float, y: Float, r: Float, lit: Color, dark: Color) {
+        val n = r.toInt()
+        for (dy in -n..n) {
+            val half = kotlin.math.sqrt((r * r - dy * dy).coerceAtLeast(0f))
+            batch.color = if (dy > 0) lit else dark
+            batch.draw(white, floor(x - half), y + dy, kotlin.math.ceil(half * 2f), 1f)
+        }
+    }
+
     private fun needle(batch: SpriteBatch, x: Float, y: Float, len: Float, t: Float, c: Color) {
         val deg = 225f - 270f * t.coerceIn(0f, 1.02f)
         batch.color = c
@@ -321,7 +514,8 @@ class CockpitDash(
         val pod = styleMeta.get("pod")
         val px = ox + pod.getFloat(0)
         val py = oy + DASH_H - pod.getFloat(1) + 4f
-        for ((k, v) in listOf(boost, 0.5f + 0.25f * kotlin.math.sin(rpm / 900f)).withIndex()) {
+        val readings = listOf(boost, 0.5f + 0.25f * kotlin.math.sin(rpm / 900f), 0.3f + 0.4f * (rpm / def.redline).coerceIn(0f, 1f))
+        for ((k, v) in readings.take(podCount).withIndex()) {
             val gx = px + k * 20f
             batch.color = POD_RIM
             batch.draw(white, gx - 8f, py - 8f, 16f, 16f)
@@ -400,6 +594,29 @@ class CockpitDash(
         val NOS_BOTTLE = Color(0.2f, 0.4f, 0.85f, 1f)
         val CAGE = Color(0.28f, 0.28f, 0.34f, 1f)
         val ROTARY_BAND = Color(1f, 0.6f, 0.15f, 1f)
+        val ZONE_GOOD = Color(1f, 0.72f, 0.2f, 1f)
+        val ZONE_PERFECT = Color(0.3f, 1f, 0.45f, 1f)
+        val PEDESTAL = Color(0.12f, 0.12f, 0.15f, 1f)
+        val BEZEL_LIT = Color(0.78f, 0.78f, 0.84f, 1f)
+        val BEZEL_DARK = Color(0.42f, 0.42f, 0.5f, 1f)
+        val TACH_FACE_WHITE = Color(0.92f, 0.92f, 0.9f, 1f)
+        val TACH_FACE_BLACK = Color(0.05f, 0.05f, 0.07f, 1f)
+        val TACH_TICK_DARK = Color(0.1f, 0.1f, 0.12f, 1f)
+        val TACH_TICK_LIGHT = Color(0.85f, 0.85f, 0.9f, 1f)
+        val RED_TICK = Color(0.9f, 0.15f, 0.12f, 1f)
+        val LED_HOUSING = Color(0.06f, 0.06f, 0.08f, 1f)
+        val LED_OFF = Color(0.14f, 0.13f, 0.16f, 1f)
+        val LED_GREEN = Color(0.3f, 1f, 0.4f, 1f)
+        val LED_YELLOW = Color(1f, 0.85f, 0.2f, 1f)
+        val SHIFT_BLUE = Color(0.35f, 0.6f, 1f, 1f)
+        val CUE_LIT = Color(0.96f, 0.95f, 0.9f, 1f)
+        val CUE_DARK = Color(0.76f, 0.75f, 0.7f, 1f)
+        val CUE_SPOT = Color(0.08f, 0.08f, 0.1f, 1f)
+        val BILLET = Color(0.7f, 0.72f, 0.78f, 1f)
+        val BILLET_LIT = Color(0.9f, 0.92f, 0.96f, 1f)
+        val BILLET_DARK = Color(0.45f, 0.46f, 0.52f, 1f)
+        val TITANIUM = listOf(Color(0.3f, 0.25f, 0.6f, 1f), Color(0.4f, 0.35f, 0.8f, 1f), Color(0.55f, 0.4f, 0.75f, 1f),
+            Color(0.8f, 0.55f, 0.5f, 1f), Color(0.9f, 0.75f, 0.45f, 1f))
         val WIPER = Color(0.06f, 0.06f, 0.08f, 1f)
         val MIRROR_SKY = Color(0.12f, 0.1f, 0.2f, 1f)
         val MIRROR_ROAD = Color(0.18f, 0.16f, 0.24f, 1f)

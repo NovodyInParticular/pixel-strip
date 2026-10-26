@@ -36,7 +36,8 @@ class PartCatalog(root: JsonValue) {
         val spoolRpm: Float?, val mass: Float,
     )
     class Slot(val id: String, val name: String, val group: String, val options: List<Option>, val excludes: List<String>)
-    class Cosmetic(val id: String, val name: String, val styles: List<String>, val price: Int, val dragArea: FloatArray?)
+    /** [group]: the shop tab it's on, LOOKS (the outside) or INTERIOR (what you see from the seat). */
+    class Cosmetic(val id: String, val name: String, val styles: List<String>, val price: Int, val dragArea: FloatArray?, val group: String = "LOOKS")
 
     class Choice(val name: String, val price: Int)
 
@@ -64,7 +65,8 @@ class PartCatalog(root: JsonValue) {
         )
     }
     val cosmetics: List<Cosmetic> = root.get("cosmetic").map { c ->
-        Cosmetic(c.getString("id"), c.getString("name"), c.get("styles").asStringArray().toList(), c.getInt("price"), c.get("dragArea")?.asFloatArray())
+        Cosmetic(c.getString("id"), c.getString("name"), c.get("styles").asStringArray().toList(), c.getInt("price"), c.get("dragArea")?.asFloatArray(),
+            c.getString("group", "LOOKS"))
     }
     private val byId = slots.associateBy { it.id }
 

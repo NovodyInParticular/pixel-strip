@@ -29,7 +29,7 @@ class UpgradeScreen(game: PixelStrip) : MenuScreen(game) {
     private val stock = game.car(owned.carId)
     private val stockClass = game.economy.classFor(DragMath.perfectPass(stock).quarter)
     private fun fits(o: PartCatalog.Option) = o.carOnly.isEmpty() || stock.id in o.carOnly
-    private val groups = (catalog.slots.filter { s -> s.options.drop(1).any { fits(it) } }.map { it.group } + LOOKS).distinct()
+    private val groups = (catalog.slots.filter { s -> s.options.drop(1).any { fits(it) } }.map { it.group } + LOOKS + INTERIOR).distinct()
     private var group = 0
     private var slotSel = 0
     private var optSel = 0
@@ -44,11 +44,11 @@ class UpgradeScreen(game: PixelStrip) : MenuScreen(game) {
     private val back = button("BACK", BTN_GREY, keys = intArrayOf(Input.Keys.B)) { onBack() }
 
     init {
-        // desktop shots: -Dpixelstrip.pick=SLOT:OPTION opens the shop on that part
+        // desktop shots: -Dpixelstrip.pick=SLOT:OPTION opens the shop on that part (or cosmetic)
         game.shots?.let { System.getProperty("pixelstrip.pick") }?.split(":")?.let { (slot, opt) ->
-            val sl = catalog.slot(slot)
-            group = groups.indexOf(sl.group)
-            slotSel = rows().indexOfFirst { it is Row.Part && it.slot.id == slot }
+            val look = catalog.cosmetics.firstOrNull { it.id == slot }
+            group = groups.indexOf(look?.group ?: catalog.slot(slot).group)
+            slotSel = rows().indexOfFirst { (it is Row.Part && it.slot.id == slot) || (it is Row.Look && it.c.id == slot) }
             optSel = opt.toInt()
         }
     }
@@ -59,7 +59,7 @@ class UpgradeScreen(game: PixelStrip) : MenuScreen(game) {
         class Look(val c: PartCatalog.Cosmetic) : Row(c.name)
     }
 
-    private fun rows(): List<Row> = if (groups[group] == LOOKS) catalog.cosmetics.map { Row.Look(it) }
+    private fun rows(): List<Row> = if (groups[group] == LOOKS || groups[group] == INTERIOR) catalog.cosmetics.filter { it.group == groups[group] }.map { Row.Look(it) }
     else catalog.slots.filter { s -> s.group == groups[group] && s.options.drop(1).any { fits(it) } }.map { Row.Part(it) }
 
     /** The options this car can take, as indices into the slot (the factory part always shows). */
@@ -357,6 +357,7 @@ class UpgradeScreen(game: PixelStrip) : MenuScreen(game) {
     companion object {
         const val LIFT_PX = 22f
         const val LOOKS = "LOOKS"
+        const val INTERIOR = "INTERIOR"
         const val MAX_SLOTS = 9
         const val MAX_OPTIONS = 11
         const val LONG_LIST = 6
