@@ -57,26 +57,6 @@
     4.33
    ]
   },
-  "delsol": {
-   "folder": "del sol",
-   "side": "3.jpg",
-   "length": 3.995,
-   "wheelbase": 2.37,
-   "rear_axle": 0.731,
-   "tyre": 0.59,
-   "rear": [
-    1084,
-    733
-   ],
-   "front": [
-    321,
-    731
-   ],
-   "ends": [
-    0.077,
-    3.88
-   ]
-  },
   "kite": {
    "folder": "EG",
    "side": "3.jpg",
@@ -455,6 +435,26 @@
    "ends": [
     -0.03,
     4.26
+   ]
+  },
+  "kite_sol": {
+   "folder": "del sol",
+   "side": "3.jpg",
+   "length": 3.995,
+   "wheelbase": 2.37,
+   "rear_axle": 0.731,
+   "tyre": 0.59,
+   "rear": [
+    1084,
+    733
+   ],
+   "front": [
+    321,
+    731
+   ],
+   "ends": [
+    0.077,
+    3.88
    ]
   }
  }

@@ -54,7 +54,7 @@ test("legacy import keeps known things and caps cash", () => {
     cash: 9_999_999,
     beaten: ["dash", "nobody"],
     cars: [
-      { uid: "c3", car: "mammoth", paint: 1, parts: { intake: 2, rocket: 9, exhaust: 99 }, cosmetics: { wing: 1, finish: 2, nope: 1 }, owned: { intake: 0b111, exhaust: 1 << 20 } },
+      { uid: "c3", car: "vortex", paint: 1, parts: { intake: 2, rocket: 9, exhaust: 99 }, cosmetics: { wing: 1, finish: 2, nope: 1 }, owned: { intake: 0b111, exhaust: 1 << 20 } },
       { uid: "c4", car: "spaceship" },
       { uid: "../x", car: "kite" },
     ],

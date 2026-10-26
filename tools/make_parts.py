@@ -72,20 +72,19 @@ def _roster():
 CARS = _roster()
 ROTARIES = sorted(c for c, d in CARS.items() if d["engine"]["layout"] == "rotary")
 # factory twin-turbo and sequential setups (the twin-to-single conversion)
-TWIN_TURBO = ["kaminari_mk1", "kaminari_mk2", "kaminari_mk3", "tsunami", "spiral_r", "typhoon", "zephyr_tt", "wal_awd", "quaranta"]
+TWIN_TURBO = ["kaminari_mk1", "kaminari_mk2", "kaminari_mk3", "tsunami", "spiral_r", "typhoon"]
 
-# Swaps enthusiasts actually do, per platform
+# Swaps enthusiasts actually do, per platform. Every list needs a car: an empty carOnly fits every car.
 SWAPS = {
-    "k24": ["kite", "kite_ef", "kite_rx", "dart", "arrow"],
-    "b18c": ["kite", "kite_ef", "kite_rx", "dart"],
-    "h22": ["kite", "kite_ef", "dart"],
-    "rb26": ["sylph_13", "sylph_14", "sylph_15", "sylph_180", "zephyr_240", "kaminari_c10"],
-    "2jz": ["tsunami_mk3", "pursuit", "kestrel"],
-    "ls": ["spiral_sa", "spiral_turbo", "spiral_r", "zephyr_240", "zephyr_tt", "kokoro", "sylph_13", "sylph_14", "isar_s3",
-           "tsunami_mk3", "phantom"],
-    "bb572": ["mammoth", "condor"],
-    "coyote": ["ranger_500", "mamba"],
-    "13brew": ["spiral_sa", "spiral_turbo", "prairie"],
+    "k24": ["kite", "kite_ef", "kite_rx", "kite_sol", "arrow"],
+    "b18c": ["kite", "kite_ef", "kite_rx", "kite_sol"],
+    "h22": ["kite", "kite_ef", "kite_sol"],
+    "rb26": ["sylph_13", "sylph_15", "sylph_180"],
+    "2jz": ["sylph_13", "sylph_15", "sylph_180"],
+    "ls": ["spiral_turbo", "spiral_r", "sylph_13", "sylph_15", "sylph_180", "tsunami"],
+    "bb572": ["vortex"],
+    "coyote": ["sylph_13", "sylph_180", "spiral_r"],
+    "13brew": ["spiral_turbo", "prairie"],
     "20b": ROTARIES,
     "26b": ROTARIES,
 }

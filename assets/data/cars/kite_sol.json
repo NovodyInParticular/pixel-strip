@@ -1,0 +1,50 @@
+{
+  "id": "kite_sol",
+  "name": "Kite Sol",
+  "brand": "Hikari",
+  "year": 1994,
+  "era": "90s",
+  "price": 15000,
+  "dealer": true,
+  "hp": 160,
+  "powerRating": "net",
+  "peakHpRpm": 7600,
+  "torqueNm": 150,
+  "peakTorqueRpm": 7000,
+  "idleRpm": 800,
+  "redline": 8200,
+  "weightKg": 1109,
+  "drivetrain": "FWD",
+  "rearWeight": 0.39,
+  "wheelbaseM": 2.37,
+  "cgHeightM": 0.47,
+  "gears": [
+    3.23,
+    2.105,
+    1.458,
+    1.107,
+    0.848
+  ],
+  "finalDrive": 4.266,
+  "shiftTime": 0.25,
+  "clutchTime": 0.32,
+  "clutchTorque": 1.5,
+  "tireRadiusM": 0.295,
+  "grip": 0.9,
+  "engineInertia": 0.1,
+  "wheelInertia": 1.7,
+  "dragArea": 0.6,
+  "nitrous": {
+    "hp": 0,
+    "charges": 0,
+    "seconds": 0
+  },
+  "defaultPaint": 0,
+  "engine": {
+    "layout": "i4",
+    "cylinders": 4,
+    "stockTurbo": false,
+    "vtecRpm": 5500
+  },
+  "rhd": true
+}

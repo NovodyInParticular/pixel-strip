@@ -479,7 +479,7 @@
       "kite",
       "kite_ef",
       "kite_rx",
-      "dart",
+      "kite_sol",
       "arrow"
      ],
      "strength": 1.8
@@ -492,11 +492,8 @@
      "engine": "rb26",
      "carOnly": [
       "sylph_13",
-      "sylph_14",
       "sylph_15",
-      "sylph_180",
-      "zephyr_240",
-      "kaminari_c10"
+      "sylph_180"
      ],
      "strength": 1.9
     },
@@ -507,9 +504,9 @@
      "brand": "COLLIN",
      "engine": "2jz",
      "carOnly": [
-      "tsunami_mk3",
-      "pursuit",
-      "kestrel"
+      "sylph_13",
+      "sylph_15",
+      "sylph_180"
      ],
      "strength": 2.3
     },
@@ -520,17 +517,12 @@
      "brand": "SIKKA",
      "engine": "ls",
      "carOnly": [
-      "spiral_sa",
       "spiral_turbo",
       "spiral_r",
-      "zephyr_240",
-      "zephyr_tt",
-      "kokoro",
       "sylph_13",
-      "sylph_14",
-      "isar_s3",
-      "tsunami_mk3",
-      "phantom"
+      "sylph_15",
+      "sylph_180",
+      "tsunami"
      ],
      "strength": 1.6
     },
@@ -541,8 +533,7 @@
      "brand": "WEYLAND",
      "engine": "bb572",
      "carOnly": [
-      "mammoth",
-      "condor"
+      "vortex"
      ],
      "strength": 1.7
     },
@@ -553,8 +544,9 @@
      "brand": "HARLAN RACING",
      "engine": "coyote",
      "carOnly": [
-      "ranger_500",
-      "mamba"
+      "sylph_13",
+      "sylph_180",
+      "spiral_r"
      ],
      "strength": 1.6
     },
@@ -568,7 +560,7 @@
       "kite",
       "kite_ef",
       "kite_rx",
-      "dart"
+      "kite_sol"
      ],
      "strength": 1.4
     },
@@ -581,7 +573,7 @@
      "carOnly": [
       "kite",
       "kite_ef",
-      "dart"
+      "kite_sol"
      ],
      "strength": 1.4
     },
@@ -592,7 +584,6 @@
      "brand": "ROTOHEAD",
      "engine": "13brew",
      "carOnly": [
-      "spiral_sa",
       "spiral_turbo",
       "prairie"
      ]
@@ -606,7 +597,6 @@
      "carOnly": [
       "prairie",
       "spiral_r",
-      "spiral_sa",
       "spiral_turbo"
      ],
      "requiresAll": [
@@ -629,7 +619,6 @@
      "carOnly": [
       "prairie",
       "spiral_r",
-      "spiral_sa",
       "spiral_turbo"
      ],
      "requiresAll": [
@@ -675,7 +664,6 @@
      "carOnly": [
       "prairie",
       "spiral_r",
-      "spiral_sa",
       "spiral_turbo"
      ],
      "engineType": "rotary"
@@ -695,7 +683,6 @@
      "carOnly": [
       "prairie",
       "spiral_r",
-      "spiral_sa",
       "spiral_turbo"
      ],
      "engineType": "rotary"
@@ -714,7 +701,6 @@
      "carOnly": [
       "prairie",
       "spiral_r",
-      "spiral_sa",
       "spiral_turbo"
      ],
      "requiresAll": [
@@ -753,7 +739,6 @@
      "carOnly": [
       "prairie",
       "spiral_r",
-      "spiral_sa",
       "spiral_turbo"
      ],
      "engineType": "rotary"
@@ -768,7 +753,6 @@
      "carOnly": [
       "prairie",
       "spiral_r",
-      "spiral_sa",
       "spiral_turbo"
      ],
      "engineType": "rotary"
@@ -795,7 +779,6 @@
      "carOnly": [
       "prairie",
       "spiral_r",
-      "spiral_sa",
       "spiral_turbo"
      ],
      "engineType": "rotary"
@@ -809,7 +792,6 @@
      "carOnly": [
       "prairie",
       "spiral_r",
-      "spiral_sa",
       "spiral_turbo"
      ],
      "engineType": "rotary"
@@ -857,7 +839,6 @@
      "carOnly": [
       "prairie",
       "spiral_r",
-      "spiral_sa",
       "spiral_turbo"
      ],
      "engineType": "rotary"
@@ -1113,10 +1094,7 @@
       "kaminari_mk3",
       "tsunami",
       "spiral_r",
-      "typhoon",
-      "zephyr_tt",
-      "wal_awd",
-      "quaranta"
+      "typhoon"
      ],
      "requiresAll": [
       [

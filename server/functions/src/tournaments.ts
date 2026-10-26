@@ -27,8 +27,9 @@ export const SEED_FEES = 10;
 export const MAX_RUNS = 5;
 /** Percent of the pool for 1st..10th; with fewer finishers the places there are split it all. */
 export const SHARES = [40, 20, 12, 8, 6, 5, 3, 2, 2, 2];
-/** Rare cars no dealer sells: the day's winner also drives one home, if they don't have one yet. */
-export const PRIZE_CARS: Record<Cls, string[]> = { STREET: [], SPORT: ["comet_22x"], PRO: ["kirin_r"], OUTLAW: ["lm40", "quaranta"] };
+/** Rare cars no dealer sells: the day's winner also drives one home, if they don't have one yet. Every class is
+ * cash-only since the 2026-10-26 roster (only the cars in the reference photos, all of them dealer cars). */
+export const PRIZE_CARS: Record<Cls, string[]> = { STREET: [], SPORT: [], PRO: [], OUTLAW: [] };
 const DAY_MS = 86_400_000;
 
 // --- pure, tested -----------------------------------------------------------------------------

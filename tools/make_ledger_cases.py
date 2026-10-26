@@ -55,8 +55,8 @@ def case(name, entries, refused=(), state=None, **expect):
 
 k = CARS["kite"]["parts"]
 case("starter car and starting cash", [start()], cash=START, cars=[kite(paint=CARS["kite"]["paint"])])
-case("only one starter", [start(), start("kestrel")], refused=[1], cash=START, cars=[kite()])
-case("starter must be a starter car", [start("mammoth")], refused=[0], cash=0, cars=[])
+case("only one starter", [start(), start("kite_sol")], refused=[1], cash=START, cars=[kite()])
+case("starter must be a starter car", [start("vortex")], refused=[0], cash=0, cars=[])
 case("parts cost the per-car price, any option can be bought directly",
      [start(), part("intake", 2)], cash=START - k["intake"][1], cars=[kite(parts={"intake": 2})])
 case("swapping back to an owned part is free; refitting the fitted one is refused",
@@ -110,9 +110,10 @@ case("paint out of range", [start(), {"type": "paint", "t": 2000, "uid": "c1", "
      refused=[1], cash=START)
 case("dealer: not prize cars, not twice, not without cash",
      [start(), {"type": "buy", "t": 2000, "car": joe["car"]}, {"type": "buy", "t": 2000, "car": "kite"},
-      {"type": "buy", "t": 2000, "car": "mammoth"}], refused=[1, 2, 3], cash=START, cars=[kite()])
-case("buying a car", [start(), race("dash", 10000), race("kat", 20000), {"type": "buy", "t": 21000, "car": "kestrel"}],
-     cash=START + dash["payout"] + RIV["kat"]["payout"] - CARS["kestrel"]["price"], cars=[kite(), kite("c2", car="kestrel")])
+      {"type": "buy", "t": 2000, "car": "vortex"}], refused=[1, 2, 3], cash=START, cars=[kite()])
+case("buying a car", [start(), race("dash", 10000), race("kat", 20000), race("tiny", 30000), {"type": "buy", "t": 31000, "car": "kite_sol"}],
+     cash=START + dash["payout"] + RIV["kat"]["payout"] + RIV["tiny"]["payout"] - CARS["kite_sol"]["price"] + level_cash(3 * WIN),
+     cars=[kite(), kite("c2", car="kite_sol")])
 case("cosmetics: next style, or pick one; the current style is refused",
      [start(), race("dash", 1500), {"type": "look", "t": 2000, "uid": "c1", "slot": "wing"},
       {"type": "look", "t": 2000, "uid": "c1", "slot": "wing", "opt": 3}, {"type": "look", "t": 2000, "uid": "c1", "slot": "wing", "opt": 3}],
@@ -164,8 +165,8 @@ case("a retired car pays back its price, every part bought for it, and its paint
      [retire()], state=garage(fancy, {"car": "kite"}),
      cash=1000 + v["price"] + v["parts"]["intake"][0] + v["parts"]["intake"][1] + looks, cars=[kite("c2")])
 case("retiring the last car needs a starter to take its place",
-     [retire(), retire(car="mammoth"), retire(car="kokoro")], refused=[0, 1], state=garage({"car": "zephyr", "paint": OLD["zephyr"]["paint"]}),
-     cash=1000 + OLD["zephyr"]["price"], cars=[kite("c2", car="kokoro")])
+     [retire(), retire(car="vortex"), retire(car="kite_sol")], refused=[0, 1], state=garage({"car": "zephyr", "paint": OLD["zephyr"]["paint"]}),
+     cash=1000 + OLD["zephyr"]["price"], cars=[kite("c2", car="kite_sol")])
 case("only retired cars and parts pay back", [retire()], refused=[0], state=garage({"car": "kite"}), cash=1000)
 awd = R["retired"]["parts"]["drive"]["1"]["kite_ef"]
 case("a retired part pays back what it cost and comes off the car, which stays",
@@ -175,14 +176,19 @@ case("a retired part pays back what it cost and comes off the car, which stays",
 
 # --- barn finds: once each, after the boss it hides behind --------------------------------------------
 barn = {b["car"]: b for b in R["barns"]}
-c10 = barn["kaminari_c10"]
+rx3 = barn["prairie"]
+sport = ["vega", "hollis", "mika", "rotor"]
+rotor = RIV["rotor"]
+two_bosses = boss + [race(r, 50000 + i * 10000) for i, r in enumerate(sport)]
+two_xp = boss_xp + 4 * WIN + BOSS
+two_cash = boss_cash - level_cash(boss_xp) + sum(RIV[r]["payout"] for r in sport) + level_cash(two_xp)
 case("a barn find needs its boss beaten, then it's free, once",
-     [start(), {"type": "find", "t": 2000, "car": "kaminari_c10"}] + boss[1:] + [
-         {"type": "find", "t": 41000, "car": "kaminari_c10"}, {"type": "find", "t": 41000, "car": "kaminari_c10"},
-         {"type": "find", "t": 41000, "car": "prairie"}, {"type": "find", "t": 41000, "car": "kite"}],
-     refused=[1, 7, 8, 9], cash=boss_cash, found=["kaminari_c10"],
-     cars=[kite(), kite("c2", joe["parts"], joe["car"]), kite("c3", car="kaminari_c10", paint=c10["paint"])])
-
+     [start(), {"type": "find", "t": 2000, "car": "prairie"}] + two_bosses[1:] + [
+         {"type": "find", "t": 91000, "car": "prairie"}, {"type": "find", "t": 91000, "car": "prairie"},
+         {"type": "find", "t": 91000, "car": "kite"}],
+     refused=[1, 11, 12], cash=two_cash, found=["prairie"],
+     cars=[kite(), kite("c2", joe["parts"], joe["car"]), kite("c3", rotor["parts"], rotor["car"]),
+           kite("c4", car="prairie", paint=rx3["paint"])])
 rematches = [start()] + [race("dash", 10000 + i * GAP) for i in range(8)]
 case("XP: a win, a loss, and levels paying cash as each threshold is crossed",
      rematches + [race("dash", 10000 + 8 * GAP, won=False)],

@@ -567,14 +567,9 @@ def _stand_ins():
 
 
 _STAND_IN = {
-    "kaminari_c10": "warrior", "kaminari_mk2": "kaminari_mk1", "zephyr_240": "ranger", "zephyr_tt": "zephyr",
-    "sylph_13": "ranger50", "sylph_14": "ranger50", "sylph_15": "kaminari_mk1", "sylph_180": "corsair_iroc",
-    "tsunami_mk3": "zephyr", "ronin": "kirin", "seiran": "squall", "pursuit": "kaminari_mk3", "shirasagi": "ranger",
-    "spiral_sa": "spiral_turbo", "kokoro": "asp", "prairie": "warrior", "kirin_r": "kirin", "kite_rx": "kite",
-    "dart": "kite_ef", "overture": "arrow", "tenshi": "asp", "halberd_4": "kaminari_mk1", "halberd_5": "kaminari_mk1",
-    "halberd_6": "kaminari_mk1", "stellar": "zephyr", "comet": "kaminari_mk1", "comet_22x": "kaminari_mk1",
-    "ranger_500": "ranger", "mamba": "asp", "lm40": "kirin", "condor": "vandal", "wal": "kessler", "wal_awd": "kessler",
-    "isar_s3": "ranger50", "quaranta": "kirin", "scarlatta": "kirin", "zanna": "kirin", "wraith": "kirin",
+    "kaminari_mk2": "kaminari_mk1", "sylph_13": "ranger50", "sylph_15": "kaminari_mk1", "ronin": "kirin",
+    "prairie": "warrior", "kite_rx": "kite", "kite_sol": "kite", "overture": "arrow", "tenshi": "asp",
+    "halberd_6": "kaminari_mk1", "comet_gd": "kaminari_mk1",
 }
 
 ROSTER = _stand_ins()

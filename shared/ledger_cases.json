@@ -32,7 +32,7 @@
    {
     "type": "start",
     "t": 1000,
-    "car": "kestrel"
+    "car": "kite_sol"
    }
   ],
   "expect": {
@@ -55,7 +55,7 @@
    {
     "type": "start",
     "t": 1000,
-    "car": "mammoth"
+    "car": "vortex"
    }
   ],
   "expect": {
@@ -744,7 +744,7 @@
    {
     "type": "buy",
     "t": 2000,
-    "car": "mammoth"
+    "car": "vortex"
    }
   ],
   "expect": {
@@ -788,13 +788,21 @@
     "pink": false
    },
    {
+    "type": "race",
+    "t": 30000,
+    "uid": "c1",
+    "rival": "tiny",
+    "won": true,
+    "pink": false
+   },
+   {
     "type": "buy",
-    "t": 21000,
-    "car": "kestrel"
+    "t": 31000,
+    "car": "kite_sol"
    }
   ],
   "expect": {
-   "cash": 1500,
+   "cash": 3000,
    "cars": [
     {
      "uid": "c1",
@@ -803,7 +811,7 @@
     },
     {
      "uid": "c2",
-     "car": "kestrel",
+     "car": "kite_sol",
      "parts": {}
     }
    ],
@@ -1299,13 +1307,13 @@
     "type": "retire",
     "t": 2000,
     "uid": "c1",
-    "car": "mammoth"
+    "car": "vortex"
    },
    {
     "type": "retire",
     "t": 2000,
     "uid": "c1",
-    "car": "kokoro"
+    "car": "kite_sol"
    }
   ],
   "expect": {
@@ -1313,7 +1321,7 @@
    "cars": [
     {
      "uid": "c2",
-     "car": "kokoro",
+     "car": "kite_sol",
      "parts": {}
     }
    ],
@@ -1440,7 +1448,7 @@
    {
     "type": "find",
     "t": 2000,
-    "car": "kaminari_c10"
+    "car": "prairie"
    },
    {
     "type": "race",
@@ -1475,30 +1483,57 @@
     "pink": false
    },
    {
-    "type": "find",
-    "t": 41000,
-    "car": "kaminari_c10"
+    "type": "race",
+    "t": 50000,
+    "uid": "c1",
+    "rival": "vega",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "race",
+    "t": 60000,
+    "uid": "c1",
+    "rival": "hollis",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "race",
+    "t": 70000,
+    "uid": "c1",
+    "rival": "mika",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "race",
+    "t": 80000,
+    "uid": "c1",
+    "rival": "rotor",
+    "won": true,
+    "pink": false
    },
    {
     "type": "find",
-    "t": 41000,
-    "car": "kaminari_c10"
-   },
-   {
-    "type": "find",
-    "t": 41000,
+    "t": 91000,
     "car": "prairie"
    },
    {
     "type": "find",
-    "t": 41000,
+    "t": 91000,
+    "car": "prairie"
+   },
+   {
+    "type": "find",
+    "t": 91000,
     "car": "kite"
    }
   ],
   "expect": {
-   "cash": 30000,
+   "cash": 167000,
    "found": [
-    "kaminari_c10"
+    "prairie"
    ],
    "cars": [
     {
@@ -1526,16 +1561,39 @@
     },
     {
      "uid": "c3",
-     "car": "kaminari_c10",
+     "car": "spiral_turbo",
+     "parts": {
+      "apexseals": 1,
+      "clutch": 2,
+      "diff": 2,
+      "downpipe": 2,
+      "ecu": 2,
+      "exhaust": 2,
+      "fuel": 1,
+      "gearbox": 1,
+      "glass": 1,
+      "headers": 2,
+      "intake": 2,
+      "interior": 1,
+      "manifold": 1,
+      "oilinject": 1,
+      "panels": 1,
+      "porting": 2,
+      "throttle": 1,
+      "tires": 2
+     }
+    },
+    {
+     "uid": "c4",
+     "car": "prairie",
      "parts": {},
-     "paint": 6
+     "paint": 3
     }
    ],
    "refused": [
     1,
-    7,
-    8,
-    9
+    11,
+    12
    ]
   }
  },

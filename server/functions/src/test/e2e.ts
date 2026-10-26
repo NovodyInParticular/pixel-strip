@@ -45,7 +45,7 @@ async function main() {
         { type: "start", t, car: "kite" },
         { type: "race", t: t + 10_000, uid: "c1", rival: "dash", won: true, pink: false },
         { type: "race", t: t + 11_000, uid: "c1", rival: "kat", won: true, pink: false },   // too soon after the last
-        { type: "buy", t: t + 12_000, car: "mammoth" },                                     // can't afford it
+        { type: "buy", t: t + 12_000, car: "vortex" },                                     // can't afford it
         { type: "race", t: t + 9_999_999, uid: "c1", rival: "kat", won: true, pink: false }, // from the future
       ],
     },
@@ -78,11 +78,11 @@ async function main() {
 
   // A brand-new account may bring a pre-ledger save once, capped
   const other = await json(`${auth}/identitytoolkit.googleapis.com/v1/accounts:signUp?key=emulator`, { returnSecureToken: true });
-  const legacy = await json(fn, { data: { base: 0, entries: [], legacy: { cash: 5_000_000, beaten: [], cars: [{ uid: "c1", car: "mammoth", paint: 0, parts: {}, cosmetics: {} }], nextUid: 2 } } }, other.body.idToken);
+  const legacy = await json(fn, { data: { base: 0, entries: [], legacy: { cash: 5_000_000, beaten: [], cars: [{ uid: "c1", car: "vortex", paint: 0, parts: {}, cosmetics: {} }], nextUid: 2 } } }, other.body.idToken);
   assert.equal(legacy.body.result.state.cash, 250_000);
-  assert.equal(legacy.body.result.state.cars[0].car, "mammoth");
+  assert.equal(legacy.body.result.state.cars[0].car, "vortex");
   const again = await json(fn, { data: { base: 0, entries: [], legacy: { cash: 250_000, cars: [{ uid: "c1", car: "aurora" }] } } }, other.body.idToken);
-  assert.equal(again.body.result.state.cars[0].car, "mammoth", "legacy import only on the first sync");
+  assert.equal(again.body.result.state.cars[0].car, "vortex", "legacy import only on the first sync");
 
   await onlineRace();
   await wagers();
@@ -102,12 +102,12 @@ async function onlineRace() {
   const loaded = await fetch(`${rtdb}/.settings/rules.json${ns}`, { method: "PUT", headers: { Authorization: "Bearer owner" }, body: rules });
   assert.equal(loaded.status, 200, "database rules loaded");
   const cases = JSON.parse(readFileSync(join(__dirname, "../../../../shared/physics_cases.json"), "utf8"));
-  const clean = cases.find((c: any) => c.name === "mammoth stock");
+  const clean = cases.find((c: any) => c.name === "vortex stock");
   const red = cases.find((c: any) => c.name === "red light");
   const player = async () => {
     const s = await json(`${auth}/identitytoolkit.googleapis.com/v1/accounts:signUp?key=emulator`, { returnSecureToken: true });
     const token: string = s.body.idToken;
-    const synced = await call("sync", { base: 0, entries: [], legacy: { cash: 1000, beaten: [], cars: [{ uid: "c1", car: "mammoth", paint: 0, parts: {}, cosmetics: {} }] } }, token);
+    const synced = await call("sync", { base: 0, entries: [], legacy: { cash: 1000, beaten: [], cars: [{ uid: "c1", car: "vortex", paint: 0, parts: {}, cosmetics: {} }] } }, token);
     assert.equal(synced.status, 200, "garage synced");
     return { token, uid: s.body.localId as string };
   };
@@ -141,7 +141,7 @@ async function onlineRace() {
   const { replay } = await import("../physics/vehicle");
   const root = join(__dirname, "../../../..");
   const grip = JSON.parse(readFileSync(join(root, `assets/data/tracks/${room.body.track}.json`), "utf8")).trackGrip ?? 1.25;
-  const def = apply(parseCar(JSON.parse(readFileSync(join(root, "assets/data/cars/mammoth.json"), "utf8"))),
+  const def = apply(parseCar(JSON.parse(readFileSync(join(root, "assets/data/cars/vortex.json"), "utf8"))),
     parseCatalog(JSON.parse(readFileSync(join(root, "assets/data/parts.json"), "utf8"))), {}, {}, null);
   const local = replay(def, clean.events, { trackGrip: grip, startX: clean.startX, finishM: clean.finishM }).splits[4];
   // a pass that didn't finish (a slippery random track) is null from the server, -1 from replay()
@@ -163,7 +163,7 @@ async function wagers() {
   const { readFileSync } = await import("node:fs");
   const { join } = await import("node:path");
   const cases = JSON.parse(readFileSync(join(__dirname, "../../../../shared/physics_cases.json"), "utf8"));
-  const clean = cases.find((c: any) => c.name === "mammoth stock").events;
+  const clean = cases.find((c: any) => c.name === "vortex stock").events;
   const red = cases.find((c: any) => c.name === "red light").events;
   const player = async (cash: number, cars: string[]) => {
     const s = await json(`${auth}/identitytoolkit.googleapis.com/v1/accounts:signUp?key=emulator`, { returnSecureToken: true });
@@ -181,9 +181,9 @@ async function wagers() {
   };
 
   // cash: matched only on the same stake; nothing moves until both accept; winner takes both
-  const a = await player(10000, ["mammoth"]);
-  const b = await player(10000, ["mammoth"]);
-  const c = await player(10000, ["mammoth"]);
+  const a = await player(10000, ["vortex"]);
+  const b = await player(10000, ["vortex"]);
+  const c = await player(10000, ["vortex"]);
   assert.equal((await call("matchmake", { car: "c1", wager: { kind: "cash", amount: 20000 } }, c.token)).status, 400, "can't bet more than you have");
   assert.equal((await call("matchmake", { car: "c1", wager: { kind: "cash", amount: 1000 } }, c.token)).body.result.waiting, true);
   const id = await match(a, b, { kind: "cash", amount: 5000 });
@@ -201,9 +201,9 @@ async function wagers() {
   assert.deepEqual([(await garage(a)).cash, (await garage(b)).cash], [15000, 5000], "the winner takes both stakes");
 
   // pink slips: a decline moves nothing; then a real one moves the car
-  const p = await player(0, ["mammoth", "kite"]);
-  const q = await player(0, ["mammoth", "kestrel"]);
-  const solo = await player(0, ["mammoth"]);
+  const p = await player(0, ["vortex", "kite"]);
+  const q = await player(0, ["vortex", "kite_sol"]);
+  const solo = await player(0, ["vortex"]);
   assert.equal((await call("matchmake", { car: "c1", wager: { kind: "pink" } }, solo.token)).status, 400, "never your last car");
   const off = await match(p, q, { kind: "pink" });
   await call("confirmWager", { raceId: off, accept: true }, p.token);
@@ -219,15 +219,15 @@ async function wagers() {
   await call("submitRun", { raceId: pink, events: red }, p.token);
   const pr = (await call("submitRun", { raceId: pink, events: clean }, q.token)).body.result.result;
   assert.equal(pr.winner, q.uid);
-  assert.equal(pr.prize.car, "mammoth");
+  assert.equal(pr.prize.car, "vortex");
   const gp = await garage(p);
   const gq = await garage(q);
   assert.deepEqual(gp.cars.map((x: any) => x.car), ["kite"], "the loser keeps their other car");
-  assert.deepEqual(gq.cars.map((x: any) => x.car), ["mammoth", "kestrel", "mammoth"], "the winner drives off in theirs");
+  assert.deepEqual(gq.cars.map((x: any) => x.car), ["vortex", "kite_sol", "vortex"], "the winner drives off in theirs");
   assert.deepEqual([gp.staked, gq.staked], [[], []]);
 
   // a negative balance (say, after a refunded purchase) blocks betting but not fun races
-  const broke = await player(0, ["mammoth"]);
+  const broke = await player(0, ["vortex"]);
   const fsUrl = `${firestore}/v1/projects/${project}/databases/(default)/documents/players/${broke.uid}?updateMask.fieldPaths=state.cash`;
   await fetch(fsUrl, { method: "PATCH", headers: { Authorization: "Bearer owner", "Content-Type": "application/json" },
     body: JSON.stringify({ fields: { state: { mapValue: { fields: { cash: { integerValue: "-500" } } } } } }) });
@@ -241,12 +241,12 @@ async function crews() {
   const { readFileSync } = await import("node:fs");
   const { join } = await import("node:path");
   const cases = JSON.parse(readFileSync(join(__dirname, "../../../../shared/physics_cases.json"), "utf8"));
-  const clean = cases.find((c: any) => c.name === "mammoth stock").events;
+  const clean = cases.find((c: any) => c.name === "vortex stock").events;
   const red = cases.find((c: any) => c.name === "red light").events;
   const player = async () => {
     const s = await json(`${auth}/identitytoolkit.googleapis.com/v1/accounts:signUp?key=emulator`, { returnSecureToken: true });
     const token: string = s.body.idToken;
-    await call("sync", { base: 0, entries: [], legacy: { cash: 0, beaten: [], cars: [{ uid: "c1", car: "mammoth", paint: 0, parts: {}, cosmetics: {} }] } }, token);
+    await call("sync", { base: 0, entries: [], legacy: { cash: 0, beaten: [], cars: [{ uid: "c1", car: "vortex", paint: 0, parts: {}, cosmetics: {} }] } }, token);
     return { token, uid: s.body.localId as string };
   };
   const emblem = { shape: 1, colors: [2, 5, 0], icon: 3 };
@@ -305,12 +305,12 @@ async function tournaments() {
   const { readFileSync } = await import("node:fs");
   const { join } = await import("node:path");
   const cases = JSON.parse(readFileSync(join(__dirname, "../../../../shared/physics_cases.json"), "utf8"));
-  const clean = cases.find((c: any) => c.name === "mammoth stock").events;
+  const clean = cases.find((c: any) => c.name === "vortex stock").events;
   const red = cases.find((c: any) => c.name === "red light").events;
   const player = async (cash: number) => {
     const s = await json(`${auth}/identitytoolkit.googleapis.com/v1/accounts:signUp?key=emulator`, { returnSecureToken: true });
     const token: string = s.body.idToken;
-    await call("sync", { base: 0, entries: [], legacy: { cash, beaten: [], cars: [{ uid: "c1", car: "mammoth", paint: 0, parts: {}, cosmetics: {} }] } }, token);
+    await call("sync", { base: 0, entries: [], legacy: { cash, beaten: [], cars: [{ uid: "c1", car: "vortex", paint: 0, parts: {}, cosmetics: {} }] } }, token);
     return { token, uid: s.body.localId as string };
   };
   const cashOf = async (p: { token: string }) => (await call("sync", { entries: [] }, p.token)).body.result.state.cash;
@@ -356,8 +356,8 @@ async function tournaments() {
   });
   const best = (et: number) => ({ mapValue: { fields: { et: { doubleValue: et }, mph: { doubleValue: 110 }, rt: { doubleValue: 0.1 }, at: { integerValue: "1" } } } });
   await doc(`tournaments/${y}-STREET`, { pool: { integerValue: "90000" }, entrants: { integerValue: "2" }, settled: { nullValue: null } });
-  await doc(`tournaments/${y}-STREET/entries/${b.uid}`, { name: { stringValue: "B" }, car: { stringValue: "mammoth" }, best: best(14.2) });
-  await doc(`tournaments/${y}-STREET/entries/${c.uid}`, { name: { stringValue: "C" }, car: { stringValue: "mammoth" }, best: best(14.1) });
+  await doc(`tournaments/${y}-STREET/entries/${b.uid}`, { name: { stringValue: "B" }, car: { stringValue: "vortex" }, best: best(14.2) });
+  await doc(`tournaments/${y}-STREET/entries/${c.uid}`, { name: { stringValue: "C" }, car: { stringValue: "vortex" }, best: best(14.1) });
   const after = (await call("tournaments", {}, b.token)).body.result;
   const street = after.yesterday.find((t: any) => t.cls === "STREET");
   assert.ok(street.settled, "settled");

@@ -3,8 +3,8 @@
   "sellRate": 0.6,
   "starterCars": [
     "kite",
-    "kestrel",
-    "kokoro"
+    "kite_sol",
+    "spiral_turbo"
   ],
   "classes": [
     {

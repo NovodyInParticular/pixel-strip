@@ -35,34 +35,43 @@ class DragPhysicsTest {
         label, r.sixty, r.et[1], r.et[2], r.mph[2], r.et[4], r.mph[4], r.ratings)
 
     @Test
-    fun mammothBehavesLikeAStockMuscleCar() {
-        val def = car("mammoth")
+    fun vortexBehavesLikeAStockV8SportsCar() {
+        val def = car("vortex")
         val sweet = DragMath.launchRpm(def, Vehicle.DEFAULT_PREP)
         println("launch sweet spot ${sweet.toInt()} rpm, shift points ${DragMath.shiftPoints(def).map { it.toInt() }}")
         val best = pass(def, sweet)
-        val bog = pass(def, sweet * 0.6f)
         val spin = pass(def, def.redline * 0.95f)
         val cold = pass(def, sweet, temp = 0.15f)
         val early = pass(def, sweet, shiftOffset = -0.15f)
         val nos = pass(def.copy(nitrous = CarDef.Nitrous(75f, 2, 2.5f)), sweet, nitrous = true)        // a two-shot 75 hp kit
-        listOf("sweet" to best, "bog" to bog, "spin" to spin, "cold tyres" to cold, "early shifts" to early, "nitrous" to nos)
+        listOf("sweet" to best, "spin" to spin, "cold tyres" to cold, "early shifts" to early, "nitrous" to nos)
             .forEach { (l, r) -> println(describe(l, r)) }
 
-        // Real '70 Chevelle SS 454 LS6 4-speed: mid-to-high 13s at ~100-105 mph on street tyres
-        assertTrue(best.et[4] in 13.0f..15.0f, "quarter ET ${best.et[4]}")
-        assertTrue(best.mph[4] in 92f..108f, "trap ${best.mph[4]}")
-        assertTrue(bog.sixty > best.sixty + 0.05f, "bogging should cost 60 ft time")
+        // Real 2002 Corvette Z06 (C5) 6-speed: mid-12s at ~114-116 mph on street tyres; a perfect sim pass a bit quicker
+        assertTrue(best.et[4] in 11.6f..13.2f, "quarter ET ${best.et[4]}")
+        assertTrue(best.mph[4] in 110f..122f, "trap ${best.mph[4]}")
         assertTrue(spin.sixty > best.sixty + 0.05f, "too much RPM should spin the tyres and cost time")
         assertTrue(spin.et[4] > best.et[4] + 0.05f, "a spun launch should lose the whole pass, not just the 60 ft")
-        assertTrue(bog.et[4] > best.et[4] + 0.05f, "a bogged launch should lose the whole pass")
         assertTrue(cold.sixty > best.sixty, "a burnout (warm tyres) should help")
         assertTrue(early.et[4] > best.et[4], "short-shifting should be slower")
         assertTrue(nos.et[4] < best.et[4] - 0.1f, "nitrous should help")
     }
 
     @Test
+    fun aPeakyEngineBogsOffTheLine() {
+        // the S2000's F20C makes its torque up top: launched low it falls out of its band (the V8 above has torque to spare)
+        val def = car("tenshi")
+        val sweet = DragMath.launchRpm(def, Vehicle.DEFAULT_PREP)
+        val best = pass(def, sweet)
+        val bog = pass(def, sweet * 0.6f)
+        listOf("sweet" to best, "bog" to bog).forEach { (l, r) -> println(describe(l, r)) }
+        assertTrue(bog.sixty > best.sixty + 0.05f, "bogging should cost 60 ft time")
+        assertTrue(bog.et[4] > best.et[4] + 0.05f, "a bogged launch should lose the whole pass")
+    }
+
+    @Test
     fun burnoutHeatsTheTyres() {
-        val car = Vehicle(car("mammoth"))
+        val car = Vehicle(car("vortex"))
         car.startBurnout()
         car.throttle = 1f
         var t = 0f
@@ -77,7 +86,7 @@ class DragPhysicsTest {
 
     @Test
     fun leavingBeforeGreenIsARedLight() {
-        val def = car("mammoth")
+        val def = car("vortex")
         val car = Vehicle(def)
         car.prime(DragMath.launchRpm(def, Vehicle.DEFAULT_PREP), 0.78f)
         car.launch(-0.25f)            // launched 0.25 s before green

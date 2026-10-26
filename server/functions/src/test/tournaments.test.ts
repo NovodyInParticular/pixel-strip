@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { emptyState } from "../ledger";
-import { classFor, dayEnd, dayKey, givePrizeCar, parseId, prizeCarFor, PRIZE_CARS, prizes, standings, trackFor } from "../tournaments";
+import { classFor, dayEnd, dayKey, givePrizeCar, parseId, prizeCarFor, prizes, standings, trackFor } from "../tournaments";
 
 test("days are UTC and end at midnight", () => {
   const t = Date.parse("2026-10-20T23:59:59Z");
@@ -50,13 +50,11 @@ test("quickest ET wins, earlier run breaks a tie, no clean run doesn't place", (
   assert.deepEqual(order, ["11.1@9", "11.2@3", "11.2@5"]);
 });
 
-test("the day's winner drives a rare car home, once", () => {
-  assert.equal(prizeCarFor("2026-10-25", "STREET"), null, "street pays cash only");
-  assert.equal(prizeCarFor("2026-10-25", "PRO"), "kirin_r");
-  const week = Array.from({ length: 14 }, (_, i) => prizeCarFor(`2026-10-${10 + i}`, "OUTLAW"));
-  assert.deepEqual([...new Set(week)].sort(), [...PRIZE_CARS.OUTLAW].sort(), "the outlaw prize rotates by day");
+test("every class pays cash only; a prize car goes home once", () => {
+  for (const cls of ["STREET", "SPORT", "PRO", "OUTLAW"] as const) assert.equal(prizeCarFor("2026-10-25", cls), null, cls);
+  assert.equal(givePrizeCar(emptyState(), null, 6), false, "no car, nothing to give");
   const s = emptyState();
-  assert.equal(givePrizeCar(s, "kirin_r", 6), true);
-  assert.equal(givePrizeCar(s, "kirin_r", 6), false, "not a second one");
-  assert.deepEqual(s.cars.map((c) => [c.uid, c.car, c.paint]), [["c1", "kirin_r", 6]]);
+  assert.equal(givePrizeCar(s, "kaminari_mk3", 6), true);
+  assert.equal(givePrizeCar(s, "kaminari_mk3", 6), false, "not a second one");
+  assert.deepEqual(s.cars.map((c) => [c.uid, c.car, c.paint]), [["c1", "kaminari_mk3", 6]]);
 });

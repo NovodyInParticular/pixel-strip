@@ -161,7 +161,7 @@ class PixelStrip(val platform: Platform, val shots: ShotPlan? = null, private va
             save.cars.clear()
             save.refundNotice.clear()
             save.cash = 250_000
-            val c = save.addCar(startCar ?: "mammoth", car(startCar ?: "mammoth").defaultPaint)
+            val c = save.addCar(startCar ?: "vortex", car(startCar ?: "vortex").defaultPaint)
             if (shots.loaded) {
                 // a pro-mod blower build: the top option everywhere except turbo, plus tubs for the slicks
                 val stockDef = car(c.carId)

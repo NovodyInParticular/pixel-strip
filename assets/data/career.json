@@ -23,7 +23,7 @@
     {
      "id": "kat",
      "name": "KAT",
-     "car": "kestrel",
+     "car": "kite_sol",
      "paint": 6,
      "finish": 0,
      "parts": {
@@ -42,7 +42,7 @@
     {
      "id": "tiny",
      "name": "TINY",
-     "car": "tsunami_mk3",
+     "car": "sylph_13",
      "paint": 11,
      "finish": 0,
      "parts": {
@@ -105,7 +105,7 @@
     {
      "id": "vega",
      "name": "VEGA",
-     "car": "squall",
+     "car": "ronin",
      "paint": 8,
      "finish": 0,
      "parts": {
@@ -125,7 +125,7 @@
     {
      "id": "hollis",
      "name": "HOLLIS",
-     "car": "ranger_500",
+     "car": "tenshi",
      "paint": 0,
      "finish": 0,
      "parts": {
@@ -212,7 +212,7 @@
     {
      "id": "bruno",
      "name": "BRUNO",
-     "car": "phantom",
+     "car": "typhoon",
      "paint": 5,
      "finish": 0,
      "parts": {
@@ -379,29 +379,34 @@
     {
      "id": "saint",
      "name": "SAINT",
-     "car": "asp",
+     "car": "halberd_6",
      "paint": 0,
      "finish": 0,
      "parts": {
+      "boostctl": 2,
       "bottle": 1,
-      "cams": 3,
+      "bov": 1,
       "clutch": 3,
-      "ecu": 2,
+      "diff": 2,
+      "ecu": 3,
       "exhaust": 3,
-      "fuel": 2,
-      "fueltype": 1,
+      "fuel": 3,
+      "fueltype": 2,
+      "glass": 1,
       "headers": 2,
-      "heads": 1,
       "intake": 2,
-      "interior": 1,
+      "intercooler": 3,
+      "interior": 2,
       "internals": 2,
-      "manifold": 1,
+      "manifold": 3,
       "nitrous": 3,
       "nosctl": 1,
-      "throttle": 1,
+      "panels": 3,
+      "throttle": 2,
       "tires": 4,
       "tubs": 1,
-      "valvesprings": 1
+      "turbo": 6,
+      "wheels": 2
      },
      "cosmetics": {},
      "skill": 0.84,
@@ -412,31 +417,33 @@
     {
      "id": "max",
      "name": "MAX",
-     "car": "mammoth",
+     "car": "comet_gd",
      "paint": 0,
      "finish": 0,
      "parts": {
+      "boostctl": 2,
       "bottle": 1,
-      "cams": 2,
-      "ecu": 1,
+      "bov": 1,
+      "clutch": 3,
+      "diff": 2,
+      "ecu": 3,
       "exhaust": 3,
       "fuel": 3,
       "fueltype": 2,
       "glass": 1,
       "headers": 2,
-      "heads": 1,
       "intake": 2,
+      "intercooler": 3,
       "interior": 2,
       "internals": 2,
       "manifold": 3,
       "nitrous": 3,
       "nosctl": 1,
-      "panels": 2,
-      "supercharger": 2,
-      "swap": 2,
+      "panels": 3,
       "throttle": 2,
       "tires": 4,
       "tubs": 1,
+      "turbo": 6,
       "wheels": 2
      },
      "cosmetics": {},
@@ -448,7 +455,7 @@
     {
      "id": "preacher",
      "name": "THE PREACHER",
-     "car": "condor",
+     "car": "vortex",
      "paint": 1,
      "finish": 4,
      "parts": {
@@ -505,17 +512,6 @@
  ],
  "barns": [
   {
-   "car": "kaminari_c10",
-   "after": "joe",
-   "x": 112,
-   "y": 160,
-   "paint": 6,
-   "story": [
-    "A TARP IN A RICE FARMER'S SHED.",
-    "UNDER IT: THE BOXY ONE. STILL ON ITS FIRST ENGINE."
-   ]
-  },
-  {
    "car": "prairie",
    "after": "rotor",
    "x": 110,
@@ -524,28 +520,6 @@
    "story": [
     "ROTOR'S OLD MENTOR LEFT IT IN A CARPORT.",
     "TWO ROTORS, ONE DREAM, A LOT OF DUST."
-   ]
-  },
-  {
-   "car": "shirasagi",
-   "after": "volt",
-   "x": 382,
-   "y": 42,
-   "paint": 6,
-   "story": [
-    "A COLLECTOR'S WIDOW WANTS IT GONE.",
-    "THE MOST BEAUTIFUL THING YOU'VE EVER TOWED."
-   ]
-  },
-  {
-   "car": "mamba",
-   "after": "preacher",
-   "x": 382,
-   "y": 158,
-   "paint": 9,
-   "story": [
-    "THE PREACHER'S FIRST CAR. HE SAYS YOU EARNED IT.",
-    "SIDE PIPES. NO ROOF. NO MERCY."
    ]
   }
  ]

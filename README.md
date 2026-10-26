@@ -13,13 +13,14 @@ The original 8-phase plan was folded into a bigger one (multiplayer, crews, purc
 Done so far:
 
 - Neon City, the race, physics, lighting and effects (original phases 1-3)
-- 54 cars (JDM, American and European legends, from a '65 roadster to a '02 rotary), each with its
-  real inspiration's stock specs and drivetrain, written by `tools/make_roster.py` and checked
-  against period road-test quarter miles (`RosterCalibrationTest`, which reads the table in
-  `car_references.md`). 44 at the dealer, browsed by class; three starters (two RWD, the Civic
-  FWD); boss cars; four barn finds on the career map; four rare tournament prizes. New cars borrow
-  an existing body until their own art is drawn. Cars taken out of the roster were refunded in
-  full, see "Retired cars" below.
+- 23 cars, exactly the ones in the reference photos (JDM from a '72 rotary to an '04 STI, plus a
+  C5 Z06), each with its real inspiration's stock specs and drivetrain (all manual gearboxes),
+  written by `tools/make_roster.py` and checked against period road-test quarter miles
+  (`RosterCalibrationTest`, which reads the table in `car_references.md`). 21 at the dealer,
+  browsed by class; three starters (EG Civic, del Sol, FC RX-7); boss cars; one barn find (the
+  RX-3). Bodies are being traced from the photos (`tools/art/photo_ref.py`); cars not traced yet
+  borrow an existing body. Cars taken out of the roster were refunded in full, see "Retired cars"
+  below.
 - Title screen, first-launch starter pick, garage, dealership, settings, local save, pixel
   transitions (dissolve, wipe, garage door)
 
@@ -66,8 +67,8 @@ Done so far:
   music per screen and track
 - Factory turbos spool: off boost an engine makes about 70% of its rated torque, and it comes on
   boost from just below its torque peak. Staged with the clutch in an engine has no load, so it
-  barely builds boost; anti-lag on the two-step does, and so does an automatic brake-torqued
-  against its converter (the GNX)
+  barely builds boost; anti-lag on the two-step does, and so would an automatic brake-torqued
+  against its converter (`"converter"` in a car's JSON; no car in the current roster has one)
 - Cloud save (Firebase): anonymous accounts, and every cash or garage change checked by the
   server (see below)
 
@@ -207,7 +208,8 @@ press the buttons perfectly. If the other side never finishes, the race goes to 
 
 ### Retired cars
 
-On 2026-10-25 the roster was rebuilt and nine cars left the game. `assets/data/retired.json`
+On 2026-10-25 the roster was rebuilt and nine cars left the game; on 2026-10-26 33 more left, so
+that only the cars in the reference photos remain. `assets/data/retired.json`
 freezes what each one cost (and every part for it) at that moment; a `retire` ledger entry, checked
 by the server like any other, pays the owner the car's price, every part bought for it and its
 paint and looks, and removes it. A garage left empty gets a free Civic. The game queues these on
@@ -217,10 +219,10 @@ Parts can be retired the same way (`retired.json` "parts").
 
 ### Barn finds and prize cars
 
-Beating each tier's boss puts a barn on the career map with a rare car in it, free, once
-(`career.json` "barns", a `find` ledger entry). Each day's tournament winner in SPORT, PRO and
-OUTLAW also gets that class's prize car if they don't have one (`tournaments.ts` PRIZE_CARS, the
-outlaw one rotating by date).
+Beating a boss can put a barn on the career map with a rare car in it, free, once (`career.json`
+"barns", a `find` ledger entry); today that's the RX-3, after Rotor. Tournaments can also give the
+day's winner a prize car (`tournaments.ts` PRIZE_CARS, rotating by date), but every class pays
+cash only for now: all the photo cars are dealer cars.
 
 ### Bets and pink slips
 

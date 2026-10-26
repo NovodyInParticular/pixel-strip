@@ -1,0 +1,50 @@
+{
+  "dir": "cars/kite_sol",
+  "width": 119,
+  "height": 56,
+  "scale": 1.5,
+  "rearWheel": [
+    22.0,
+    42.849999999999994
+  ],
+  "frontWheel": [
+    92.5,
+    42.849999999999994
+  ],
+  "wheelSize": 22,
+  "wheelFrames": 4,
+  "blurFrames": 3,
+  "spokes": 8,
+  "headlight": [
+    115.30000000000001,
+    34.599999999999994
+  ],
+  "taillight": [
+    3.55,
+    32.800000000000004
+  ],
+  "exhaust": [
+    7.0,
+    43.0
+  ],
+  "groundY": 51.25,
+  "frontX": 115.0,
+  "popup": false,
+  "driver": [
+    43.18,
+    15.650000000000002
+  ],
+  "wheelRadius10": 56,
+  "sideExhaust": [
+    33.496,
+    46.599999999999994
+  ],
+  "sideExit": [
+    34.246,
+    45.99999999999999
+  ],
+  "door": [
+    47,
+    40
+  ]
+}
