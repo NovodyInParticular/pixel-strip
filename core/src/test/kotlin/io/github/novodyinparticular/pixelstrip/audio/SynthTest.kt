@@ -64,7 +64,7 @@ class SynthTest {
     @Test
     fun enginesTrackRpmAndMusicPlays() {
         val wav = ArrayList<Float>()
-        for ((layout, cyl, firingsPerRev) in listOf(Triple("v8", 8, 4f), Triple("i4", 4, 2f), Triple("rotary", 2, 2f))) {
+        for ((layout, cyl, firingsPerRev) in listOf(Triple("v8", 8, 4f), Triple("i4", 4, 2f), Triple("rotary", 2, 2f), Triple("flat4", 4, 2f), Triple("flat6", 6, 3f), Triple("v12", 12, 6f))) {
             val marks = sweep(layout, cyl, 3f, wav)
             println("$layout: " + marks.joinToString { (rpm, hz) -> "%.0f rpm -> %.0f Hz (firing %.0f)".format(rpm, hz, rpm / 60f * firingsPerRev) })
             // the measured pitch should rise with the revs and sit on the firing frequency or a sub-harmonic of the cycle
@@ -93,5 +93,36 @@ class SynthTest {
             o.writeBytes("data"); le32(x.size * 2)
             for (v in x) le16((v.coerceIn(-1f, 1f) * 32000).toInt())
         }
+    }
+
+    /** High-frequency energy (first difference) of a held engine note: a harder, raspier sound scores higher. */
+    private fun edge(vtec: Float, rpm: Float): Float {
+        val s = Synth(rate)
+        s.musicVolume = 0f
+        val e = s.engines[0]
+        e.active = true
+        e.layout = "i4"
+        e.cylinders = 4
+        e.throttle = 1f
+        e.rpm = rpm
+        e.vtecRpm = vtec
+        val buf = FloatArray(256)
+        var sum = 0.0
+        var last = 0f
+        repeat(rate / 256) { k ->
+            s.render(buf, buf.size)
+            if (k > rate / 512) for (x in buf) { sum += (x - last) * (x - last); last = x }   // after it has settled
+        }
+        return sum.toFloat()
+    }
+
+    @Test
+    fun theCamCrossoverIsAudible() {
+        val plain = edge(0f, 7000f)
+        val onCam = edge(5500f, 7000f)
+        val belowCam = edge(5500f, 4000f) / edge(0f, 4000f)
+        println("vtec at 7000 rpm: %.1fx the edge of the same engine without it; below the crossover %.2fx".format(onCam / plain, belowCam))
+        assertTrue(onCam > plain * 1.2f, "past the crossover the note should harden")
+        assertTrue(belowCam in 0.8f..1.25f, "below it nothing changes")
     }
 }

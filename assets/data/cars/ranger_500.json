@@ -1,0 +1,47 @@
+{
+  "id": "ranger_500",
+  "name": "Ranger 500",
+  "brand": "Carver",
+  "year": 1967,
+  "era": "classic",
+  "price": 160000,
+  "dealer": true,
+  "hp": 355,
+  "powerRating": "gross",
+  "peakHpRpm": 5400,
+  "torqueNm": 569,
+  "peakTorqueRpm": 3200,
+  "idleRpm": 800,
+  "redline": 5800,
+  "weightKg": 1588,
+  "drivetrain": "RWD",
+  "rearWeight": 0.43,
+  "wheelbaseM": 2.743,
+  "cgHeightM": 0.54,
+  "gears": [
+    2.32,
+    1.69,
+    1.29,
+    1.0
+  ],
+  "finalDrive": 3.5,
+  "shiftTime": 0.3,
+  "clutchTime": 0.32,
+  "clutchTorque": 1.5,
+  "tireRadiusM": 0.33,
+  "grip": 0.84,
+  "engineInertia": 0.4,
+  "wheelInertia": 2.4,
+  "dragArea": 0.88,
+  "nitrous": {
+    "hp": 0,
+    "charges": 0,
+    "seconds": 0
+  },
+  "defaultPaint": 6,
+  "engine": {
+    "layout": "v8",
+    "cylinders": 8,
+    "stockTurbo": false
+  }
+}

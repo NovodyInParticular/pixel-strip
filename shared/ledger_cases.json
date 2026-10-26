@@ -55,7 +55,7 @@
    {
     "type": "start",
     "t": 1000,
-    "car": "vandal"
+    "car": "mammoth"
    }
   ],
   "expect": {
@@ -744,7 +744,7 @@
    {
     "type": "buy",
     "t": 2000,
-    "car": "vandal"
+    "car": "mammoth"
    }
   ],
   "expect": {
@@ -1105,6 +1105,260 @@
     2,
     3,
     4
+   ]
+  }
+ },
+ {
+  "name": "a retired car pays back its price, every part bought for it, and its paint and looks",
+  "entries": [
+   {
+    "type": "retire",
+    "t": 2000,
+    "uid": "c1"
+   }
+  ],
+  "expect": {
+   "cash": 67460,
+   "cars": [
+    {
+     "uid": "c2",
+     "car": "kite",
+     "parts": {}
+    }
+   ],
+   "refused": []
+  },
+  "state": {
+   "cash": 1000,
+   "xp": 0,
+   "nextUid": 3,
+   "lastRaceT": 0,
+   "beaten": [],
+   "found": [],
+   "cars": [
+    {
+     "paint": 3,
+     "parts": {
+      "intake": 2
+     },
+     "owned": {
+      "intake": 6
+     },
+     "cosmetics": {
+      "wing": 1,
+      "finish": 1,
+      "decal": 0,
+      "decalColor": 2
+     },
+     "uid": "c1",
+     "car": "vandal"
+    },
+    {
+     "paint": 0,
+     "parts": {},
+     "owned": {},
+     "cosmetics": {},
+     "uid": "c2",
+     "car": "kite"
+    }
+   ]
+  }
+ },
+ {
+  "name": "retiring the last car needs a starter to take its place",
+  "entries": [
+   {
+    "type": "retire",
+    "t": 2000,
+    "uid": "c1"
+   },
+   {
+    "type": "retire",
+    "t": 2000,
+    "uid": "c1",
+    "car": "mammoth"
+   },
+   {
+    "type": "retire",
+    "t": 2000,
+    "uid": "c1",
+    "car": "kokoro"
+   }
+  ],
+  "expect": {
+   "cash": 17000,
+   "cars": [
+    {
+     "uid": "c2",
+     "car": "kokoro",
+     "parts": {}
+    }
+   ],
+   "refused": [
+    0,
+    1
+   ]
+  },
+  "state": {
+   "cash": 1000,
+   "xp": 0,
+   "nextUid": 2,
+   "lastRaceT": 0,
+   "beaten": [],
+   "found": [],
+   "cars": [
+    {
+     "paint": 11,
+     "parts": {},
+     "owned": {},
+     "cosmetics": {},
+     "uid": "c1",
+     "car": "zephyr"
+    }
+   ]
+  }
+ },
+ {
+  "name": "only retired cars and parts pay back",
+  "entries": [
+   {
+    "type": "retire",
+    "t": 2000,
+    "uid": "c1"
+   }
+  ],
+  "expect": {
+   "cash": 1000,
+   "refused": [
+    0
+   ]
+  },
+  "state": {
+   "cash": 1000,
+   "xp": 0,
+   "nextUid": 2,
+   "lastRaceT": 0,
+   "beaten": [],
+   "found": [],
+   "cars": [
+    {
+     "paint": 0,
+     "parts": {},
+     "owned": {},
+     "cosmetics": {},
+     "uid": "c1",
+     "car": "kite"
+    }
+   ]
+  }
+ },
+ {
+  "name": "a barn find needs its boss beaten, then it's free, once",
+  "entries": [
+   {
+    "type": "start",
+    "t": 1000,
+    "car": "kite"
+   },
+   {
+    "type": "find",
+    "t": 2000,
+    "car": "kaminari_c10"
+   },
+   {
+    "type": "race",
+    "t": 10000,
+    "uid": "c1",
+    "rival": "dash",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "race",
+    "t": 20000,
+    "uid": "c1",
+    "rival": "kat",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "race",
+    "t": 30000,
+    "uid": "c1",
+    "rival": "tiny",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "race",
+    "t": 40000,
+    "uid": "c1",
+    "rival": "joe",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "find",
+    "t": 41000,
+    "car": "kaminari_c10"
+   },
+   {
+    "type": "find",
+    "t": 41000,
+    "car": "kaminari_c10"
+   },
+   {
+    "type": "find",
+    "t": 41000,
+    "car": "prairie"
+   },
+   {
+    "type": "find",
+    "t": 41000,
+    "car": "kite"
+   }
+  ],
+  "expect": {
+   "cash": 30000,
+   "found": [
+    "kaminari_c10"
+   ],
+   "cars": [
+    {
+     "uid": "c1",
+     "car": "kite",
+     "parts": {}
+    },
+    {
+     "uid": "c2",
+     "car": "kite_ef",
+     "parts": {
+      "cams": 1,
+      "clutch": 1,
+      "diff": 2,
+      "ecu": 2,
+      "exhaust": 1,
+      "gearbox": 1,
+      "headers": 1,
+      "intake": 1,
+      "interior": 1,
+      "swap": 2,
+      "throttle": 1,
+      "tires": 2
+     }
+    },
+    {
+     "uid": "c3",
+     "car": "kaminari_c10",
+     "parts": {},
+     "paint": 6
+    }
+   ],
+   "refused": [
+    1,
+    7,
+    8,
+    9
    ]
   }
  },

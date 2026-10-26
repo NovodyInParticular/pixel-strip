@@ -229,8 +229,9 @@ export function apply(def: CarDef, c: Catalog, parts: Record<string, number>, co
     finalDrive,
     nitrous,
     boostGain: extraPsi * PSI_GAIN * icEff,
-    boostSpoolRpm: (turbo.spool ?? 0) * spoolScale(def),
-    boostLag: turbo.lag ?? 0.8,
+    // an aftermarket turbo replaces a factory one, so the stock boost spools with it
+    boostSpoolRpm: turbo.spool !== undefined ? turbo.spool * spoolScale(def) : def.boostSpoolRpm,
+    boostLag: turbo.lag ?? def.boostLag,
     boostPsi: psi,
     boostByGear: byGear,
     blowOff: fx(c, parts, "bov", "bov") > 0,

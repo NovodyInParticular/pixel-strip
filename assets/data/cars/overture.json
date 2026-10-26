@@ -1,0 +1,49 @@
+{
+  "id": "overture",
+  "name": "Overture VTX",
+  "brand": "Hikari",
+  "year": 1993,
+  "era": "90s",
+  "price": 14000,
+  "dealer": true,
+  "hp": 190,
+  "powerRating": "net",
+  "peakHpRpm": 6800,
+  "torqueNm": 214,
+  "peakTorqueRpm": 5500,
+  "idleRpm": 800,
+  "redline": 7500,
+  "weightKg": 1300,
+  "drivetrain": "FWD",
+  "rearWeight": 0.38,
+  "wheelbaseM": 2.55,
+  "cgHeightM": 0.5,
+  "gears": [
+    3.307,
+    1.809,
+    1.23,
+    0.933,
+    0.757
+  ],
+  "finalDrive": 4.266,
+  "shiftTime": 0.25,
+  "clutchTime": 0.32,
+  "clutchTorque": 1.5,
+  "tireRadiusM": 0.303,
+  "grip": 0.92,
+  "engineInertia": 0.2,
+  "wheelInertia": 1.9,
+  "dragArea": 0.62,
+  "nitrous": {
+    "hp": 0,
+    "charges": 0,
+    "seconds": 0
+  },
+  "defaultPaint": 7,
+  "engine": {
+    "layout": "i4",
+    "cylinders": 4,
+    "stockTurbo": false,
+    "vtecRpm": 5200
+  }
+}

@@ -283,8 +283,9 @@ object Upgrades {
             finalDrive = finalDrive,
             nitrous = nitrous,
             boostGain = extraPsi * PSI_GAIN * icEff,
-            boostSpoolRpm = (turbo["spool"] ?: 0f) * spoolScale(def),
-            boostLag = turbo["lag"] ?: 0.8f,
+            // an aftermarket turbo replaces a factory one, so the stock boost spools with it
+            boostSpoolRpm = turbo["spool"]?.let { it * spoolScale(def) } ?: def.boostSpoolRpm,
+            boostLag = turbo["lag"] ?: def.boostLag,
             boostPsi = psi,
             boostByGear = byGear,
             blowOff = c.fx(parts, "bov", "bov") > 0f,

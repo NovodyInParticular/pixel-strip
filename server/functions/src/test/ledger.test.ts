@@ -13,7 +13,7 @@ interface Want { uid: string; car: string; parts?: Record<string, number>; paint
 test("shared ledger cases (same file as core LedgerTest)", () => {
   assert.ok(cases.length >= 10);
   for (const c of cases) {
-    const s = emptyState();
+    const s = c.state ? structuredClone(c.state) : emptyState();     // a garage from before a rule changed (retired cars)
     const refused: number[] = [];
     c.entries.forEach((raw: unknown, i: number) => {
       const e = sanitize(raw);
@@ -24,6 +24,7 @@ test("shared ledger cases (same file as core LedgerTest)", () => {
     if (want.cash !== undefined) assert.equal(s.cash, want.cash, `${c.name}: cash`);
     if (want.xp !== undefined) assert.equal(s.xp ?? 0, want.xp, `${c.name}: xp`);
     if (want.beaten !== undefined) assert.deepEqual(s.beaten, want.beaten, `${c.name}: beaten`);
+    if (want.found !== undefined) assert.deepEqual(s.found ?? [], want.found, `${c.name}: found`);
     if (want.cars !== undefined) {
       assert.equal(s.cars.length, want.cars.length, `${c.name}: car count`);
       want.cars.forEach((w: Want, i: number) => {
@@ -53,7 +54,7 @@ test("legacy import keeps known things and caps cash", () => {
     cash: 9_999_999,
     beaten: ["dash", "nobody"],
     cars: [
-      { uid: "c3", car: "vandal", paint: 1, parts: { intake: 2, rocket: 9, exhaust: 99 }, cosmetics: { wing: 1, finish: 2, nope: 1 }, owned: { intake: 0b111, exhaust: 1 << 20 } },
+      { uid: "c3", car: "mammoth", paint: 1, parts: { intake: 2, rocket: 9, exhaust: 99 }, cosmetics: { wing: 1, finish: 2, nope: 1 }, owned: { intake: 0b111, exhaust: 1 << 20 } },
       { uid: "c4", car: "spaceship" },
       { uid: "../x", car: "kite" },
     ],

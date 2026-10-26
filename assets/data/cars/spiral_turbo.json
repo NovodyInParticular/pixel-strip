@@ -43,5 +43,6 @@
     "layout": "rotary",
     "cylinders": 2,
     "stockTurbo": true
-  }
+  },
+  "dealer": true
 }

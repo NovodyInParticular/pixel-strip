@@ -8,7 +8,8 @@ import com.badlogic.gdx.utils.JsonValue
  * result wins. [t] is the client clock in ms.
  *
  * Types: start(car), buy(car), part(uid, slot, opt), look(uid, slot = cosmetic id, opt = style or -1 for the next),
- * paint(uid, paint = [colour, finish, decal, decal colour]), sell(uid), race(uid, rival, won, pink).
+ * paint(uid, paint = [colour, finish, decal, decal colour]), sell(uid), race(uid, rival, won, pink),
+ * retire(uid, car = a starter in case it was the last car), find(car = a barn find).
  */
 class Entry(
     val type: String,
@@ -84,6 +85,37 @@ object Ledger {
         if (p[2] != (car.cosmetics["decal"] ?: 0)) c += r.decals[p[2]]
         if (p[3] != (car.cosmetics["decalColor"] ?: 0) && p[2] > 0) c += r.decalColorPrice
         return c
+    }
+
+    /**
+     * What a car or part taken out of the game pays back: a retired car its full price, every part
+     * bought for it and its paint and cosmetics; otherwise each retired part this car owns. 0 = nothing.
+     */
+    fun refund(r: Rules, car: OwnedCar): Long {
+        r.retired.cars[car.carId]?.let { rc ->
+            var total = rc.price
+            for ((slot, bits) in car.owned) {
+                val prices = rc.parts[slot] ?: continue
+                for (i in prices.indices) if (bits and (1 shl (i + 1)) != 0) total += prices[i]
+            }
+            for ((k, v) in car.cosmetics) {
+                if (v <= 0) continue
+                total += when (k) {
+                    "finish" -> r.finishes.getOrElse(v) { 0L }
+                    "decal" -> r.decals.getOrElse(v) { 0L }
+                    "decalColor" -> if ((car.cosmetics["decal"] ?: 0) > 0) r.decalColorPrice else 0L
+                    else -> r.cosmetics[k]?.price ?: 0L
+                }
+            }
+            if (car.paint != rc.paint) total += r.colorPrice
+            return total
+        }
+        var total = 0L
+        for ((slot, opts) in r.retired.parts) {
+            val bits = car.owned[slot] ?: continue
+            for ((opt, byCar) in opts) if (bits and (1 shl opt) != 0) total += byCar[car.carId] ?: 0L
+        }
+        return total
     }
 
     fun unlocked(r: Rules, s: SaveGame, rivalId: String): Boolean {
@@ -182,6 +214,33 @@ object Ledger {
                     for ((k, v) in rival.parts) if (v > 0) prize.owned[k] = 1 shl v
                     prize.cosmetics.putAll(rival.cosmetics)
                 }
+            }
+            "retire" -> {
+                car ?: return false
+                val pay = refund(r, car)
+                if (pay <= 0L) return false
+                if (car.carId in r.retired.cars) {
+                    val starter = e.car
+                    if (s.cars.size == 1 && (starter == null || starter !in r.starterCars || r.cars[starter] == null)) return false
+                    s.cash += pay
+                    s.removeCar(car.uid)
+                    if (s.cars.isEmpty()) s.addCar(starter!!, r.cars.getValue(starter).paint)
+                } else {
+                    s.cash += pay
+                    for ((slot, opts) in r.retired.parts) {
+                        val bits = car.owned[slot] ?: continue
+                        var left = bits
+                        for (opt in opts.keys) left = left and (1 shl opt).inv()
+                        if (left == 0) car.owned.remove(slot) else car.owned[slot] = left
+                        if (car.parts[slot]?.let { it in opts } == true) car.parts.remove(slot)
+                    }
+                }
+            }
+            "find" -> {
+                val barn = r.barns.firstOrNull { it.car == e.car } ?: return false
+                if (barn.after !in s.beaten || barn.car in s.found || r.cars[barn.car] == null) return false
+                s.found.add(barn.car)
+                s.addCar(barn.car, barn.paint)
             }
             else -> return false
         }

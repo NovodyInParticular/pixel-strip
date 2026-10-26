@@ -30,7 +30,7 @@ class LedgerTest {
             cars, PartCatalog(JsonReader().parse(File("data/parts.json").readText())),
             Economy.parse(JsonReader().parse(File("data/economy.json").readText())),
             Career.parse(JsonReader().parse(File("data/career.json").readText())),
-            colors, PixelStrip.PARTS_RESALE_PERCENT,
+            colors, PixelStrip.PARTS_RESALE_PERCENT, JsonReader().parse(File("data/retired.json").readText()),
         )
     }
 
@@ -48,6 +48,7 @@ class LedgerTest {
         val tmp = FileHandle(File.createTempFile("ledger", ".json"))
         for (c in cases) {
             val save = SaveGame(tmp)
+            c.get("state")?.let { save.adopt(it, null) }      // a garage from before a rule changed (retired cars)
             val refused = ArrayList<Int>()
             c.get("entries").forEachIndexed { i, e -> if (!Ledger.apply(rules, save, Entry.from(e))) refused.add(i) }
             val want = c.get("expect")
@@ -56,6 +57,7 @@ class LedgerTest {
             want.get("cash")?.let { assertEquals(it.asLong(), save.cash, "$name: cash") }
             want.get("xp")?.let { assertEquals(it.asLong(), save.xp, "$name: xp") }
             want.get("beaten")?.let { assertEquals(it.asStringArray().toList(), save.beaten.toList(), "$name: beaten") }
+            want.get("found")?.let { assertEquals(it.asStringArray().toList(), save.found.toList(), "$name: found") }
             want.get("cars")?.let { cars ->
                 assertEquals(cars.size, save.cars.size, "$name: car count")
                 cars.forEachIndexed { i, wc ->

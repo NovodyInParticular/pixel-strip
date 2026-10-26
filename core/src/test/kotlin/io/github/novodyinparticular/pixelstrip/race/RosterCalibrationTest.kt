@@ -4,20 +4,24 @@ import com.badlogic.gdx.utils.JsonReader
 import io.github.novodyinparticular.pixelstrip.data.CarDef
 import java.io.File
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 /**
- * A perfect driver (sweet-spot launch, best shift points, warm tyres) should land each car near
- * its real stock quarter mile. Reference ETs are typical period magazine results.
+ * Every car against its real inspiration, from the table in car_references.md: the same
+ * drivetrain, and a perfect driver (sweet-spot launch, best shift points, warm tyres) landing near
+ * the stock quarter mile period road tests got.
  */
 class RosterCalibrationTest {
-    private val reference = mapOf(
-        "vandal" to 13.9f, "ranger" to 15.2f, "corsair" to 14.5f, "mammoth" to 13.8f, "piranha" to 13.9f, "warrior" to 14.8f,
-        "phantom" to 13.4f, "ranger50" to 14.9f, "corsair_iroc" to 15.0f, "kestrel" to 16.5f, "spiral_turbo" to 15.0f,
-        "kessler" to 14.5f, "zephyr" to 15.2f, "tsunami" to 13.3f, "kaminari_mk1" to 13.3f, "kaminari_mk3" to 13.0f,
-        "spiral_r" to 13.8f, "kirin" to 13.6f, "typhoon" to 13.8f, "squall" to 14.5f, "kite" to 16.0f, "arrow" to 15.1f,
-        "vortex" to 13.0f, "asp" to 13.0f,
-    )
+    class Ref(val id: String, val drivetrain: String, val et: Float)
+
+    /** The rows of the reference table: id, real drivetrain, stock quarter mile. */
+    private val reference: List<Ref> = File("../car_references.md").readLines()
+        .filter { it.startsWith("| ") && "`" in it }
+        .map { line ->
+            val cols = line.trim('|').split("|").map { it.trim() }
+            Ref(cols[1].trim('`'), cols[3], cols[5].toFloat())
+        }
 
     private fun load(id: String): CarDef {
         val stats = JsonReader().parse(File("data/cars/$id.json").readText())
@@ -26,10 +30,22 @@ class RosterCalibrationTest {
     }
 
     @Test
+    fun theTableCoversTheWholeRoster() {
+        val roster = JsonReader().parse(File("data/roster.json").readText()).asStringArray().toList()
+        assertEquals(roster.sorted(), reference.map { it.id }.sorted(), "car_references.md and roster.json list different cars")
+    }
+
+    @Test
+    fun everyCarHasItsRealDrivetrain() {
+        val wrong = reference.filter { load(it.id).drivetrain != it.drivetrain }.map { "${it.id}: ${load(it.id).drivetrain}, real car ${it.drivetrain}" }
+        assertTrue(wrong.isEmpty(), wrong.joinToString("\n"))
+    }
+
+    @Test
     fun everyCarIsCloseToItsRealQuarterMile() {
         val failures = ArrayList<String>()
-        for ((id, ref) in reference) {
-            val def = load(id)
+        for (ref in reference) {
+            val def = load(ref.id)
             val car = Vehicle(def)
             car.prime(DragMath.launchRpm(def, Vehicle.DEFAULT_PREP), 0.78f)
             car.launch(0f)
@@ -42,11 +58,15 @@ class RosterCalibrationTest {
             }
             val et = car.splits[4]
             val mph = car.splitSpeed[4] * 2.23694f
-            val line = "%-13s 60ft %.2f  1/8 %.2f  1/4 %.2f @ %5.1f  (real ~%.1f) launch %4.0f".format(
-                id, car.splits[0], car.splits[2], et, mph, ref, DragMath.launchRpm(def, Vehicle.DEFAULT_PREP))
+            val line = "%-13s %s 60ft %.2f  1/8 %.2f  1/4 %.2f @ %5.1f  (real ~%.1f, %+.2f) launch %4.0f".format(
+                ref.id, ref.drivetrain, car.splits[0], car.splits[2], et, mph, ref.et, et - ref.et, DragMath.launchRpm(def, Vehicle.DEFAULT_PREP))
             println(line)
-            if (et < ref - 1.0f || et > ref + 1.0f) failures.add(line)
+            if (et < ref.et - TOLERANCE || et > ref.et + TOLERANCE) failures.add(line)
         }
         assertTrue(failures.isEmpty(), "out of range:\n" + failures.joinToString("\n"))
+    }
+
+    companion object {
+        const val TOLERANCE = 1.0f
     }
 }

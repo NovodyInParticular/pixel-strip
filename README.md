@@ -13,8 +13,13 @@ The original 8-phase plan was folded into a bigger one (multiplayer, crews, purc
 Done so far:
 
 - Neon City, the race, physics, lighting and effects (original phases 1-3)
-- All 24 cars, each generated from a sprite profile, with stock stats checked against their real
-  quarter-mile times (`RosterCalibrationTest`)
+- 54 cars (JDM, American and European legends, from a '65 roadster to a '02 rotary), each with its
+  real inspiration's stock specs and drivetrain, written by `tools/make_roster.py` and checked
+  against period road-test quarter miles (`RosterCalibrationTest`, which reads the table in
+  `car_references.md`). 44 at the dealer, browsed by class; three starters (two RWD, the Civic
+  FWD); boss cars; four barn finds on the career map; four rare tournament prizes. New cars borrow
+  an existing body until their own art is drawn. Cars taken out of the roster were refunded in
+  full, see "Retired cars" below.
 - Title screen, first-launch starter pick, garage, dealership, settings, local save, pixel
   transitions (dissolve, wipe, garage door)
 
@@ -40,8 +45,14 @@ Done so far:
 - Six tracks: Neon City, Sundown Strip (desert), Dockside (rain, wet reflections, lightning),
   Sunset Coast, Summit Airfield (snow), Dusk Speedway '77; each with its own grip, weather and
   song. Joe's boss race has a seventh, San Antonio, which is his alone.
-- Audio, all synthesized: engines from the live physics (per-cylinder firing, turbo, blower,
-  limiter, nitrous, tyre squeal), effects, crowd, and chiptune music per screen and track
+- Audio, all synthesized: engines from the live physics (per-cylinder firing for I4, I6, V6, V8,
+  V10, V12, flat-4 with its unequal-header burble, flat-6, flat-12 and rotary; a VTEC-style cam
+  crossover that hardens the note; turbo, blower, limiter, nitrous, tyre squeal), effects, crowd,
+  and chiptune music per screen and track
+- Factory turbos spool: off boost an engine makes about 70% of its rated torque, and it comes on
+  boost from just below its torque peak. Staged with the clutch in an engine has no load, so it
+  barely builds boost; anti-lag on the two-step does, and so does an automatic brake-torqued
+  against its converter (the GNX)
 - Cloud save (Firebase): anonymous accounts, and every cash or garage change checked by the
   server (see below)
 
@@ -66,6 +77,7 @@ Done so far:
 - Daily rewards: a claim a day in the garage, a seven-day streak with growing cash (and XP on day
   seven); the server's clock decides (see below)
 
+- Tyre smoke, haze and spray come off the driven wheels: the fronts on FWD, rears on RWD, all four on AWD
 - Polish, first pass: rubber in the lanes (a rubbered-in groove off the line, darkened by your
   burnouts and wheelspin), a mist trail off the tyres at Dockside and a dust trail in the
   desert, camera-flash volleys from the stands on the green and at the line,
@@ -177,6 +189,23 @@ What the replay can't prove: the race clock at the launch comes from the phone (
 when the other car staged), so a modified client could claim a perfect light, and a bot could
 press the buttons perfectly. If the other side never finishes, the race goes to whoever did after
 150 s.
+
+### Retired cars
+
+On 2026-10-25 the roster was rebuilt and nine cars left the game. `assets/data/retired.json`
+freezes what each one cost (and every part for it) at that moment; a `retire` ledger entry, checked
+by the server like any other, pays the owner the car's price, every part bought for it and its
+paint and looks, and removes it. A garage left empty gets a free Civic. The game queues these on
+launch and after every sync (another device may still hand one back), and the garage shows a
+one-time notice with the amounts. Retired ids are never reused (`tools/make_roster.py` checks).
+Parts can be retired the same way (`retired.json` "parts").
+
+### Barn finds and prize cars
+
+Beating each tier's boss puts a barn on the career map with a rare car in it, free, once
+(`career.json` "barns", a `find` ledger entry). Each day's tournament winner in SPORT, PRO and
+OUTLAW also gets that class's prize car if they don't have one (`tournaments.ts` PRIZE_CARS, the
+outlaw one rotating by date).
 
 ### Bets and pink slips
 

@@ -1,0 +1,49 @@
+{
+  "id": "kirin_r",
+  "name": "Kirin R",
+  "brand": "Hikari",
+  "year": 1992,
+  "era": "90s",
+  "price": 260000,
+  "dealer": false,
+  "hp": 276,
+  "powerRating": "net",
+  "peakHpRpm": 7300,
+  "torqueNm": 294,
+  "peakTorqueRpm": 5400,
+  "idleRpm": 800,
+  "redline": 8000,
+  "weightKg": 1230,
+  "drivetrain": "RWD",
+  "rearWeight": 0.58,
+  "wheelbaseM": 2.53,
+  "cgHeightM": 0.44,
+  "gears": [
+    3.066,
+    2.047,
+    1.481,
+    1.166,
+    0.976
+  ],
+  "finalDrive": 4.235,
+  "shiftTime": 0.25,
+  "clutchTime": 0.32,
+  "clutchTorque": 1.5,
+  "tireRadiusM": 0.314,
+  "grip": 1.0,
+  "engineInertia": 0.27,
+  "wheelInertia": 2.1,
+  "dragArea": 0.52,
+  "nitrous": {
+    "hp": 0,
+    "charges": 0,
+    "seconds": 0
+  },
+  "defaultPaint": 6,
+  "engine": {
+    "layout": "v6",
+    "cylinders": 6,
+    "stockTurbo": false,
+    "vtecRpm": 5800
+  }
+}

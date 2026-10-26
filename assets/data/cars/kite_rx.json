@@ -1,0 +1,49 @@
+{
+  "id": "kite_rx",
+  "name": "Kite RX",
+  "brand": "Hikari",
+  "year": 1997,
+  "era": "90s",
+  "price": 30000,
+  "dealer": true,
+  "hp": 182,
+  "powerRating": "net",
+  "peakHpRpm": 8200,
+  "torqueNm": 160,
+  "peakTorqueRpm": 7500,
+  "idleRpm": 800,
+  "redline": 8900,
+  "weightKg": 1050,
+  "drivetrain": "FWD",
+  "rearWeight": 0.38,
+  "wheelbaseM": 2.62,
+  "cgHeightM": 0.49,
+  "gears": [
+    3.23,
+    2.105,
+    1.458,
+    1.107,
+    0.848
+  ],
+  "finalDrive": 4.785,
+  "shiftTime": 0.25,
+  "clutchTime": 0.32,
+  "clutchTorque": 1.5,
+  "tireRadiusM": 0.298,
+  "grip": 0.93,
+  "engineInertia": 0.11,
+  "wheelInertia": 1.8,
+  "dragArea": 0.6,
+  "nitrous": {
+    "hp": 0,
+    "charges": 0,
+    "seconds": 0
+  },
+  "defaultPaint": 6,
+  "engine": {
+    "layout": "i4",
+    "cylinders": 4,
+    "stockTurbo": false,
+    "vtecRpm": 5800
+  }
+}

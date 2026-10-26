@@ -48,9 +48,16 @@ export function limit(d: CarDef, r: number, na: number, total: number): number {
 export function crankTorque(d: CarDef, r: number): number {
   const na = torqueAt(d, r);
   let t = na;
+  const spooled = Math.min(Math.max((r - d.boostSpoolRpm) / BOOST_RANGE_RPM, 0), 1);
+  if (d.stockBoostGain > 0) t *= stockBoost(d, spooled);
   if (d.blowerGain > 0) t *= 1 + blower(d, r);
-  if (d.boostGain > 0) t *= 1 + d.boostGain * Math.min(Math.max((r - d.boostSpoolRpm) / BOOST_RANGE_RPM, 0), 1);
+  if (d.boostGain > 0) t *= 1 + d.boostGain * spooled;
   return limit(d, r, na, t);
+}
+
+/** Share of the published (full stock boost) torque a factory turbo car makes at boost 0..1. */
+export function stockBoost(d: CarDef, boost: number) {
+  return (1 + d.stockBoostGain * boost) / (1 + d.stockBoostGain);
 }
 
 export function shiftPoints(d: CarDef): number[] {

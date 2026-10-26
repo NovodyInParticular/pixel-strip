@@ -540,6 +540,37 @@ KITE_EF = make(  # '90 EF hatch (boss car "Ground Control"): lowered, flat hood,
 KITE_EF["flat_sides"] = True
 KITE_EF["rocker_trim"] = False
 
-ROSTER = [VANDAL, RANGER, CORSAIR, MAMMOTH, PIRANHA, WARRIOR,
-          PHANTOM, RANGER50, CORSAIR_IROC, KESTREL, SPIRAL_TURBO, KESSLER, ZEPHYR,
-          TSUNAMI, KAMINARI_MK1, KAMINARI_MK3, SPIRAL_R, KIRIN, TYPHOON, SQUALL, KITE, ARROW, VORTEX, ASP, KITE_EF]
+# Profiles of cars that left the game (VANDAL, RANGER, CORSAIR, PIRANHA, WARRIOR, RANGER50, CORSAIR_IROC,
+# KESSLER, ZEPHYR) aren't drawn under their own ids any more; new cars borrow the closest shape until
+# they get their own art. Keep this in step with the "sprite" column of tools/make_roster.py.
+_BY_ID = {p["id"]: p for p in [VANDAL, RANGER, CORSAIR, MAMMOTH, PIRANHA, WARRIOR, PHANTOM, RANGER50, CORSAIR_IROC,
+                               KESTREL, SPIRAL_TURBO, KESSLER, ZEPHYR, TSUNAMI, KAMINARI_MK1, KAMINARI_MK3, SPIRAL_R,
+                               KIRIN, TYPHOON, SQUALL, KITE, ARROW, VORTEX, ASP, KITE_EF]}
+
+
+def _stand_ins():
+    import json
+    import pathlib
+    data = pathlib.Path(__file__).resolve().parents[2] / "assets" / "data"
+    out = []
+    for cid in json.loads((data / "roster.json").read_text()):
+        if cid in _BY_ID:
+            out.append(_BY_ID[cid])
+            continue
+        donor = _STAND_IN[cid]
+        out.append(dict(_BY_ID[donor], id=cid))
+    return out
+
+
+_STAND_IN = {
+    "kaminari_c10": "warrior", "kaminari_mk2": "kaminari_mk1", "zephyr_240": "ranger", "zephyr_tt": "zephyr",
+    "sylph_13": "ranger50", "sylph_14": "ranger50", "sylph_15": "kaminari_mk1", "sylph_180": "corsair_iroc",
+    "tsunami_mk3": "zephyr", "ronin": "kirin", "seiran": "squall", "pursuit": "kaminari_mk3", "shirasagi": "ranger",
+    "spiral_sa": "spiral_turbo", "kokoro": "asp", "prairie": "warrior", "kirin_r": "kirin", "kite_rx": "kite",
+    "dart": "kite_ef", "overture": "arrow", "tenshi": "asp", "halberd_4": "kaminari_mk1", "halberd_5": "kaminari_mk1",
+    "halberd_6": "kaminari_mk1", "stellar": "zephyr", "comet": "kaminari_mk1", "comet_22x": "kaminari_mk1",
+    "ranger_500": "ranger", "mamba": "asp", "lm40": "kirin", "condor": "vandal", "wal": "kessler", "wal_awd": "kessler",
+    "isar_s3": "ranger50", "quaranta": "kirin", "scarlatta": "kirin", "zanna": "kirin", "wraith": "kirin",
+}
+
+ROSTER = _stand_ins()

@@ -35,8 +35,8 @@ class DragPhysicsTest {
         label, r.sixty, r.et[1], r.et[2], r.mph[2], r.et[4], r.mph[4], r.ratings)
 
     @Test
-    fun vandalBehavesLikeAStockMuscleCar() {
-        val def = car("vandal")
+    fun mammothBehavesLikeAStockMuscleCar() {
+        val def = car("mammoth")
         val sweet = DragMath.launchRpm(def, Vehicle.DEFAULT_PREP)
         println("launch sweet spot ${sweet.toInt()} rpm, shift points ${DragMath.shiftPoints(def).map { it.toInt() }}")
         val best = pass(def, sweet)
@@ -44,11 +44,11 @@ class DragPhysicsTest {
         val spin = pass(def, def.redline * 0.95f)
         val cold = pass(def, sweet, temp = 0.15f)
         val early = pass(def, sweet, shiftOffset = -0.15f)
-        val nos = pass(def, sweet, nitrous = true)
+        val nos = pass(def.copy(nitrous = CarDef.Nitrous(75f, 2, 2.5f)), sweet, nitrous = true)        // a two-shot 75 hp kit
         listOf("sweet" to best, "bog" to bog, "spin" to spin, "cold tyres" to cold, "early shifts" to early, "nitrous" to nos)
             .forEach { (l, r) -> println(describe(l, r)) }
 
-        // Real '69 Charger R/T 440 4-speed: high 13s to low 14s at ~100 mph on street tyres
+        // Real '70 Chevelle SS 454 LS6 4-speed: mid-to-high 13s at ~100-105 mph on street tyres
         assertTrue(best.et[4] in 13.0f..15.0f, "quarter ET ${best.et[4]}")
         assertTrue(best.mph[4] in 92f..108f, "trap ${best.mph[4]}")
         assertTrue(bog.sixty > best.sixty + 0.05f, "bogging should cost 60 ft time")
@@ -62,7 +62,7 @@ class DragPhysicsTest {
 
     @Test
     fun burnoutHeatsTheTyres() {
-        val car = Vehicle(car("vandal"))
+        val car = Vehicle(car("mammoth"))
         car.startBurnout()
         car.throttle = 1f
         var t = 0f
@@ -77,7 +77,7 @@ class DragPhysicsTest {
 
     @Test
     fun leavingBeforeGreenIsARedLight() {
-        val def = car("vandal")
+        val def = car("mammoth")
         val car = Vehicle(def)
         car.prime(DragMath.launchRpm(def, Vehicle.DEFAULT_PREP), 0.78f)
         car.launch(-0.25f)            // launched 0.25 s before green

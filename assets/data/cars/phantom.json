@@ -42,5 +42,7 @@
     "layout": "v6",
     "cylinders": 6,
     "stockTurbo": true
-  }
+  },
+  "dealer": true,
+  "converter": true
 }

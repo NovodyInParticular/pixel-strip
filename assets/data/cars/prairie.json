@@ -1,0 +1,48 @@
+{
+  "id": "prairie",
+  "name": "Prairie R3",
+  "brand": "Kitsune",
+  "year": 1972,
+  "era": "classic",
+  "price": 45000,
+  "dealer": false,
+  "hp": 118,
+  "powerRating": "gross",
+  "peakHpRpm": 6500,
+  "torqueNm": 157,
+  "peakTorqueRpm": 4000,
+  "idleRpm": 900,
+  "redline": 7000,
+  "weightKg": 905,
+  "drivetrain": "RWD",
+  "rearWeight": 0.47,
+  "wheelbaseM": 2.31,
+  "cgHeightM": 0.5,
+  "gears": [
+    3.683,
+    2.263,
+    1.397,
+    1.0,
+    0.862
+  ],
+  "finalDrive": 4.111,
+  "shiftTime": 0.3,
+  "clutchTime": 0.32,
+  "clutchTorque": 1.5,
+  "tireRadiusM": 0.297,
+  "grip": 0.8,
+  "engineInertia": 0.13,
+  "wheelInertia": 1.7,
+  "dragArea": 0.68,
+  "nitrous": {
+    "hp": 0,
+    "charges": 0,
+    "seconds": 0
+  },
+  "defaultPaint": 3,
+  "engine": {
+    "layout": "rotary",
+    "cylinders": 2,
+    "stockTurbo": false
+  }
+}

@@ -103,6 +103,8 @@ class EngineVoice(private val synth: Synth) {
     @Volatile var limiter = false
     @Volatile var layout = "v8"
     @Volatile var cylinders = 8
+    /** Cam crossover rpm (0 = none): above it, on the throttle, the intake howl hardens. */
+    @Volatile var vtecRpm = 0f
     @Volatile var turbo = false
     @Volatile var boost = 0f
     @Volatile var blower = 0f
@@ -128,14 +130,36 @@ class EngineVoice(private val synth: Synth) {
     private var blowOff = 0f
     private var lastThrottle = 0f
     private var hissLp = 0f
+    private var cam = 0f
+    private var lope = 0.0
 
     private fun pattern(): FloatArray = when (layout) {
         "v8" -> V8
         "v6" -> V6
         "v10" -> V10
+        "v12" -> V12
         "rotary" -> ROTARY
         "i6" -> I6
+        "flat4" -> FLAT4
+        "flat6" -> FLAT6
+        "flat12" -> FLAT12
         else -> I4
+    }
+
+    /** Extra filter brightness (Hz) and exhaust rasp per layout: air-cooled sixes and twelves scream, boxers rumble. */
+    private fun bright(): Float = when (layout) {
+        "flat6" -> 500f
+        "v12", "flat12" -> 750f
+        "v10" -> 200f
+        "flat4" -> -120f
+        else -> 0f
+    }
+
+    private fun rasp(): Float = when (layout) {
+        "flat6" -> 0.3f
+        "flat4" -> 0.2f
+        "v12", "flat12" -> 0.12f
+        else -> 0f
     }
 
     fun next(): Float {
@@ -158,11 +182,19 @@ class EngineVoice(private val synth: Synth) {
         val local = (pos - k).toFloat()
         val decay = if (layout == "rotary") 3.5f else 5f + r / 1500f
         var pulse = exp(-local * decay) * amps[k % amps.size]
-        var s = pulse + synth.noise() * pulse * (0.25f + 0.5f * exhaust) * (0.3f + thr)
+        if (layout == "flat4") {
+            // unequal-length headers: the pulses bunch in pairs, a burble at half the firing rate
+            lope += cycleHz / rate
+            pulse *= 0.8f + 0.35f * sin(2 * PI * lope).toFloat()
+        }
+        // the cam switching over: an audible step up in rasp and brightness, on the gas
+        val camTarget = if (vtecRpm > 0f && r > vtecRpm && thr > 0.5f) 1f else 0f
+        cam += (camTarget - cam) * 0.003f
+        var s = pulse + synth.noise() * pulse * (0.25f + 0.5f * exhaust + rasp() + 0.25f * cam) * (0.3f + thr)
         if (limiter) s *= if (synth.noise() > 0.3f) 0.15f else 0.5f            // ignition cut crackle
 
-        val cutoff = 180f + r * 0.32f + thr * 900f + exhaust * 700f
-        val q = 0.55f - exhaust * 0.25f
+        val cutoff = 180f + r * 0.32f + thr * 900f + exhaust * 700f + bright() + cam * 800f
+        val q = 0.55f - exhaust * 0.25f - cam * 0.12f
         var y = filter.run(s, cutoff, q, rate) + filter.band * (0.15f + 0.35f * exhaust)
         // DC blocker
         val dc = y - dcIn + 0.995f * dcOut
@@ -203,6 +235,10 @@ class EngineVoice(private val synth: Synth) {
         val I6 = floatArrayOf(1f, 0.94f, 0.97f, 0.95f, 1f, 0.93f)
         val I4 = floatArrayOf(1f, 0.9f, 0.98f, 0.88f)
         val ROTARY = floatArrayOf(1f, 1f, 1f, 1f)
+        val V12 = floatArrayOf(1f, 0.95f, 0.98f, 0.93f, 1f, 0.96f, 0.97f, 0.94f, 1f, 0.95f, 0.98f, 0.92f)
+        val FLAT12 = floatArrayOf(1f, 0.97f, 0.99f, 0.96f, 1f, 0.98f, 0.99f, 0.96f, 1f, 0.97f, 0.99f, 0.95f)
+        val FLAT4 = floatArrayOf(1f, 0.55f, 0.9f, 0.5f)
+        val FLAT6 = floatArrayOf(1f, 0.9f, 0.96f, 0.88f, 1f, 0.92f)
     }
 }
 

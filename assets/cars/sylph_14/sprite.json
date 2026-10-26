@@ -1,0 +1,45 @@
+{
+  "dir": "cars/sylph_14",
+  "width": 91,
+  "height": 40,
+  "rearWheel": [
+    24,
+    29.5
+  ],
+  "frontWheel": [
+    70,
+    29.5
+  ],
+  "wheelSize": 16,
+  "wheelFrames": 4,
+  "blurFrames": 3,
+  "spokes": 10,
+  "headlight": [
+    86.6,
+    24.0
+  ],
+  "taillight": [
+    3.8,
+    23.7
+  ],
+  "exhaust": [
+    6.0,
+    30.0
+  ],
+  "groundY": 35.5,
+  "frontX": 87,
+  "popup": false,
+  "driver": [
+    44.22,
+    10.600000000000001
+  ],
+  "wheelRadius10": 60,
+  "sideExhaust": [
+    32.14,
+    32.4
+  ],
+  "door": [
+    46,
+    28
+  ]
+}

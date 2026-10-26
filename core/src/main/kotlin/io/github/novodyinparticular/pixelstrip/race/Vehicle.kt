@@ -211,9 +211,16 @@ class Vehicle(val def: CarDef, private val powerScale: Float = 1f) {
     }
 
     /** Test and AI hooks: set the staged RPM and tyre temperature directly. */
+    /** Staged and held at [stagedRpm] long enough for the boost to settle where a staged engine holds it. */
     fun prime(stagedRpm: Float, temp: Float) {
         rpm = stagedRpm.coerceIn(def.idleRpm, def.redline)
         tireTemp = temp
+        if (def.boostGain > 0f || def.stockBoostGain > 0f) {
+            var b = ((rpm - def.boostSpoolRpm) / BOOST_RANGE_RPM).coerceIn(0f, 1f) * (if (def.converter) 1f else NO_LOAD_BOOST)
+            def.boostByGear?.getOrNull(0)?.let { b *= it.coerceIn(0.2f, 1f) }
+            if (def.antiLag) b = max(b, ANTI_LAG_BOOST)
+            boost = b
+        }
     }
 
     // --- Model ---------------------------------------------------------------------------
@@ -247,6 +254,7 @@ class Vehicle(val def: CarDef, private val powerScale: Float = 1f) {
         }
         val na = torqueAt(rpm) * (if (bog) bogFactor() else 1f)
         var t = na
+        if (def.stockBoostGain > 0f) t *= DragMath.stockBoost(def, boost)
         if (def.blowerGain > 0f) t *= 1f + DragMath.blower(def, rpm)
         if (def.boostGain > 0f) t *= 1f + def.boostGain * boost
         if (nitrousActive) {
@@ -282,8 +290,10 @@ class Vehicle(val def: CarDef, private val powerScale: Float = 1f) {
     }
 
     private fun spool(dt: Float) {
-        if (def.boostGain <= 0f) return
+        if (def.boostGain <= 0f && def.stockBoostGain <= 0f) return
         var target = ((rpm - def.boostSpoolRpm) / BOOST_RANGE_RPM).coerceIn(0f, 1f) * throttle
+        // staged with the clutch in the engine has no load to push against, so it barely makes boost
+        if (mode == Mode.HELD && !def.converter) target *= NO_LOAD_BOOST
         def.boostByGear?.getOrNull(gear)?.let { target *= it.coerceIn(0.2f, 1f) }
         // anti-lag on the two-step builds boost on the line; without a blow-off valve a shift dumps it
         if (mode == Mode.HELD && def.antiLag && throttle > 0f) target = max(target, ANTI_LAG_BOOST)
@@ -491,6 +501,7 @@ class Vehicle(val def: CarDef, private val powerScale: Float = 1f) {
         const val PERFECT_BONUS = 0.06f
         const val PERFECT_BONUS_S = 0.6f
         const val ANTI_LAG_BOOST = 0.6f
+        const val NO_LOAD_BOOST = 0.3f
         const val TRANSFER_TAU = 0.06f
         const val WHEELIE_LIFT = 0.35f
         const val WHEELIE_BAR_LIFT = 0.18f

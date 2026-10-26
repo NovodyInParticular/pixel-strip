@@ -76,6 +76,7 @@ class PixelStrip(val platform: Platform, val shots: ShotPlan? = null, private va
     private fun migrateParts() {
         val m = io.github.novodyinparticular.pixelstrip.data.PartsMigration(com.badlogic.gdx.utils.JsonReader().parse(Gdx.files.internal("data/parts_migration.json")))
         for (c in save.cars) {
+            if (c.carId in rules.retired.cars) continue      // refunded by retireOld instead
             val next = m.convert(c.parts, c.cosmetics.remove("kit") ?: 0, parts, car(c.carId).drivetrain, c.carId)
             c.parts.clear()
             c.parts.putAll(next)
@@ -107,6 +108,29 @@ class PixelStrip(val platform: Platform, val shots: ShotPlan? = null, private va
         return effectiveCache.getOrPut(key) { Upgrades.apply(car(carId), this.parts, parts, cosmetics, tune) }
     }
     fun car(id: String): CarDef = carCache.getOrPut(id) { CarDef.load(id) }
+
+    /** A car's name for display, also for ids other players' old runs still carry (cars taken out of the game). */
+    fun carName(id: String): String = (if (id in carIds) car(id).name else rules.retired.cars[id]?.name ?: id).uppercase()
+
+    /**
+     * Cars and parts taken out of the game: each is refunded in full through the ledger (a
+     * "retire" entry the server checks too), then shown once (save.refundNotice). A garage left
+     * empty gets a free Civic. Runs after loading and after every cloud sync, since another
+     * device may still hand back a car this one already retired.
+     */
+    fun retireOld() {
+        for (c in save.cars.toList()) {
+            val pay = io.github.novodyinparticular.pixelstrip.save.Ledger.refund(rules, c)
+            if (pay <= 0L) continue
+            val retiredCar = rules.retired.cars[c.carId]
+            val last = retiredCar != null && save.cars.size == 1
+            val e = io.github.novodyinparticular.pixelstrip.save.Entry("retire", now(), uid = c.uid, car = if (last) REPLACEMENT_STARTER else null)
+            if (!commit(e)) continue
+            val what = retiredCar?.name?.uppercase() ?: "${carName(c.carId)}: RETIRED PARTS"
+            save.refundNotice.add("$what|$pay")
+        }
+        if (save.refundNotice.isNotEmpty()) save.write()
+    }
     val carIds: List<String> by lazy { CarDef.ids() }
 
     // Screen transitions: cover (out), swap, uncover (in)
@@ -132,13 +156,22 @@ class PixelStrip(val platform: Platform, val shots: ShotPlan? = null, private va
         if (save.oldParts) migrateParts()
         if (shots != null) {
             save.cars.clear()
+            save.refundNotice.clear()
             save.cash = 250_000
-            val c = save.addCar(startCar ?: "vandal", car(startCar ?: "vandal").defaultPaint)
+            val c = save.addCar(startCar ?: "mammoth", car(startCar ?: "mammoth").defaultPaint)
             if (shots.loaded) {
                 // a pro-mod blower build: the top option everywhere except turbo, plus tubs for the slicks
                 for (s in parts.slots) if (s.id != "turbo" && s.id != "final") c.parts[s.id] = s.options.size - 1
                 if (car(c.carId).drivetrain != "RWD") { c.parts.remove("bars"); c.parts.remove("wheeliebars") }
                 c.cosmetics.putAll(mapOf("wing" to 3, "rims" to 4, "underglow" to 2, "finish" to 4, "decal" to 2, "decalColor" to 6, "tint" to 1))
+            }
+            // -Dpixelstrip.beaten=ID,ID: rivals already beaten (barn finds show after their boss)
+            save.beaten.clear()
+            save.found.clear()
+            System.getProperty("pixelstrip.beaten")?.split(",")?.let { save.beaten.addAll(it) }
+            // -Dpixelstrip.retired=ID,ID: cars taken out of the game parked in the garage, to see the refund
+            System.getProperty("pixelstrip.retired")?.split(",")?.forEach { id ->
+                save.addCar(id, 3).apply { parts["intake"] = 2; owned["intake"] = 0b110; cosmetics["wing"] = 1 }
             }
         }
         cloud = io.github.novodyinparticular.pixelstrip.net.Cloud(this, enabled = shots == null || System.getProperty("pixelstrip.emulator") != null)
@@ -155,6 +188,7 @@ class PixelStrip(val platform: Platform, val shots: ShotPlan? = null, private va
             commit(io.github.novodyinparticular.pixelstrip.save.Entry("start", now(), car = "kite"))
             commit(io.github.novodyinparticular.pixelstrip.save.Entry("race", now() + 10_000, uid = "c1", rival = "dash", won = true))
         }
+        if (shots == null || System.getProperty("pixelstrip.retired") != null) retireOld()
         cloud.requestSync()
         Gdx.input.setCatchKey(Input.Keys.BACK, true)
         audio = io.github.novodyinparticular.pixelstrip.audio.AudioEngine(settings)
@@ -257,5 +291,7 @@ class PixelStrip(val platform: Platform, val shots: ShotPlan? = null, private va
     companion object {
         const val TRANSITION_S = 0.38f
         const val PARTS_RESALE_PERCENT = 30L
+        /** What a garage whose only car was taken out of the game gets instead (the Civic). */
+        const val REPLACEMENT_STARTER = "kite"
     }
 }

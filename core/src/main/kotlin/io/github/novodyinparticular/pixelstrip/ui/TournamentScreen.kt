@@ -200,6 +200,7 @@ class TournamentScreen(game: PixelStrip, private val focus: String? = null) : Me
             font.draw(batch, "ENDS IN %d:%02d:%02d".format(left / 3600, left / 60 % 60, left % 60), lx + 6f, top - 86f, if (left < 3600) ORANGE else SOFT, 1, null)
             val shares = e.prizes.take(3).mapIndexed { i, p -> "${i + 1}. ${money(p)}" }.joinToString("  ")
             font.draw(batch, shares, lx + 6f, top - 98f, GREEN, 1, null)
+            e.prizeCar?.let { font.draw(batch, "1ST ALSO WINS A ${game.carName(it)}", lx + 6f, top - 107f, ORANGE, 1, null) }
             val mine = e.mine
             if (mine != null) {
                 val best = mine.entry.best?.let { "BEST %.3f".format(it.et) } ?: "NO TIME YET"
@@ -250,7 +251,7 @@ class TournamentScreen(game: PixelStrip, private val focus: String? = null) : Me
             font.draw(batch, "FEE ${money(e.fee)}", w - 128f, 46f, if (save.cash >= e.fee) YELLOW else RED, 1, null)
         } else if (view == View.TODAY) {
             val mine = e.mine!!
-            font.drawCentered(batch, "ENTERED: ${game.car(mine.entry.car).name.uppercase()}", 162f, 16f, CYAN)
+            font.drawCentered(batch, "ENTERED: ${game.carName(mine.entry.car)}", 162f, 16f, CYAN)
             if (e.runsLeft <= 0) font.draw(batch, "ALL RUNS USED", w - 128f, 20f, SOFT, 1, null)
         }
     }

@@ -1,0 +1,49 @@
+{
+  "id": "scarlatta",
+  "name": "Scarlatta",
+  "brand": "Fenice",
+  "year": 1986,
+  "era": "80s",
+  "price": 150000,
+  "dealer": true,
+  "hp": 380,
+  "powerRating": "net",
+  "peakHpRpm": 5750,
+  "torqueNm": 490,
+  "peakTorqueRpm": 4500,
+  "idleRpm": 800,
+  "redline": 6800,
+  "weightKg": 1660,
+  "drivetrain": "RWD",
+  "rearWeight": 0.59,
+  "wheelbaseM": 2.55,
+  "cgHeightM": 0.46,
+  "gears": [
+    3.139,
+    2.104,
+    1.522,
+    1.156,
+    0.917
+  ],
+  "finalDrive": 3.21,
+  "shiftTime": 0.27,
+  "clutchTime": 0.32,
+  "clutchTorque": 1.5,
+  "tireRadiusM": 0.331,
+  "grip": 0.96,
+  "engineInertia": 0.54,
+  "wheelInertia": 2.4,
+  "dragArea": 0.68,
+  "nitrous": {
+    "hp": 0,
+    "charges": 0,
+    "seconds": 0
+  },
+  "defaultPaint": 0,
+  "engine": {
+    "layout": "flat12",
+    "cylinders": 12,
+    "stockTurbo": false
+  },
+  "exotic": true
+}

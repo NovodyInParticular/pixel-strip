@@ -1,0 +1,50 @@
+{
+  "id": "tenshi",
+  "name": "Tenshi 2000",
+  "brand": "Hikari",
+  "year": 2000,
+  "era": "90s",
+  "price": 42000,
+  "dealer": true,
+  "hp": 240,
+  "powerRating": "net",
+  "peakHpRpm": 8300,
+  "torqueNm": 208,
+  "peakTorqueRpm": 7500,
+  "idleRpm": 800,
+  "redline": 9000,
+  "weightKg": 1274,
+  "drivetrain": "RWD",
+  "rearWeight": 0.5,
+  "wheelbaseM": 2.4,
+  "cgHeightM": 0.45,
+  "gears": [
+    3.133,
+    2.045,
+    1.481,
+    1.161,
+    0.971,
+    0.811
+  ],
+  "finalDrive": 4.1,
+  "shiftTime": 0.25,
+  "clutchTime": 0.32,
+  "clutchTorque": 1.5,
+  "tireRadiusM": 0.316,
+  "grip": 0.98,
+  "engineInertia": 0.11,
+  "wheelInertia": 2.1,
+  "dragArea": 0.62,
+  "nitrous": {
+    "hp": 0,
+    "charges": 0,
+    "seconds": 0
+  },
+  "defaultPaint": 11,
+  "engine": {
+    "layout": "i4",
+    "cylinders": 4,
+    "stockTurbo": false,
+    "vtecRpm": 6000
+  }
+}

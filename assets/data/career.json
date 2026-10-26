@@ -42,7 +42,7 @@
     {
      "id": "tiny",
      "name": "TINY",
-     "car": "zephyr",
+     "car": "tsunami_mk3",
      "paint": 11,
      "finish": 0,
      "parts": {
@@ -125,7 +125,7 @@
     {
      "id": "hollis",
      "name": "HOLLIS",
-     "car": "corsair",
+     "car": "ranger_500",
      "paint": 0,
      "finish": 0,
      "parts": {
@@ -341,38 +341,6 @@
     {
      "id": "reaper",
      "name": "REAPER",
-     "car": "asp",
-     "paint": 0,
-     "finish": 0,
-     "parts": {
-      "bottle": 1,
-      "cams": 3,
-      "clutch": 3,
-      "ecu": 2,
-      "exhaust": 3,
-      "fuel": 2,
-      "fueltype": 1,
-      "headers": 2,
-      "heads": 1,
-      "intake": 2,
-      "interior": 1,
-      "internals": 2,
-      "manifold": 1,
-      "nitrous": 3,
-      "nosctl": 1,
-      "throttle": 1,
-      "tires": 4,
-      "tubs": 1
-     },
-     "cosmetics": {},
-     "skill": 0.8,
-     "payout": 120000,
-     "x": 370,
-     "y": 212
-    },
-    {
-     "id": "saint",
-     "name": "SAINT",
      "car": "kaminari_mk3",
      "paint": 9,
      "finish": 0,
@@ -399,6 +367,38 @@
       "tubs": 1,
       "turbo": 3,
       "wheels": 2
+     },
+     "cosmetics": {},
+     "skill": 0.8,
+     "payout": 120000,
+     "x": 370,
+     "y": 212
+    },
+    {
+     "id": "saint",
+     "name": "SAINT",
+     "car": "asp",
+     "paint": 0,
+     "finish": 0,
+     "parts": {
+      "bottle": 1,
+      "cams": 3,
+      "clutch": 3,
+      "ecu": 2,
+      "exhaust": 3,
+      "fuel": 2,
+      "fueltype": 1,
+      "headers": 2,
+      "heads": 1,
+      "intake": 2,
+      "interior": 1,
+      "internals": 2,
+      "manifold": 1,
+      "nitrous": 3,
+      "nosctl": 1,
+      "throttle": 1,
+      "tires": 4,
+      "tubs": 1
      },
      "cosmetics": {},
      "skill": 0.84,
@@ -444,7 +444,7 @@
     {
      "id": "preacher",
      "name": "THE PREACHER",
-     "car": "piranha",
+     "car": "condor",
      "paint": 1,
      "finish": 4,
      "parts": {
@@ -495,6 +495,52 @@
       "LET'S SEE WHICH ONE YOU ARE."
      ]
     }
+   ]
+  }
+ ],
+ "barns": [
+  {
+   "car": "kaminari_c10",
+   "after": "joe",
+   "x": 112,
+   "y": 160,
+   "paint": 6,
+   "story": [
+    "A TARP IN A RICE FARMER'S SHED.",
+    "UNDER IT: THE BOXY ONE. STILL ON ITS FIRST ENGINE."
+   ]
+  },
+  {
+   "car": "prairie",
+   "after": "rotor",
+   "x": 110,
+   "y": 52,
+   "paint": 3,
+   "story": [
+    "ROTOR'S OLD MENTOR LEFT IT IN A CARPORT.",
+    "TWO ROTORS, ONE DREAM, A LOT OF DUST."
+   ]
+  },
+  {
+   "car": "shirasagi",
+   "after": "volt",
+   "x": 382,
+   "y": 42,
+   "paint": 6,
+   "story": [
+    "A COLLECTOR'S WIDOW WANTS IT GONE.",
+    "THE MOST BEAUTIFUL THING YOU'VE EVER TOWED."
+   ]
+  },
+  {
+   "car": "mamba",
+   "after": "preacher",
+   "x": 382,
+   "y": 158,
+   "paint": 9,
+   "story": [
+    "THE PREACHER'S FIRST CAR. HE SAYS YOU EARNED IT.",
+    "SIDE PIPES. NO ROOF. NO MERCY."
    ]
   }
  ]

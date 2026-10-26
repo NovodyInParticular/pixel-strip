@@ -10,7 +10,10 @@ import kotlin.math.floor
 import kotlin.math.hypot
 import kotlin.math.sin
 
-/** The career map: four glowing districts, a marker per rival, bosses big and pulsing. */
+/**
+ * The career map: four glowing districts, a marker per rival, bosses big and pulsing. Beating a
+ * boss reveals a barn out past the district's edge with a rare car under a tarp.
+ */
 class CareerScreen(game: PixelStrip) : MenuScreen(game) {
     private val map = art.tex("scenes/career_map.png")
     private val mapGlow = art.tex("scenes/career_map_glow.png")
@@ -39,9 +42,22 @@ class CareerScreen(game: PixelStrip) : MenuScreen(game) {
     private val next = button(">", BTN_GREY, keys = intArrayOf(Input.Keys.RIGHT)) { selected = (selected + 1) % all.size }
 
     private val rival get() = all[selected]
+
+    /** A barn tapped on the map (null: a rival is selected). Barns show once their boss is beaten. */
+    private var barn: Career.Barn? = null
+    private val barns get() = career.barns.filter { it.after in save.beaten && it.carId !in save.found }
+
+    private fun openBarn() {
+        val b = barn ?: return
+        if (!game.commit(io.github.novodyinparticular.pixelstrip.save.Entry("find", game.now(), car = b.carId))) return
+        game.save.selected = game.save.cars.last().uid
+        game.save.write()
+        game.go(2) { PrizeScreen(game, b) }
+    }
     override val song = "career"
 
     private fun start() {
+        if (barn != null) return openBarn()
         if (!career.unlocked(save, rival)) {
             flash = 0.3f
             flashColor.set(RED)
@@ -58,11 +74,14 @@ class CareerScreen(game: PixelStrip) : MenuScreen(game) {
     private fun nodeY(r: Career.Rival) = 270f - r.y
 
     override fun layout(w: Int, h: Int) {
-        race.apply { x = w - 96f; y = 8f; this.w = 88f; this.h = 34f; label = if (career.unlocked(save, rival)) "RACE" else "LOCKED" }
+        race.apply {
+            x = w - 96f; y = 8f; this.w = 88f; this.h = 34f
+            label = if (barn != null) "OPEN" else if (career.unlocked(save, rival)) "RACE" else "LOCKED"
+        }
         back.apply { x = 8f; y = 8f; this.w = 64f; this.h = 20f }
         slips.apply {
             x = w - 96f; y = 46f; this.w = 88f; this.h = 16f
-            visible = rival.id in save.beaten && save.cars.size >= 2
+            visible = barn == null && rival.id in save.beaten && save.cars.size >= 2
             label = if (confirmSlip > 0f) "RISK IT?" else "PINK SLIP"
         }
         prev.apply { x = 78f; y = 8f; this.w = 20f; this.h = 20f }
@@ -75,15 +94,21 @@ class CareerScreen(game: PixelStrip) : MenuScreen(game) {
             val tx = post.toBufferX(Gdx.input.x)
             val ty = post.toBufferY(Gdx.input.y)
             all.forEachIndexed { i, r ->
-                if (hypot(tx - nodeX(post.width, r), ty - nodeY(r)) < (if (r.boss) 18f else 13f)) selected = i
+                if (hypot(tx - nodeX(post.width, r), ty - nodeY(r)) < (if (r.boss) 18f else 13f)) {
+                    selected = i
+                    barn = null
+                }
             }
+            for (b in barns) if (hypot(tx - (bx(post.width) + b.x), ty - (270f - b.y)) < 14f) barn = b
         }
+        if (prev.justPressed || next.justPressed) barn = null
     }
 
     override fun drawScene(w: Int, h: Int) {
         batch.draw(map, bx(w), 0f)
         drawPaths(w, false)
         for (r in all) drawNode(w, r)
+        for (b in barns) drawBarn(w, b)
         // district names
         for (t in career.tiers) {
             val first = t.rivals.first()
@@ -142,9 +167,46 @@ class CareerScreen(game: PixelStrip) : MenuScreen(game) {
         }
     }
 
+    /** A little red barn with a white X on its doors and a light in the loft window. */
+    private fun drawBarn(w: Int, b: Career.Barn) {
+        val x = floor(bx(w) + b.x - 10f)
+        val y = floor(270f - b.y - 9f)
+        val sel = barn == b
+        batch.color = if (sel) YELLOW else BARN_EDGE
+        batch.draw(white, x - 1f, y - 1f, 22f, 14f)
+        for (i in 0..6) batch.draw(white, x + 3f + i, y + 12f + i, 14f - 2f * i, 1f)          // roof outline
+        batch.color = BARN_RED
+        batch.draw(white, x, y, 20f, 12f)
+        batch.color = BARN_ROOF
+        for (i in 0..5) batch.draw(white, x + 4f + i, y + 12f + i, 12f - 2f * i, 1f)
+        batch.color = BARN_TRIM
+        batch.draw(white, x + 6f, y, 8f, 8f)
+        batch.color = BARN_RED
+        batch.draw(white, x + 7f, y, 6f, 7f)
+        batch.color = BARN_TRIM
+        for (i in 0..5) {
+            batch.draw(white, x + 7f + i, y + i.toFloat(), 1f, 1f)
+            batch.draw(white, x + 12f - i, y + i.toFloat(), 1f, 1f)
+        }
+        val glint = 0.6f + 0.4f * sin(time * 4f + b.x)
+        batch.setColor(1f, 0.85f * glint, 0.4f * glint, 1f)
+        batch.draw(white, x + 9f, y + 13f, 2f, 2f)                 // loft window
+        batch.color = Color.WHITE
+    }
+
     override fun drawGlow(w: Int, h: Int) {
         batch.draw(mapGlow, bx(w), 0f)
         drawPaths(w, true)
+        for (b in barns) {
+            batch.setColor(1f, 0.7f, 0.3f, 0.5f + 0.4f * sin(time * 4f + b.x))
+            batch.draw(white, floor(bx(w) + b.x - 1f), floor(270f - b.y + 4f), 2f, 2f)
+        }
+        barn?.let { b ->
+            batch.setColor(1f, 0.9f, 0.5f, 0.6f + 0.4f * sin(time * 6f))
+            batch.draw(white, bx(w) + b.x - 12f, 270f - b.y - 11f, 24f, 26f)
+            batch.color = Color.WHITE
+            return
+        }
         val r = rival
         val pulse = 0.6f + 0.4f * sin(time * 6f)
         batch.setColor(1f, 0.9f, 0.5f, pulse)
@@ -154,6 +216,15 @@ class CareerScreen(game: PixelStrip) : MenuScreen(game) {
     }
 
     override fun drawUi(w: Int, h: Int) {
+        barn?.let { b ->
+            panel(130f, 4f, w - 236f, 44f, ORANGE, 0.9f)
+            font.draw(batch, "BARN FIND", 138f, 36f, ORANGE, 1, null)
+            font.draw(batch, "SOMETHING UNDER A TARP. NOBODY'S CLAIMED IT.", 138f, 25f, SOFT, 1, null)
+            font.draw(batch, "FREE. ONE PER BARN.", 138f, 14f, YELLOW, 1, null)
+            font.draw(batch, "CAREER", 8f, h - 20f, PINK, 2)
+            cash(w - 8f, h - 20f)
+            return
+        }
         val r = rival
         val def = game.effective(r.asCar())
         val tier = career.tierOf(r)
@@ -173,5 +244,12 @@ class CareerScreen(game: PixelStrip) : MenuScreen(game) {
             font.drawCentered(batch, text, w / 2f, h / 2f + 5f, RED, 1, null)
         }
         cash(w - 8f, h - 20f)
+    }
+
+    companion object {
+        private val BARN_RED = Color(0.62f, 0.16f, 0.14f, 1f)
+        private val BARN_ROOF = Color(0.35f, 0.3f, 0.32f, 1f)
+        private val BARN_TRIM = Color(0.92f, 0.88f, 0.8f, 1f)
+        private val BARN_EDGE = Color(0.2f, 0.12f, 0.1f, 1f)
     }
 }

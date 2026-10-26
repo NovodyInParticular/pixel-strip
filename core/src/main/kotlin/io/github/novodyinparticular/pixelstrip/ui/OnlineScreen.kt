@@ -263,7 +263,7 @@ class OnlineScreen(game: PixelStrip) : MenuScreen(game) {
             State.CONFIRM -> {
                 val r = race!!
                 val left = max(0L, (r.confirmBy - System.currentTimeMillis()) / 1000)
-                font.drawCentered(batch, "${r.them.tagged}: ${game.car(r.them.car).name.uppercase()}  RATING ${r.them.rating}", w / 2f, py + 32f, ORANGE)
+                font.drawCentered(batch, "${r.them.tagged}: ${game.carName(r.them.car)}  RATING ${r.them.rating}", w / 2f, py + 32f, ORANGE)
                 font.drawCentered(batch, r.wager.label, w / 2f, py + 16f, Color.WHITE, 2)
                 font.drawCentered(batch, if (r.accepted) "ACCEPTED: WAITING FOR THEM$dots" else "ACCEPT IN $left S", w / 2f, py + 2f, if (left < 8) RED else YELLOW)
             }
@@ -272,7 +272,7 @@ class OnlineScreen(game: PixelStrip) : MenuScreen(game) {
                 font.drawCentered(batch, r.me.tagged, w / 2f - 90f, py + 26f, CYAN, 2)
                 font.drawCentered(batch, "VS", w / 2f, py + 24f, PINK, 3)
                 font.drawCentered(batch, r.them.tagged, w / 2f + 90f, py + 26f, ORANGE, 2)
-                font.drawCentered(batch, game.car(r.them.car).name.uppercase() + "  RATING ${r.them.rating}", w / 2f + 70f, py + 10f, SOFT)
+                font.drawCentered(batch, game.carName(r.them.car) + "  RATING ${r.them.rating}", w / 2f + 70f, py + 10f, SOFT)
                 font.drawCentered(batch, if (r.wager.none) "TO THE LINE" else "STAKES HELD: ${r.wager.label}", w / 2f, py, YELLOW)
             }
             State.ERROR -> font.drawCentered(batch, message, w / 2f, py + 22f, RED)

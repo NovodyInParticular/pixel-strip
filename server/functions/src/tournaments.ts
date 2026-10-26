@@ -11,7 +11,7 @@ import { FieldValue, getFirestore } from "firebase-admin/firestore";
 import { HttpsError, onCall } from "firebase-functions/v2/https";
 import { SPLITS_M } from "./physics/consts";
 import { perfectPass, replay } from "./physics/vehicle";
-import { addXp, Car, State } from "./ledger";
+import { addCar, addXp, Car, State } from "./ledger";
 import { effective, rules, sanitizeEvents, START_X, TRACKS } from "./race";
 import { handleOf } from "./crews";
 import { classFor } from "./classes";
@@ -27,6 +27,8 @@ export const SEED_FEES = 10;
 export const MAX_RUNS = 5;
 /** Percent of the pool for 1st..10th; with fewer finishers the places there are split it all. */
 export const SHARES = [40, 20, 12, 8, 6, 5, 3, 2, 2, 2];
+/** Rare cars no dealer sells: the day's winner also drives one home, if they don't have one yet. */
+export const PRIZE_CARS: Record<Cls, string[]> = { STREET: [], SPORT: ["comet_22x"], PRO: ["kirin_r"], OUTLAW: ["lm40", "quaranta"] };
 const DAY_MS = 86_400_000;
 
 // --- pure, tested -----------------------------------------------------------------------------
@@ -43,6 +45,19 @@ export function trackFor(day: string, cls: string, tracks: string[]): string {
 }
 
 export const tournamentId = (day: string, cls: string) => `${day}-${cls}`;
+
+/** The car the day's winner gets (the same for everyone all day), or null for a cash-only class. */
+export function prizeCarFor(day: string, cls: Cls): string | null {
+  const cars = PRIZE_CARS[cls];
+  return cars.length ? trackFor(day, cls, cars) : null;
+}
+
+/** Puts the prize car in the winner's garage; false if they already own one (they keep the cash). */
+export function givePrizeCar(state: State, car: string | null, paint: number): boolean {
+  if (!car || state.cars.some((c) => c.car === car)) return false;
+  addCar(state, car, paint);
+  return true;
+}
 
 export function parseId(id: unknown): { day: string; cls: Cls } | null {
   if (typeof id !== "string") return null;
@@ -81,7 +96,7 @@ function needAuth(req: { auth?: { uid: string } }): string {
 
 function eventOf(day: string, cls: Cls) {
   const track = trackFor(day, cls, TRACKS.map((t) => t.id));
-  return { id: tournamentId(day, cls), day, cls, track, fee: FEES[cls], seed: seedFor(cls), ends: dayEnd(day) };
+  return { id: tournamentId(day, cls), day, cls, track, fee: FEES[cls], seed: seedFor(cls), ends: dayEnd(day), prizeCar: prizeCarFor(day, cls) };
 }
 
 /** Pays out a finished tournament once: ranks the entries and credits the top ten's garages. */
@@ -96,14 +111,20 @@ async function settle(id: string, now = Date.now()) {
     const order = standings(entries);
     const pay = prizes(t.pool, order.length);
     const players = await Promise.all(pay.map((_, i) => tx.get(playerRef(order[i].uid))));
-    const results = order.slice(0, 20).map((e, i) => ({ uid: e.uid, name: e.name ?? "?", tag: e.tag ?? null, car: e.car ?? null, et: e.best!.et, mph: e.best!.mph, prize: pay[i] ?? 0 }));
+    const prizeCar = prizeCarFor(p.day, p.cls);
+    let prizeCarTo: string | null = null;
     pay.forEach((amount, i) => {
       const snap = players[i];
       if (!snap.exists || amount <= 0) return;
       const state = snap.data()!.state as State;
       state.cash += amount;
+      if (i === 0 && prizeCar && givePrizeCar(state, prizeCar, rules.cars[prizeCar]?.paint ?? 0)) prizeCarTo = order[0].uid;
       tx.update(snap.ref, { state });
     });
+    const results = order.slice(0, 20).map((e, i) => ({
+      uid: e.uid, name: e.name ?? "?", tag: e.tag ?? null, car: e.car ?? null, et: e.best!.et, mph: e.best!.mph, prize: pay[i] ?? 0,
+      prizeCar: e.uid === prizeCarTo ? prizeCar : null,
+    }));
     tx.update(tRef(id), { settled: now, results });
   });
 }

@@ -1,0 +1,48 @@
+{
+  "id": "halberd_4",
+  "name": "Halberd IV",
+  "brand": "Tsubasa",
+  "year": 1996,
+  "era": "90s",
+  "price": 40000,
+  "dealer": true,
+  "hp": 276,
+  "powerRating": "net",
+  "peakHpRpm": 6500,
+  "torqueNm": 352,
+  "peakTorqueRpm": 3000,
+  "idleRpm": 800,
+  "redline": 7500,
+  "weightKg": 1350,
+  "drivetrain": "AWD",
+  "rearWeight": 0.4,
+  "wheelbaseM": 2.51,
+  "cgHeightM": 0.52,
+  "gears": [
+    2.785,
+    1.95,
+    1.444,
+    1.096,
+    0.761
+  ],
+  "finalDrive": 4.529,
+  "shiftTime": 0.25,
+  "clutchTime": 0.32,
+  "clutchTorque": 1.5,
+  "tireRadiusM": 0.314,
+  "grip": 0.93,
+  "engineInertia": 0.2,
+  "wheelInertia": 2.1,
+  "dragArea": 0.68,
+  "nitrous": {
+    "hp": 0,
+    "charges": 0,
+    "seconds": 0
+  },
+  "defaultPaint": 6,
+  "engine": {
+    "layout": "i4",
+    "cylinders": 4,
+    "stockTurbo": true
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "id": "quaranta",
+  "name": "Quaranta",
+  "brand": "Fenice",
+  "year": 1990,
+  "era": "90s",
+  "price": 320000,
+  "dealer": false,
+  "hp": 478,
+  "powerRating": "net",
+  "peakHpRpm": 7000,
+  "torqueNm": 577,
+  "peakTorqueRpm": 4000,
+  "idleRpm": 800,
+  "redline": 7750,
+  "weightKg": 1254,
+  "drivetrain": "RWD",
+  "rearWeight": 0.58,
+  "wheelbaseM": 2.45,
+  "cgHeightM": 0.42,
+  "gears": [
+    2.769,
+    1.722,
+    1.227,
+    0.962,
+    0.766
+  ],
+  "finalDrive": 2.727,
+  "shiftTime": 0.25,
+  "clutchTime": 0.32,
+  "clutchTorque": 1.5,
+  "tireRadiusM": 0.333,
+  "grip": 1.02,
+  "engineInertia": 0.4,
+  "wheelInertia": 2.5,
+  "dragArea": 0.65,
+  "nitrous": {
+    "hp": 0,
+    "charges": 0,
+    "seconds": 0
+  },
+  "defaultPaint": 0,
+  "engine": {
+    "layout": "v8",
+    "cylinders": 8,
+    "stockTurbo": true
+  },
+  "exotic": true
+}

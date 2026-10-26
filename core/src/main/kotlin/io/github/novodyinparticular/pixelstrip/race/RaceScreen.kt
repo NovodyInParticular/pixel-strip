@@ -968,7 +968,7 @@ class RaceScreen(
             else -> notes.add("VERIFIED BY THE SERVER")
         }
         if (r != null && !r.off && !o.wager.none) notes.add(when {
-            r.prizeCar != null && r.won -> "PINK SLIP: ${game.car(r.prizeCar).name.uppercase()} IS YOURS"
+            r.prizeCar != null && r.won -> "PINK SLIP: ${game.carName(r.prizeCar)} IS YOURS"
             r.prizeCar != null -> "LOST: ${carDef.name.uppercase()}"
             r.won -> "WON  $" + "%,d".format(r.prizeCash)
             else -> "LOST  $" + "%,d".format(o.wager.amount)

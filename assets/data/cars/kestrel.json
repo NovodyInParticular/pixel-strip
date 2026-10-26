@@ -43,5 +43,6 @@
     "layout": "i4",
     "cylinders": 4,
     "stockTurbo": false
-  }
+  },
+  "dealer": true
 }

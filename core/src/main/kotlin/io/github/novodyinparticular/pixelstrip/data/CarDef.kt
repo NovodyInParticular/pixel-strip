@@ -43,7 +43,10 @@ data class CarDef(
     /** "gross" for period SAE gross ratings (derated in the physics), "net" otherwise. */
     val powerRating: String,
     val nitrous: Nitrous,
-    /** For the sound: "v8", "i4", "i6", "v6", "v10" or "rotary"; cylinders (rotors for a rotary). */
+    /**
+     * For the sound: "v8", "v6", "v10", "v12", "i4", "i6", "flat4", "flat6", "flat12" or "rotary";
+     * cylinders (rotors for a rotary).
+     */
     val engineLayout: String,
     val cylinders: Int,
     val stockTurbo: Boolean,
@@ -53,6 +56,15 @@ data class CarDef(
     val boostGain: Float = 0f,
     val boostSpoolRpm: Float = 0f,
     val boostLag: Float = 0.8f,
+    /**
+     * Factory turbo: the share of the published torque its stock boost makes. It spools like any
+     * turbo (from [boostSpoolRpm], over [boostLag]); off boost the engine makes 1 / (1 + this).
+     */
+    val stockBoostGain: Float = 0f,
+    /** An automatic with a torque converter: staged on the brake it loads the engine and builds boost. */
+    val converter: Boolean = false,
+    /** Variable cam timing that switches to the high-lift lobe at this rpm (0 = none): the sound gets harder. */
+    val vtecRpm: Float = 0f,
     /** Supercharger: instant extra torque share (grows a little with RPM). */
     val blowerGain: Float = 0f,
     val tirePressure: Float = STOCK_PRESSURE,
@@ -121,6 +133,10 @@ data class CarDef(
     companion object {
         /** Stats from data/cars/<id>.json; sprite anchors from the generated cars/<id>/sprite.json. */
         const val STOCK_PRESSURE = 32f
+        /** Stock boost (Upgrades.STOCK_TURBO_PSI through the factory intercooler) as a torque share. */
+        const val STOCK_BOOST_GAIN = Upgrades.STOCK_TURBO_PSI * Upgrades.PSI_GAIN * Upgrades.STOCK_IC
+        const val STOCK_SPOOL_MIN = 1200f
+        const val STOCK_LAG = 0.6f
 
         fun load(id: String): CarDef {
             val stats = JsonReader().parse(Gdx.files.internal("data/cars/$id.json"))
@@ -169,6 +185,13 @@ data class CarDef(
                 engineLayout = j.get("engine")?.getString("layout", "v8") ?: "v8",
                 cylinders = j.get("engine")?.getInt("cylinders", 8) ?: 8,
                 stockTurbo = j.get("engine")?.getBoolean("stockTurbo", false) ?: false,
+                converter = j.getBoolean("converter", false),
+                vtecRpm = j.get("engine")?.getFloat("vtecRpm", 0f) ?: 0f,
+                stockBoostGain = if (j.get("engine")?.getBoolean("stockTurbo", false) == true) STOCK_BOOST_GAIN else 0f,
+                // a factory turbo is sized to be on full boost by the torque peak
+                boostSpoolRpm = if (j.get("engine")?.getBoolean("stockTurbo", false) == true)
+                    j.get("engine").getFloat("spoolRpm", maxOf(STOCK_SPOOL_MIN, j.getFloat("peakTorqueRpm") - io.github.novodyinparticular.pixelstrip.race.Vehicle.BOOST_RANGE_RPM)) else 0f,
+                boostLag = if (j.get("engine")?.getBoolean("stockTurbo", false) == true) j.get("engine").getFloat("lag", STOCK_LAG) else 0.8f,
                 defaultPaint = j.getInt("defaultPaint", 0),
                 sprite = SpriteDef(
                     dir = s.getString("dir"),

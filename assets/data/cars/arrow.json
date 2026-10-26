@@ -42,6 +42,8 @@
   "engine": {
     "layout": "i4",
     "cylinders": 4,
-    "stockTurbo": false
-  }
+    "stockTurbo": false,
+    "vtecRpm": 5700
+  },
+  "dealer": true
 }

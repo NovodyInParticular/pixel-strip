@@ -5,7 +5,7 @@
  */
 import { CarDef, STOCK_PRESSURE } from "./car";
 import * as K from "./consts";
-import { blower, launchRpm, limit, shiftPoints, torqueAt } from "./dragmath";
+import { blower, launchRpm, limit, shiftPoints, stockBoost, torqueAt } from "./dragmath";
 
 export type Mode = "HELD" | "BURNOUT" | "CREEP" | "LAUNCH" | "DRIVE" | "SHIFT";
 
@@ -123,9 +123,18 @@ export class Vehicle {
   }
 
   /** Test and rating hook: set the staged rpm and tyre temperature directly (Vehicle.prime). */
+  /** Staged and held at stagedRpm long enough for the boost to settle where a staged engine holds it. */
   prime(stagedRpm: number, temp: number) {
-    this.rpm = clamp(stagedRpm, this.def.idleRpm, this.def.redline);
+    const d = this.def;
+    this.rpm = clamp(stagedRpm, d.idleRpm, d.redline);
     this.tireTemp = temp;
+    if (d.boostGain > 0 || d.stockBoostGain > 0) {
+      let b = clamp((this.rpm - d.boostSpoolRpm) / K.BOOST_RANGE_RPM, 0, 1) * (d.converter ? 1 : K.NO_LOAD_BOOST);
+      const share = d.boostByGear?.[0];
+      if (share !== undefined) b *= clamp(share, 0.2, 1);
+      if (d.antiLag) b = Math.max(b, K.ANTI_LAG_BOOST);
+      this.boost = b;
+    }
   }
 
   // --- model -----------------------------------------------------------------------------
@@ -158,6 +167,7 @@ export class Vehicle {
     }
     const na = this.torqueAt(this.rpm) * (bog ? this.bogFactor() : 1);
     let t = na;
+    if (d.stockBoostGain > 0) t *= stockBoost(d, this.boost);
     if (d.blowerGain > 0) t *= 1 + blower(d, this.rpm);
     if (d.boostGain > 0) t *= 1 + d.boostGain * this.boost;
     if (this.nitrousActive) {
@@ -190,8 +200,9 @@ export class Vehicle {
 
   private spool(dt: number) {
     const d = this.def;
-    if (d.boostGain <= 0) return;
+    if (d.boostGain <= 0 && d.stockBoostGain <= 0) return;
     let target = clamp((this.rpm - d.boostSpoolRpm) / K.BOOST_RANGE_RPM, 0, 1) * this.throttle;
+    if (this.mode === "HELD" && !d.converter) target *= K.NO_LOAD_BOOST;
     const share = d.boostByGear?.[this.gear];
     if (share !== undefined) target *= clamp(share, 0.2, 1);
     if (this.mode === "HELD" && d.antiLag && this.throttle > 0) target = Math.max(target, K.ANTI_LAG_BOOST);

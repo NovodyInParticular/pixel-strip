@@ -1,0 +1,45 @@
+{
+  "dir": "cars/dart",
+  "width": 80,
+  "height": 40,
+  "rearWheel": [
+    16,
+    29.0
+  ],
+  "frontWheel": [
+    61,
+    29.0
+  ],
+  "wheelSize": 18,
+  "wheelFrames": 4,
+  "blurFrames": 3,
+  "spokes": 8,
+  "headlight": [
+    76.2,
+    25.7
+  ],
+  "taillight": [
+    3.7,
+    24.6
+  ],
+  "exhaust": [
+    8.0,
+    31.1
+  ],
+  "groundY": 35.5,
+  "frontX": 76,
+  "popup": false,
+  "driver": [
+    30.05,
+    12.8
+  ],
+  "wheelRadius10": 65,
+  "sideExhaust": [
+    24.1,
+    33.4
+  ],
+  "door": [
+    32,
+    29
+  ]
+}

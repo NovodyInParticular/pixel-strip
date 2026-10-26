@@ -10,7 +10,10 @@ import io.github.novodyinparticular.pixelstrip.save.SaveGame
  * whose car is the prize. Rivals unlock in order; a tier's boss after its rivals; the next tier
  * after the boss.
  */
-class Career(val tiers: List<Tier>) {
+class Career(val tiers: List<Tier>, val barns: List<Barn> = emptyList()) {
+    /** A rare car waiting on the map once [after] (a boss) is beaten: claimed once, for free. */
+    class Barn(val carId: String, val after: String, val x: Float, val y: Float, val paint: Int, val story: List<String>)
+
     class Tier(val id: String, val name: String, val quarter: Boolean, val rivals: List<Rival>)
 
     class Rival(
@@ -53,6 +56,10 @@ class Career(val tiers: List<Tier>) {
 
         fun parse(root: com.badlogic.gdx.utils.JsonValue): Career {
             var n = 0
+            val barns = root.get("barns")?.map { b ->
+                Barn(b.getString("car"), b.getString("after"), b.getFloat("x"), b.getFloat("y"), b.getInt("paint"),
+                    b.get("story")?.asStringArray()?.toList() ?: emptyList())
+            } ?: emptyList()
             return Career(root.get("tiers").map { t ->
                 val tid = t.getString("id")
                 Tier(tid, t.getString("name"), t.getString("distance") == "quarter", t.get("rivals").map { r ->
@@ -69,7 +76,7 @@ class Career(val tiers: List<Tier>) {
                         r.getString("track", TrackDef.GENERAL[n++ % TrackDef.GENERAL.size]),
                     )
                 })
-            })
+            }, barns)
         }
     }
 }

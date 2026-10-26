@@ -42,6 +42,8 @@
   "engine": {
     "layout": "v6",
     "cylinders": 6,
-    "stockTurbo": false
-  }
+    "stockTurbo": false,
+    "vtecRpm": 5800
+  },
+  "dealer": true
 }

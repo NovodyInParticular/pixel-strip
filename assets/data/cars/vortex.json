@@ -44,5 +44,6 @@
     "layout": "v8",
     "cylinders": 8,
     "stockTurbo": false
-  }
+  },
+  "dealer": true
 }

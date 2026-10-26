@@ -63,10 +63,15 @@ object DragMath {
     fun crankTorque(def: CarDef, r: Float, why: Array<Limit>? = null): Float {
         val na = torqueAt(def, r)
         var t = na
+        val spooled = ((r - def.boostSpoolRpm) / Vehicle.BOOST_RANGE_RPM).coerceIn(0f, 1f)
+        if (def.stockBoostGain > 0f) t *= stockBoost(def, spooled)
         if (def.blowerGain > 0f) t *= 1f + blower(def, r)
-        if (def.boostGain > 0f) t *= 1f + def.boostGain * ((r - def.boostSpoolRpm) / Vehicle.BOOST_RANGE_RPM).coerceIn(0f, 1f)
+        if (def.boostGain > 0f) t *= 1f + def.boostGain * spooled
         return limit(def, r, na, t, why)
     }
+
+    /** Share of the published (full stock boost) torque a factory turbo car makes at [boost] 0..1. */
+    fun stockBoost(def: CarDef, boost: Float) = (1f + def.stockBoostGain * boost) / (1f + def.stockBoostGain)
 
     /** Wheel horsepower at an RPM. */
     fun wheelHp(def: CarDef, r: Float) = crankTorque(def, r) * r / 7127f * Vehicle.DRIVELINE_EFF

@@ -229,6 +229,7 @@ class Cloud(private val game: PixelStrip, enabled: Boolean) {
         save.pending.clear()
         for (e in later) if (Ledger.apply(game.rules, save, e)) save.pending.add(e) else rejected++
         save.write()
+        game.retireOld()           // the server may still hold a car this game has taken out
     }
 
     // --- http ---------------------------------------------------------------------------------------

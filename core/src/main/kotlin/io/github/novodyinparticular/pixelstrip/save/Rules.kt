@@ -32,7 +32,19 @@ class Rules(
     /** Two career races can't finish closer together than this (staging + the run itself). */
     val minRaceGapMs: Long,
     val xp: XpRule,
+    /** Cars and parts taken out of the game, with what their owners paid (assets/data/retired.json). */
+    val retired: RetiredRule = RetiredRule(emptyMap(), emptyMap()),
+    val barns: List<BarnRule> = emptyList(),
 ) {
+    /**
+     * [cars]: retired car -> its price, default paint and part prices back then. [parts]: slot ->
+     * option -> car -> the price paid for it on that car.
+     */
+    class RetiredRule(val cars: Map<String, RetiredCar>, val parts: Map<String, Map<Int, Map<String, Long>>>)
+    class RetiredCar(val name: String, val price: Long, val paint: Int, val parts: Map<String, List<Long>>)
+    /** A barn find: [car] can be claimed once, after the rival [after] is beaten. */
+    class BarnRule(val car: String, val after: String, val paint: Int)
+
     /**
      * XP for races, and the levels it buys: reaching level L takes levelStep * (L-1) * L / 2 XP in
      * all and pays levelCash * (L-1). Online and tournament XP is granted by the server alone.
@@ -116,6 +128,30 @@ class Rules(
                 o.addChild("cosmetics", intMap(r.cosmetics))
             }
         }))
+        root.addChild("retired", obj().also { o ->
+            o.addChild("cars", obj().also { co ->
+                for ((id, c) in retired.cars.toSortedMap()) co.addChild(id, obj().also { r ->
+                    r.addChild("name", JsonValue(c.name))
+                    r.addChild("price", JsonValue(c.price))
+                    r.addChild("paint", JsonValue(c.paint.toLong()))
+                    r.addChild("parts", obj().also { po -> for ((s, p) in c.parts) po.addChild(s, arr(p.map { JsonValue(it) })) })
+                })
+            })
+            o.addChild("parts", obj().also { po ->
+                for ((slot, opts) in retired.parts.toSortedMap()) po.addChild(slot, obj().also { so ->
+                    for ((opt, byCar) in opts.toSortedMap()) so.addChild(opt.toString(), obj().also { bo ->
+                        for ((car, price) in byCar.toSortedMap()) bo.addChild(car, JsonValue(price))
+                    })
+                })
+            })
+        })
+        root.addChild("barns", arr(barns.map { b ->
+            obj().also { o ->
+                o.addChild("car", JsonValue(b.car))
+                o.addChild("after", JsonValue(b.after))
+                o.addChild("paint", JsonValue(b.paint.toLong()))
+            }
+        }))
         root.addChild("minRaceGapMs", JsonValue(minRaceGapMs))
         root.addChild("xp", obj().also { o ->
             o.addChild("careerWin", JsonValue(xp.careerWin))
@@ -140,7 +176,8 @@ class Rules(
         private fun ints(j: JsonValue?) = j?.associate { it.name to it.asInt() } ?: emptyMap()
 
         /** From the game data; the stock class (which scales part prices) comes from a perfect-pass simulation. */
-        fun build(cars: List<CarDef>, catalog: PartCatalog, economy: Economy, career: Career, colors: Int, partsResalePercent: Long) = Rules(
+        fun build(cars: List<CarDef>, catalog: PartCatalog, economy: Economy, career: Career, colors: Int, partsResalePercent: Long,
+                  retired: JsonValue? = null) = Rules(
             startingCash = economy.startingCash,
             starterCars = economy.starterCars,
             resalePercent = partsResalePercent,
@@ -168,6 +205,19 @@ class Rules(
             minRaceGapMs = 6000L,
             xp = XpRule(careerWin = 100, careerLoss = 25, bossBonus = 250, onlineWin = 150, onlineLoss = 40, tournamentRun = 30,
                 levelStep = 250, levelCash = 1000, maxLevel = 50),
+            retired = retired?.let(::parseRetired) ?: RetiredRule(emptyMap(), emptyMap()),
+            barns = career.barns.map { BarnRule(it.carId, it.after, it.paint) },
+        )
+
+        /** retired.json and the "retired" block of rules.json share one shape. */
+        private fun parseRetired(j: JsonValue) = RetiredRule(
+            cars = j.get("cars")?.associate { c ->
+                c.name to RetiredCar(c.getString("name"), c.getLong("price"), c.getInt("paint", 0),
+                    c.get("parts").associate { p -> p.name to p.asLongArray().toList() })
+            } ?: emptyMap(),
+            parts = j.get("parts")?.associate { s ->
+                s.name to s.associate { o -> o.name.toInt() to o.associate { c -> c.name to c.asLong() } }
+            } ?: emptyMap(),
         )
 
         const val DECAL_COLOR_PRICE = 500L
@@ -202,6 +252,8 @@ class Rules(
                         ints(r.get("parts")), ints(r.get("cosmetics")))
                 },
                 minRaceGapMs = j.getLong("minRaceGapMs"),
+                retired = j.get("retired")?.let(::parseRetired) ?: RetiredRule(emptyMap(), emptyMap()),
+                barns = j.get("barns")?.map { BarnRule(it.getString("car"), it.getString("after"), it.getInt("paint")) } ?: emptyList(),
                 xp = j.get("xp").let { x ->
                     XpRule(x.getLong("careerWin"), x.getLong("careerLoss"), x.getLong("bossBonus"), x.getLong("onlineWin"), x.getLong("onlineLoss"),
                         x.getLong("tournamentRun"), x.getLong("levelStep"), x.getLong("levelCash"), x.getInt("maxLevel"))

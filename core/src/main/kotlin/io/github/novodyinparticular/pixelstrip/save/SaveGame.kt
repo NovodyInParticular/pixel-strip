@@ -57,6 +57,13 @@ class SaveGame(private val file: FileHandle) {
     var selected: String? = null
     /** Career rivals beaten at least once (ids from career.json). */
     val beaten = LinkedHashSet<String>()
+    /** Barn finds already claimed (car ids from career.json "barns"). */
+    val found = LinkedHashSet<String>()
+    /**
+     * Refunds for cars and parts taken out of the game, waiting to be shown once ("NAME|amount"),
+     * local only: the ledger already paid them.
+     */
+    val refundNotice = ArrayList<String>()
     var nextUid = 1
     /** Client time of the last career race (the ledger spaces them out). */
     var lastRaceT = 0L
@@ -137,6 +144,8 @@ class SaveGame(private val file: FileHandle) {
         val b = JsonValue(JsonValue.ValueType.array)
         beaten.forEach { b.addChild(JsonValue(it)) }
         root.addChild("beaten", b)
+        root.addChild("found", JsonValue(JsonValue.ValueType.array).also { a -> found.forEach { a.addChild(JsonValue(it)) } })
+        root.addChild("refundNotice", JsonValue(JsonValue.ValueType.array).also { a -> refundNotice.forEach { a.addChild(JsonValue(it)) } })
         val tmp = file.sibling(file.name() + ".tmp")
         tmp.writeString(root.toJson(JsonWriter.OutputType.json), false)
         tmp.moveTo(file)
@@ -155,6 +164,7 @@ class SaveGame(private val file: FileHandle) {
         o.addChild("nextUid", JsonValue(nextUid.toLong()))
         o.addChild("lastRaceT", JsonValue(lastRaceT))
         o.addChild("beaten", JsonValue(JsonValue.ValueType.array).also { a -> beaten.forEach { a.addChild(JsonValue(it)) } })
+        o.addChild("found", JsonValue(JsonValue.ValueType.array).also { a -> found.forEach { a.addChild(JsonValue(it)) } })
         o.addChild("cars", JsonValue(JsonValue.ValueType.array).also { a ->
             for (c in cars) a.addChild(JsonValue(JsonValue.ValueType.`object`).also { co ->
                 co.addChild("uid", JsonValue(c.uid))
@@ -182,6 +192,8 @@ class SaveGame(private val file: FileHandle) {
         lastRaceT = state.getLong("lastRaceT", 0)
         beaten.clear()
         state.get("beaten")?.asStringArray()?.let { beaten.addAll(it) }
+        found.clear()
+        state.get("found")?.asStringArray()?.let { found.addAll(it) }
         cars.clear()
         state.get("cars")?.forEach { o ->
             val uid = o.getString("uid")
@@ -269,6 +281,8 @@ class SaveGame(private val file: FileHandle) {
             save.nextUid = root.getInt("nextUid", 1)
             save.selected = root.getString("selected", null)
             root.get("beaten")?.asStringArray()?.let { save.beaten.addAll(it) }
+            root.get("found")?.asStringArray()?.let { save.found.addAll(it) }
+            root.get("refundNotice")?.asStringArray()?.let { save.refundNotice.addAll(it) }
             root.get("cars")?.forEach { o ->
                 val parts = mutableMapOf<String, Int>()
                 o.get("parts")?.forEach { parts[it.name] = it.asInt() }

@@ -38,7 +38,7 @@ class CareerBalanceTest {
                 }
             }
         }
-        for (s in listOf("kite", "kestrel", "ranger50")) println("starter %-9s 1/8 %.3f".format(s, DragMath.perfectPass(car(s)).eighth))
+        for (s in listOf("kite", "kestrel", "kokoro")) println("starter %-9s 1/8 %.3f".format(s, DragMath.perfectPass(car(s)).eighth))
         assertTrue(problems.isEmpty(), problems.joinToString("; "))
     }
 }

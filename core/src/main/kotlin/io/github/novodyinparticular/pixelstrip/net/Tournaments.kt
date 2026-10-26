@@ -19,6 +19,8 @@ class Tournaments(private val cloud: Cloud) {
     class Event(
         val id: String, val cls: String, val track: String, val fee: Long, val pool: Long, val entrants: Int, val ends: Long,
         val board: List<Entry>, val prizes: List<Long>, val mine: Mine?, val settled: Boolean, val results: List<Result>?,
+        /** A rare car the day's winner also gets (if they don't have one); null: cash only. */
+        val prizeCar: String? = null,
     ) {
         val runsLeft get() = mine?.let { MAX_RUNS - it.entry.runs } ?: 0
     }
@@ -84,6 +86,7 @@ class Tournaments(private val cloud: Cloud) {
             Result(it.getString("uid", ""), it.getString("name", "?"), it.get("tag")?.takeIf { v -> v.isString }?.asString(),
                 it.get("car")?.takeIf { v -> v.isString }?.asString(), it.getFloat("et", 0f), it.getLong("prize", 0))
         },
+        t.get("prizeCar")?.takeIf { it.isString }?.asString(),
     )
 
     companion object {

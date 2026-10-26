@@ -467,7 +467,7 @@ class CrewScreen(game: PixelStrip) : MenuScreen(game) {
                 }
                 font.draw(batch, letter, lx + 5f, y + 5f, col, 1, null)
                 font.draw(batch, m.name, lx + 16f, y + 5f, if (m.uid == cloud.accountId) PINK else Color.WHITE, 1, null)
-                val best = m.bestCar?.let { "%.3f  %s".format(m.bestEt, game.car(it).name.uppercase().take(14)) } ?: "NO ONLINE WIN YET"
+                val best = m.bestCar?.let { "%.3f  %s".format(m.bestEt, game.carName(it).take(14)) } ?: "NO ONLINE WIN YET"
                 font.draw(batch, best, lx + LIST_W - 4f - font.width(best), y + 5f, if (m.bestCar != null) GREEN else SOFT, 1, null)
             }
         }

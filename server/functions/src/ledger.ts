@@ -33,6 +33,15 @@ export interface Rules {
   rivals: RivalRule[];
   minRaceGapMs: number;
   xp: XpRule;
+  /** Cars and parts taken out of the game, with what their owners paid (assets/data/retired.json). */
+  retired?: RetiredRule;
+  /** Barn finds: car, claimable once after the rival `after` is beaten. */
+  barns?: { car: string; after: string; paint: number }[];
+}
+/** cars: retired car -> price, default paint, part prices back then; parts: slot -> option -> car -> price paid. */
+export interface RetiredRule {
+  cars: Record<string, { name: string; price: number; paint: number; parts: Record<string, number[]> }>;
+  parts: Record<string, Record<string, Record<string, number>>>;
 }
 
 /** XP for races and the levels it buys (Rules.XpRule in the game): level L takes levelStep*(L-1)*L/2 in all, pays levelCash*(L-1). */
@@ -59,7 +68,8 @@ export function addXp(r: Rules, s: State, n: number) {
 /** parts: slot -> fitted option; owned: slot -> bitmask of options bought for this car. */
 export interface Car { uid: string; car: string; paint: number; parts: Record<string, number>; cosmetics: Record<string, number>; owned: Record<string, number> }
 /** staked: cars on the line in an online pink-slip race (server only: they can't be sold or lost elsewhere). */
-export interface State { cash: number; xp?: number; nextUid: number; lastRaceT: number; beaten: string[]; cars: Car[]; staked?: string[] }
+/** found: barn finds already claimed. */
+export interface State { cash: number; xp?: number; nextUid: number; lastRaceT: number; beaten: string[]; found?: string[]; cars: Car[]; staked?: string[] }
 
 const isStaked = (s: State, uid: string) => (s.staked ?? []).includes(uid);
 
@@ -83,7 +93,7 @@ export function emptyState(): State {
 
 const has = (o: object, k: string | undefined): k is string => k !== undefined && Object.prototype.hasOwnProperty.call(o, k);
 
-function addCar(s: State, car: string, paint: number): Car {
+export function addCar(s: State, car: string, paint: number): Car {
   const c: Car = { uid: `c${s.nextUid++}`, car, paint, parts: {}, cosmetics: {}, owned: {} };
   s.cars.push(c);
   return c;
@@ -112,6 +122,39 @@ export function paintCost(r: Rules, car: Car, p: number[]): number {
   if (p[2] !== (car.cosmetics.decal ?? 0)) c += r.decals[p[2]];
   if (p[3] !== (car.cosmetics.decalColor ?? 0) && p[2] > 0) c += r.decalColorPrice;
   return c;
+}
+
+/**
+ * What a car or part taken out of the game pays back: a retired car its full price, every part
+ * bought for it and its paint and cosmetics; otherwise each retired part this car owns. 0 = nothing.
+ */
+export function refund(r: Rules, car: Car): number {
+  const retired = r.retired ?? { cars: {}, parts: {} };
+  if (has(retired.cars, car.car)) {
+    const rc = retired.cars[car.car];
+    let total = rc.price;
+    for (const [slot, bits] of Object.entries(car.owned)) {
+      const prices = has(rc.parts, slot) ? rc.parts[slot] : undefined;
+      if (!prices) continue;
+      for (let i = 0; i < prices.length; i++) if (bits & (1 << (i + 1))) total += prices[i];
+    }
+    for (const [k, v] of Object.entries(car.cosmetics)) {
+      if (!(v > 0)) continue;
+      if (k === "finish") total += r.finishes[v] ?? 0;
+      else if (k === "decal") total += r.decals[v] ?? 0;
+      else if (k === "decalColor") total += (car.cosmetics.decal ?? 0) > 0 ? r.decalColorPrice : 0;
+      else total += has(r.cosmetics, k) ? r.cosmetics[k].price : 0;
+    }
+    if (car.paint !== rc.paint) total += r.colorPrice;
+    return total;
+  }
+  let total = 0;
+  for (const [slot, opts] of Object.entries(retired.parts)) {
+    const bits = car.owned[slot];
+    if (!bits) continue;
+    for (const [opt, byCar] of Object.entries(opts)) if (bits & (1 << Number(opt))) total += has(byCar, car.car) ? byCar[car.car] : 0;
+  }
+  return total;
 }
 
 export function unlocked(r: Rules, s: State, rivalId: string): boolean {
@@ -236,6 +279,38 @@ export function apply(r: Rules, s: State, e: Entry): boolean {
         for (const [k, v] of Object.entries(rival.parts)) if (v > 0) prize.owned[k] = 1 << v;
         Object.assign(prize.cosmetics, rival.cosmetics);
       }
+      return true;
+    }
+    case "retire": {
+      if (!car || isStaked(s, car.uid)) return false;
+      const pay = refund(r, car);
+      if (pay <= 0) return false;
+      const retired = r.retired ?? { cars: {}, parts: {} };
+      if (has(retired.cars, car.car)) {
+        const starter = e.car;
+        if (s.cars.length === 1 && !(starter !== undefined && r.starterCars.includes(starter) && has(r.cars, starter))) return false;
+        s.cash += pay;
+        removeCar(s, car.uid);
+        if (s.cars.length === 0) addCar(s, starter!, r.cars[starter!].paint);
+      } else {
+        s.cash += pay;
+        for (const [slot, opts] of Object.entries(retired.parts)) {
+          const bits = car.owned[slot];
+          if (!bits) continue;
+          let left = bits;
+          for (const opt of Object.keys(opts)) left &= ~(1 << Number(opt));
+          if (left === 0) delete car.owned[slot];
+          else car.owned[slot] = left;
+          if (has(car.parts, slot) && has(opts, String(car.parts[slot]))) delete car.parts[slot];
+        }
+      }
+      return true;
+    }
+    case "find": {
+      const barn = (r.barns ?? []).find((b) => b.car === e.car);
+      if (!barn || !s.beaten.includes(barn.after) || (s.found ?? []).includes(barn.car) || !has(r.cars, barn.car)) return false;
+      s.found = [...(s.found ?? []), barn.car];
+      addCar(s, barn.car, barn.paint);
       return true;
     }
     default:

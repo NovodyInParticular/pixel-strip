@@ -30,10 +30,10 @@ class PhysicsCasesTest {
     private val supported = mapOf("internals" to 2, "fueltype" to 2, "fuel" to 3, "intercooler" to 2, "boostctl" to 1, "ecu" to 2)
 
     private val cases = listOf(
-        Case("vandal stock", "vandal", emptyMap(), null),
+        Case("mammoth stock", "mammoth", emptyMap(), null),
         Case("kite stock, eighth mile", "kite", emptyMap(), null, quarter = false),
-        Case("vandal bolt-ons on slicks", "vandal", mapOf("intake" to 2, "headers" to 2, "exhaust" to 2, "cams" to 2, "heads" to 1, "tires" to 4, "tubs" to 1), null),
-        Case("vandal turbo, launch control, timing", "vandal", supported + mapOf("turbo" to 3, "tires" to 3, "tubs" to 1),
+        Case("mammoth bolt-ons on slicks", "mammoth", mapOf("intake" to 2, "headers" to 2, "exhaust" to 2, "cams" to 2, "heads" to 1, "tires" to 4, "tubs" to 1), null),
+        Case("mammoth turbo, launch control, timing", "mammoth", supported + mapOf("turbo" to 3, "tires" to 3, "tubs" to 1),
             Tune(boostPsi = 20f, launchRpm = 3600f, timing = 2f)),
         Case("joe's AWD K-swap on nitrous", "kite_ef", supported + mapOf("drive" to 1, "swap" to 4, "turbo" to 3, "nitrous" to 2, "bottle" to 1, "gearbox" to 3),
             Tune(boostPsi = 25f, nitrousGear = 2)),
@@ -42,7 +42,9 @@ class PhysicsCasesTest {
         Case("tsunami tuned gears and pressure", "tsunami", mapOf("gearbox" to 1, "final" to 4, "tires" to 2),
             Tune(gears = floatArrayOf(3.4f, 2.1f, 1.45f, 1.1f, 0.88f, 0.7f), finalDrive = 3.9f, tirePressure = 20f)),
         Case("spiral rotary with wheelie bars", "spiral_r", mapOf("wheeliebars" to 1, "springs" to 1, "shocks" to 2, "tires" to 2), Tune(shockRate = 0.9f)),
-        Case("red light", "vandal", emptyMap(), null, launchClock = -0.5f),
+        Case("red light", "mammoth", emptyMap(), null, launchClock = -0.5f),
+        Case("phantom stock: the converter builds boost on the brake", "phantom", emptyMap(), null),
+        Case("halberd stock: a factory turbo spools off the line", "halberd_6", emptyMap(), null),
     )
 
     /** Drives one race the way a decent player would, with every input going through the recorder. */

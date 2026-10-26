@@ -1,0 +1,48 @@
+{
+  "id": "kaminari_c10",
+  "name": "Kaminari 2000 GT-X",
+  "brand": "Raijin",
+  "year": 1969,
+  "era": "classic",
+  "price": 150000,
+  "dealer": false,
+  "hp": 158,
+  "powerRating": "gross",
+  "peakHpRpm": 7000,
+  "torqueNm": 177,
+  "peakTorqueRpm": 5600,
+  "idleRpm": 950,
+  "redline": 8000,
+  "weightKg": 1100,
+  "drivetrain": "RWD",
+  "rearWeight": 0.47,
+  "wheelbaseM": 2.57,
+  "cgHeightM": 0.52,
+  "gears": [
+    2.957,
+    1.857,
+    1.311,
+    1.0,
+    0.852
+  ],
+  "finalDrive": 4.444,
+  "shiftTime": 0.3,
+  "clutchTime": 0.32,
+  "clutchTorque": 1.5,
+  "tireRadiusM": 0.318,
+  "grip": 0.83,
+  "engineInertia": 0.27,
+  "wheelInertia": 2.2,
+  "dragArea": 0.72,
+  "nitrous": {
+    "hp": 0,
+    "charges": 0,
+    "seconds": 0
+  },
+  "defaultPaint": 6,
+  "engine": {
+    "layout": "i6",
+    "cylinders": 6,
+    "stockTurbo": false
+  }
+}

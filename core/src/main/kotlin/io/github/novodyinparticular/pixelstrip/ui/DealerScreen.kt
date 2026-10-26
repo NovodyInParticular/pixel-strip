@@ -12,7 +12,8 @@ import kotlin.math.floor
 import kotlin.math.sin
 
 /**
- * Chrome & Co. Motors: every car on a turntable under sweeping spotlights, sorted by price.
+ * Chrome & Co. Motors: every car on a turntable under sweeping spotlights, by class (street first)
+ * and then price, with a tab per class to jump through a big lot.
  * [starterMode] is the first-launch pick: three starter cars, free.
  */
 open class DealerScreen(game: PixelStrip, private val starterMode: Boolean = false) : MenuScreen(game) {
@@ -21,8 +22,23 @@ open class DealerScreen(game: PixelStrip, private val starterMode: Boolean = fal
     private val cone = TextureRegion(art.tex("fx/light_cone.png"))
     private val stage = CarStage()
     private val stock: List<CarDef> =
-        if (starterMode) game.economy.starterCars.map { game.car(it) } else game.carIds.map { game.car(it) }.filter { it.dealer }.sortedBy { it.price }
+        if (starterMode) game.economy.starterCars.map { game.car(it) } else game.carIds.map { game.car(it) }.filter { it.dealer }
+            .sortedWith(compareBy<CarDef>({ CLASS_ORDER.indexOf(classOf(it)) }, { it.price }))
     private var index = 0
+
+    private fun classOf(d: CarDef) = game.economy.classFor(io.github.novodyinparticular.pixelstrip.race.DragMath.perfectPass(d).quarter)
+
+    /** One tab per class: jumps to its cheapest car. */
+    private val tabs = CLASS_ORDER.mapIndexed { i, cls ->
+        button(cls, BTN_GREY, keys = intArrayOf(Input.Keys.NUM_1 + i)) {
+            val first = stock.indexOfFirst { classOf(it) == cls }
+            if (first >= 0) {
+                index = first
+                flash = 0.2f
+                flashColor.set(YELLOW)
+            }
+        }
+    }
     private var soldTimer = 0f
 
     private val prev = button("<", BTN_GREY, keys = intArrayOf(Input.Keys.LEFT)) { browse(-1) }
@@ -61,6 +77,11 @@ open class DealerScreen(game: PixelStrip, private val starterMode: Boolean = fal
         next.apply { x = w / 2f + 108f; y = 10f; this.w = 26f; this.h = 22f }
         buy.apply { x = w - 112f; y = 8f; this.w = 104f; this.h = 40f }
         back.apply { x = 8f; y = 8f; this.w = 60f; this.h = 22f; visible = !starterMode }
+        val current = classOf(def)
+        tabs.forEachIndexed { i, t ->
+            t.apply { x = w / 2f - 122f + i * 62f; y = h - 50f; this.w = 58f; this.h = 14f; visible = !starterMode && stock.any { classOf(it) == CLASS_ORDER[i] } }
+            t.label = if (CLASS_ORDER[i] == current) "[${CLASS_ORDER[i]}]" else CLASS_ORDER[i]
+        }
         val owned = game.save.owns(def.id)
         buy.label = when {
             starterMode -> "TAKE IT"
@@ -143,6 +164,7 @@ open class DealerScreen(game: PixelStrip, private val starterMode: Boolean = fal
 
     companion object {
         const val GROUND = 270f - 234f
+        val CLASS_ORDER = listOf("STREET", "SPORT", "PRO", "OUTLAW")
         const val SPOT_Y = 262f
         val AMBIENT = Color(0.55f, 0.55f, 0.7f, 1f)
     }

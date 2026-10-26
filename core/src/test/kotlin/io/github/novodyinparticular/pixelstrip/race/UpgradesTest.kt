@@ -49,9 +49,9 @@ class UpgradesTest {
 
     @Test
     fun boltOnsAddPeakPower() {
-        val stock = peakHp(build("vandal", emptyMap()))
+        val stock = peakHp(build("mammoth", emptyMap()))
         for (slot in listOf("intake", "throttle", "manifold", "heads", "cams", "headers", "exhaust", "swap", "ecu")) {
-            val hp = peakHp(build("vandal", mapOf(slot to 1)))
+            val hp = peakHp(build("mammoth", mapOf(slot to 1)))
             println("%-9s option 1: %.0f hp (stock %.0f)".format(slot, hp, stock))
             assertTrue(hp > stock, "$slot should add peak power")
         }
@@ -59,8 +59,8 @@ class UpgradesTest {
 
     @Test
     fun raceCamTradesLowEndForTopEnd() {
-        val stock = build("vandal", emptyMap())
-        val cam = build("vandal", mapOf("cams" to 3))
+        val stock = build("mammoth", emptyMap())
+        val cam = build("mammoth", mapOf("cams" to 3))
         assertTrue(DragMath.crankTorque(cam, 1500f) < DragMath.crankTorque(stock, 1500f), "less low end")
         assertTrue(peakHp(cam) > peakHp(stock) * 1.08f, "more top end")
         assertTrue(cam.redline > stock.redline && cam.idleRpm > stock.idleRpm, "revs higher, idles lumpy")
@@ -69,21 +69,21 @@ class UpgradesTest {
     @Test
     fun boostNeedsTheSupportingParts() {
         val tune = Tune(boostPsi = 22f)
-        val bare = build("vandal", mapOf("turbo" to 2, "boostctl" to 1), tune)
-        val built = build("vandal", supported + mapOf("turbo" to 2), tune)
-        println("vandal medium turbo 22 psi: stock bottom end %.0f hp %s, built %.0f hp %s".format(peakHp(bare), limited(bare), peakHp(built), limited(built)))
+        val bare = build("mammoth", mapOf("turbo" to 2, "boostctl" to 1), tune)
+        val built = build("mammoth", supported + mapOf("turbo" to 2), tune)
+        println("mammoth medium turbo 22 psi: stock bottom end %.0f hp %s, built %.0f hp %s".format(peakHp(bare), limited(bare), peakHp(built), limited(built)))
         assertTrue(DragMath.Limit.KNOCK in limited(bare), "stock internals on pump gas knock at 22 psi")
         assertTrue(limited(built).isEmpty(), "forged, E85, big fuel system: clean")
         assertTrue(peakHp(built) > peakHp(bare) * 1.3f)
-        val noController = build("vandal", supported + mapOf("turbo" to 2, "boostctl" to 0), tune)
+        val noController = build("mammoth", supported + mapOf("turbo" to 2, "boostctl" to 0), tune)
         assertEquals(Upgrades.SPRING_PSI, noController.boostPsi, "the wastegate spring holds it at 8 psi")
     }
 
     @Test
     fun theFuelSystemCapsPower() {
         val tune = Tune(boostPsi = 30f)
-        val starved = build("vandal", supported + mapOf("turbo" to 4, "fuel" to 0), tune)
-        val fed = build("vandal", supported + mapOf("turbo" to 4), tune)
+        val starved = build("mammoth", supported + mapOf("turbo" to 4, "fuel" to 0), tune)
+        val fed = build("mammoth", supported + mapOf("turbo" to 4), tune)
         println("large turbo 30 psi: stock fuel %.0f hp %s, race fuel %.0f hp".format(peakHp(starved), limited(starved), peakHp(fed)))
         assertTrue(DragMath.Limit.FUEL in limited(starved))
         assertTrue(peakHp(fed) > peakHp(starved) * 1.4f)
@@ -91,10 +91,10 @@ class UpgradesTest {
 
     @Test
     fun timingNeedsAnEcuAndCostsKnockMargin() {
-        val noEcu = build("vandal", emptyMap(), Tune(timing = 4f))
+        val noEcu = build("mammoth", emptyMap(), Tune(timing = 4f))
         assertEquals(0f, noEcu.timingDeg, "the stock ECU is locked")
-        val flashed = build("vandal", mapOf("ecu" to 2), Tune(timing = 4f))
-        val flat = build("vandal", mapOf("ecu" to 2), Tune(timing = 0f))
+        val flashed = build("mammoth", mapOf("ecu" to 2), Tune(timing = 4f))
+        val flat = build("mammoth", mapOf("ecu" to 2), Tune(timing = 0f))
         assertTrue(peakHp(flashed) > peakHp(flat))
         assertTrue(flashed.knockLimit < flat.knockLimit)
     }
@@ -102,9 +102,9 @@ class UpgradesTest {
     @Test
     fun fullRaceBuildIsAMonster() {
         val all = catalog.slots.filter { it.id != "turbo" && it.id != "final" }.associate { it.id to it.options.size - 1 }
-        val stock = pass(car("vandal"))
-        val built = pass(build("vandal", all, Tune(nitrousGear = 2)))
-        println("vandal stock %.2f @ %.1f -> everything %.2f @ %.1f (%.0f hp)".format(stock.quarter, stock.trapMph, built.quarter, built.trapMph, peakHp(build("vandal", all))))
+        val stock = pass(car("mammoth"))
+        val built = pass(build("mammoth", all, Tune(nitrousGear = 2)))
+        println("mammoth stock %.2f @ %.1f -> everything %.2f @ %.1f (%.0f hp)".format(stock.quarter, stock.trapMph, built.quarter, built.trapMph, peakHp(build("mammoth", all))))
         assertTrue(built.quarter < stock.quarter - 3f, "a full build should be seconds quicker")
         assertTrue(built.trapMph < 185f, "but still a believable trap speed")
     }
@@ -113,8 +113,8 @@ class UpgradesTest {
     fun turboLagsWhereTheBlowerDoesNot() {
         // on slicks, so the launch isn't traction-limited whatever the power adder
         val grip = mapOf("tires" to 4, "tubs" to 1)
-        val turbo = pass(build("vandal", supported + grip + mapOf("turbo" to 4), Tune(boostPsi = 18f)))
-        val blower = pass(build("vandal", supported + grip + mapOf("supercharger" to 2)))
+        val turbo = pass(build("mammoth", supported + grip + mapOf("turbo" to 4), Tune(boostPsi = 18f)))
+        val blower = pass(build("mammoth", supported + grip + mapOf("supercharger" to 2)))
         println("turbo 60ft %.3f, blower 60ft %.3f".format(turbo.sixty, blower.sixty))
         assertTrue(turbo.sixty > blower.sixty, "the turbo should launch softer (lag)")
     }
@@ -137,7 +137,7 @@ class UpgradesTest {
     @Test
     fun biggerTurbosLagMore() {
         val grip = supported + mapOf("tires" to 4, "tubs" to 1, "bov" to 1)
-        val times = (1..5).associateWith { spoolTime(build("vandal", grip + mapOf("turbo" to it), Tune(boostPsi = 15f))) }
+        val times = (1..5).associateWith { spoolTime(build("mammoth", grip + mapOf("turbo" to it), Tune(boostPsi = 15f))) }
         val names = catalog.slot("turbo").options
         for ((o, t) in times) println("%-14s full boost after %.2f s".format(names[o].name, t))
         assertTrue(times[1]!! < times[2]!! && times[2]!! < times[4]!! && times[4]!! < times[5]!!, "small < medium < large < 88mm")
@@ -146,27 +146,27 @@ class UpgradesTest {
 
     @Test
     fun gearboxAndTuneLimits() {
-        val sixSpeed = build("vandal", mapOf("gearbox" to 3))
+        val sixSpeed = build("mammoth", mapOf("gearbox" to 3))
         assertEquals(6, sixSpeed.gears.size)
         val wild = Tune(gears = floatArrayOf(9f, 9f, 9f, 9f), finalDrive = 9f)
-        val clamped = build("vandal", emptyMap(), wild)
-        assertTrue(clamped.gears[0] <= 2.66f * 1.051f && clamped.finalDrive <= 3.55f * 1.051f, "stock parts only allow +-5%")
-        assertTrue(build("vandal", mapOf("final" to 1)).finalDrive > 3.55f * 1.07f, "a shorter ring and pinion")
+        val clamped = build("mammoth", emptyMap(), wild)
+        assertTrue(clamped.gears[0] <= 2.2f * 1.051f && clamped.finalDrive <= 3.73f * 1.051f, "stock parts only allow +-5%")
+        assertTrue(build("mammoth", mapOf("final" to 1)).finalDrive > 3.73f * 1.07f, "a shorter ring and pinion")
     }
 
     @Test
     fun lowTirePressureHelpsTheLaunch() {
         val parts = mapOf("tires" to 2)
-        val high = pass(build("vandal", parts, Tune(tirePressure = 36f))).sixty
-        val low = pass(build("vandal", parts, Tune(tirePressure = 18f))).sixty
+        val high = pass(build("mammoth", parts, Tune(tirePressure = 36f))).sixty
+        val low = pass(build("mammoth", parts, Tune(tirePressure = 18f))).sixty
         println("drag radials 60ft: 36 psi %.3f, 18 psi %.3f".format(high, low))
         assertTrue(low < high)
     }
 
     @Test
     fun weightComesOff() {
-        val light = build("vandal", mapOf("interior" to 2, "panels" to 3, "glass" to 2, "battery" to 2))
-        assertTrue(light.weightKg < car("vandal").weightKg - 150f)
-        assertTrue(light.rearWeight > car("vandal").rearWeight)
+        val light = build("mammoth", mapOf("interior" to 2, "panels" to 3, "glass" to 2, "battery" to 2))
+        assertTrue(light.weightKg < car("mammoth").weightKg - 150f)
+        assertTrue(light.rearWeight > car("mammoth").rearWeight)
     }
 }

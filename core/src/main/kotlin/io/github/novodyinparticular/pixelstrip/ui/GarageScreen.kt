@@ -51,7 +51,19 @@ class GarageScreen(game: PixelStrip) : MenuScreen(game) {
     private var dailyBusy = false
     private var claimed: io.github.novodyinparticular.pixelstrip.net.Daily.Reward? = null
     private var claimedTime = 0f
-    private val dailyOpen get() = daily?.ready == true && !game.dailyDismissed || claimedTime > 0f
+    private val dailyOpen get() = !refundOpen && (daily?.ready == true && !game.dailyDismissed || claimedTime > 0f)
+
+    // --- one-time notice: cars and parts taken out of the game, refunded (save.refundNotice) ----
+    private val refundOpen get() = save.refundNotice.isNotEmpty() && showcase == null
+    private val gotIt = button("GOT IT", Color(0.2f, 0.55f, 0.3f, 1f), big = true, keys = intArrayOf(Input.Keys.ENTER)) { dismissRefund() }
+
+    private fun dismissRefund() {
+        save.refundNotice.clear()
+        save.write()
+        index = save.cars.indexOfFirst { it.uid == save.selected }.coerceAtLeast(0)
+        flash = 0.5f
+        flashColor.set(YELLOW)
+    }
     private val claim = button("CLAIM", Color(0.2f, 0.55f, 0.3f, 1f), big = true, keys = intArrayOf(Input.Keys.ENTER)) { claimDaily() }
     private val later = button("LATER", BTN_GREY, keys = intArrayOf(Input.Keys.ESCAPE)) { game.dailyDismissed = true }
 
@@ -99,7 +111,7 @@ class GarageScreen(game: PixelStrip) : MenuScreen(game) {
 
     /** Desktop shots only: -Dpixelstrip.showcase=RIVAL puts that rival's car on the lift, zoomed in. */
     private val showcase = game.shots?.let { System.getProperty("pixelstrip.showcase") }?.let { id -> game.career.rivals.first { it.id == id }.asCar() }
-    private val owned get() = showcase ?: save.cars[index]
+    private val owned get() = showcase ?: save.cars[index.coerceAtMost(save.cars.size - 1)]
     private val def get() = game.car(owned.carId)
 
     private fun cycle(d: Int) {
@@ -112,7 +124,7 @@ class GarageScreen(game: PixelStrip) : MenuScreen(game) {
     }
 
     override fun onBack() {
-        if (dailyOpen) game.dailyDismissed = true else game.go(0) { TitleScreen(game) }
+        if (refundOpen) dismissRefund() else if (dailyOpen) game.dailyDismissed = true else game.go(0) { TitleScreen(game) }
     }
 
     override fun layout(w: Int, h: Int) {
@@ -142,8 +154,10 @@ class GarageScreen(game: PixelStrip) : MenuScreen(game) {
         next.apply { x = w / 2f + 74f; y = 52f; this.w = 22f; this.h = 22f; visible = save.cars.size > 1 }
         claim.apply { x = w / 2f - 60f; y = h / 2f - 58f; this.w = 120f; this.h = 30f; visible = dailyOpen && claimedTime <= 0f }
         later.apply { x = w / 2f + 70f; y = h / 2f - 52f; this.w = 54f; this.h = 18f; visible = dailyOpen && claimedTime <= 0f }
-        // while the reward is up, it's the only thing to press
+        gotIt.apply { x = w / 2f - 60f; y = h / 2f - 90f; this.w = 120f; this.h = 22f; visible = refundOpen }
+        // while the reward (or the refund notice) is up, it's the only thing to press
         if (dailyOpen) for (b in controls.buttons) if (b !== claim && b !== later) b.visible = false
+        if (refundOpen) for (b in controls.buttons) if (b !== gotIt) b.visible = false
     }
 
     private fun bgX(w: Int) = floor((w - bg.width) / 2f)
@@ -252,6 +266,62 @@ class GarageScreen(game: PixelStrip) : MenuScreen(game) {
             font.drawCentered(batch, text, w / 2f, h / 2f + 45f, YELLOW, 1, null)
         }
         drawDaily(w, h)
+        drawRefund(w, h)
+    }
+
+    /** The roster changed: every car (or part) that left the game, what it paid back, and a tow-truck keys tag. */
+    private fun drawRefund(w: Int, h: Int) {
+        if (!refundOpen) return
+        batch.setColor(0f, 0f, 0.02f, 0.7f)
+        batch.draw(white, 0f, 0f, w.toFloat(), h.toFloat())
+        batch.color = Color.WHITE
+        val rows = save.refundNotice.map { it.substringBefore('|') to (it.substringAfter('|').toLongOrNull() ?: 0L) }
+        val shown = rows.take(5)
+        val pw = 340f
+        val ph = 140f + shown.size * 11f
+        val px = w / 2f - pw / 2f
+        val py = h / 2f - 92f
+        panel(px, py, pw, ph, YELLOW, 0.96f)
+        drawKeyTag(px + 14f, py + ph - 38f)
+        drawKeyTag(px + pw - 38f, py + ph - 38f)
+        font.drawCentered(batch, "THE LOT CHANGED", w / 2f, py + ph - 22f, YELLOW, 2)
+        font.drawCentered(batch, "THESE LEFT THE GAME. YOU GOT EVERY DOLLAR BACK:", w / 2f, py + ph - 48f, SOFT)
+        shown.forEachIndexed { i, (name, pay) ->
+            val y = py + ph - 64f - i * 11f
+            font.draw(batch, name.take(30), px + 14f, y, Color.WHITE)
+            val cash = "+$" + "%,d".format(pay)
+            font.draw(batch, cash, px + pw - 14f - font.width(cash), y, GREEN)
+        }
+        if (rows.size > shown.size) font.draw(batch, "AND ${rows.size - shown.size} MORE", px + 14f, py + ph - 64f - shown.size * 11f, SOFT)
+        val total = "TOTAL +$" + "%,d".format(rows.sumOf { it.second })
+        font.drawCentered(batch, total, w / 2f, py + 52f, GREEN, 2)
+        font.drawCentered(batch, "THE PRICE PAID, EVERY PART, PAINT AND LOOKS.", w / 2f, py + 40f, SOFT)
+        font.drawCentered(batch, "THE DEALER HAS A WHOLE NEW LOT.", w / 2f, py + 30f, CYAN)
+    }
+
+    /** A pixel key on a paper tag, the way the dealer hands them over. */
+    private fun drawKeyTag(x: Float, y: Float) {
+        batch.color = KEY_TAG
+        batch.draw(white, x, y + 6f, 12f, 16f)
+        batch.color = KEY_TAG_SHADE
+        batch.draw(white, x + 11f, y + 6f, 1f, 16f)
+        batch.draw(white, x, y + 6f, 12f, 1f)
+        batch.color = KEY_RING
+        batch.draw(white, x + 4f, y + 18f, 4f, 2f)
+        batch.draw(white, x + 9f, y + 21f, 6f, 1f)
+        batch.color = KEY_STEEL
+        batch.draw(white, x + 14f, y + 18f, 6f, 6f)         // key head
+        batch.draw(white, x + 16f, y + 2f, 2f, 16f)          // blade
+        batch.draw(white, x + 18f, y + 4f, 2f, 2f)          // teeth
+        batch.draw(white, x + 18f, y + 8f, 2f, 1f)
+        batch.color = KEY_HOLE
+        batch.draw(white, x + 16f, y + 20f, 2f, 2f)
+        batch.color = Color.WHITE
+        batch.draw(white, x + 15f, y + 23f, 2f, 1f)         // glint
+        batch.color = KEY_INK
+        batch.draw(white, x + 2f, y + 14f, 8f, 1f)          // writing on the tag
+        batch.draw(white, x + 2f, y + 11f, 6f, 1f)
+        batch.color = Color.WHITE
     }
 
     companion object {
@@ -259,5 +329,11 @@ class GarageScreen(game: PixelStrip) : MenuScreen(game) {
         const val LAMP_Y = 270f - 58f
         const val GROUND = 270f - 232f
         val AMBIENT = Color(0.5f, 0.48f, 0.66f, 1f)
+        private val KEY_TAG = Color(0.93f, 0.86f, 0.62f, 1f)
+        private val KEY_TAG_SHADE = Color(0.7f, 0.6f, 0.38f, 1f)
+        private val KEY_RING = Color(0.7f, 0.72f, 0.78f, 1f)
+        private val KEY_STEEL = Color(0.78f, 0.8f, 0.86f, 1f)
+        private val KEY_HOLE = Color(0.2f, 0.18f, 0.3f, 1f)
+        private val KEY_INK = Color(0.35f, 0.25f, 0.4f, 1f)
     }
 }

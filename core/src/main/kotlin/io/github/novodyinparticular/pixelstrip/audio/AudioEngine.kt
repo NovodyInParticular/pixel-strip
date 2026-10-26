@@ -54,12 +54,13 @@ class AudioEngine(private val settings: Settings) : Disposable {
         e.active = true
         e.layout = def.engineLayout
         e.cylinders = def.cylinders
+        e.vtecRpm = def.vtecRpm
         e.rpm = car.rpm
         e.redline = def.redline
         e.throttle = car.throttle
         e.limiter = car.limiter
         e.turbo = def.boostGain > 0f || def.stockTurbo
-        e.boost = if (def.boostGain > 0f) car.boost else if (def.stockTurbo) (car.throttle * ((car.rpm - 2800f) / 2500f)).coerceIn(0f, 1f) else 0f
+        e.boost = car.boost
         e.blower = (def.blowerGain * 2f).coerceAtMost(1f)
         e.exhaust = exhaustTier / 4f
         e.nitrous = car.nitrousActive && car.throttle > 0f
@@ -73,6 +74,7 @@ class AudioEngine(private val settings: Settings) : Disposable {
         e.active = true
         e.layout = def.engineLayout
         e.cylinders = def.cylinders
+        e.vtecRpm = def.vtecRpm
         e.rpm = rpm
         e.redline = def.redline
         e.throttle = throttle

@@ -1,0 +1,47 @@
+{
+  "id": "mamba",
+  "name": "Mamba 427",
+  "brand": "Carver",
+  "year": 1965,
+  "era": "classic",
+  "price": 300000,
+  "dealer": false,
+  "hp": 425,
+  "powerRating": "gross",
+  "peakHpRpm": 6000,
+  "torqueNm": 651,
+  "peakTorqueRpm": 3700,
+  "idleRpm": 800,
+  "redline": 6500,
+  "weightKg": 1147,
+  "drivetrain": "RWD",
+  "rearWeight": 0.48,
+  "wheelbaseM": 2.286,
+  "cgHeightM": 0.46,
+  "gears": [
+    2.36,
+    1.61,
+    1.2,
+    1.0
+  ],
+  "finalDrive": 3.54,
+  "shiftTime": 0.3,
+  "clutchTime": 0.32,
+  "clutchTorque": 1.5,
+  "tireRadiusM": 0.33,
+  "grip": 0.84,
+  "engineInertia": 0.4,
+  "wheelInertia": 2.4,
+  "dragArea": 0.85,
+  "nitrous": {
+    "hp": 0,
+    "charges": 0,
+    "seconds": 0
+  },
+  "defaultPaint": 9,
+  "engine": {
+    "layout": "v8",
+    "cylinders": 8,
+    "stockTurbo": false
+  }
+}

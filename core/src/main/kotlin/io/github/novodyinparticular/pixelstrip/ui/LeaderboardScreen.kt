@@ -151,7 +151,7 @@ class LeaderboardScreen(game: PixelStrip) : MenuScreen(game) {
             }
             font.draw(batch, right, px + pw - 8f - font.width(right), y, c, 1, null)
             if (tab == Tab.QUICKEST && pw > 380f) {
-                val car = r.car?.let { id -> runCatching { game.car(id).name.uppercase() }.getOrNull() } ?: ""
+                val car = r.car?.let { game.carName(it) } ?: ""
                 val mph = if (game.settings.metric) "%.0f KMH".format(r.mph * 1.60934f) else "%.0f MPH".format(r.mph)
                 font.draw(batch, car.take(14), px + pw * 0.5f, y, SOFT, 1, null)
                 font.draw(batch, mph, px + pw - 8f - font.width(right) - 12f - font.width(mph), y, SOFT, 1, null)
