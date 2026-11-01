@@ -256,17 +256,21 @@ def showroom():
 
 
 # district outlines on the career map (x, y from the top); the game draws the race nodes on top
-DISTRICTS = {        # inside x 84..556 so a 480-wide screen sees all of it
+DISTRICTS = {        # three columns, two rows; the map scrolls sideways to follow the selected race
     "street": [(92, 152), (300, 148), (304, 258), (88, 262)],
     "sport": [(92, 22), (296, 18), (300, 124), (88, 128)],
     "pro": [(340, 18), (548, 22), (552, 128), (336, 124)],
     "outlaw": [(336, 148), (552, 152), (548, 262), (340, 258)],
+    "half": [(592, 152), (800, 148), (804, 258), (588, 262)],
+    "legend": [(592, 22), (796, 18), (800, 124), (588, 128)],
 }
-DISTRICT_RAMPS = {"street": "yellow", "sport": "cyan", "pro": "magenta", "outlaw": "red"}
+DISTRICT_RAMPS = {"street": "yellow", "sport": "cyan", "pro": "magenta", "outlaw": "red", "half": "green", "legend": "orange"}
+MAP_W = 892
 
 
 def career_map():
     from common import poly_mask
+    W = MAP_W
     out = canvas(W, H)
     glow = canvas(W, H)
     for y in range(H):
@@ -297,7 +301,8 @@ def career_map():
             out[y, x] = P(ramp, 1)
             glow[y, x] = P(ramp, 1)
     # one neon road joining the districts in race order: street, sport, pro, outlaw
-    roads = [[(196, 150), (196, 126)], [(298, 70), (338, 70)], [(444, 126), (444, 150)]]
+    roads = [[(196, 150), (196, 126)], [(298, 70), (338, 70)], [(444, 126), (444, 150)], [(550, 206), (590, 206)],
+             [(696, 150), (696, 126)]]
     for road in roads:
         for (ax, ay), (bx, by) in zip(road, road[1:]):
             n = int(max(abs(bx - ax), abs(by - ay)))

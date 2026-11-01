@@ -29,7 +29,7 @@ class OwnedCar(
     val tune: Tune? get() = tunes.getOrNull(activeTune)
     val tuneName: String get() = tune?.name ?: "STOCK"
 
-    fun bestRun(tune: String, quarter: Boolean) = runs.filter { it.tune == tune && it.quarter == quarter }.minByOrNull { it.et }
+    fun bestRun(tune: String, dist: Int) = runs.filter { it.tune == tune && it.dist == dist }.minByOrNull { it.et }
 
     fun logRun(r: RunRecord) {
         runs.add(r)
@@ -43,7 +43,8 @@ class OwnedCar(
 }
 
 /** One test-n-tune pass. */
-data class RunRecord(val tune: String, val quarter: Boolean, val et: Float, val sixty: Float, val trapMph: Float, val rt: Float)
+/** [dist] is a [io.github.novodyinparticular.pixelstrip.race.Distance] ordinal. */
+data class RunRecord(val tune: String, val dist: Int, val et: Float, val sixty: Float, val trapMph: Float, val rt: Float)
 
 /**
  * The local save: cash and the garage. Written atomically (temp file, then move) so a crash
@@ -125,7 +126,8 @@ class SaveGame(private val file: FileHandle) {
             for (r in c.runs) {
                 val ro = JsonValue(JsonValue.ValueType.`object`)
                 ro.addChild("tune", JsonValue(r.tune))
-                ro.addChild("q", JsonValue(r.quarter))
+                ro.addChild("q", JsonValue(r.dist == 1))
+                ro.addChild("d", JsonValue(r.dist.toLong()))
                 ro.addChild("et", JsonValue(r.et.toDouble()))
                 ro.addChild("s60", JsonValue(r.sixty.toDouble()))
                 ro.addChild("mph", JsonValue(r.trapMph.toDouble()))
@@ -290,7 +292,7 @@ class SaveGame(private val file: FileHandle) {
                 o.get("cosmetics")?.forEach { cos[it.name] = it.asInt() }
                 val tunes = o.get("tunes")?.map { tuneFrom(it) }?.toMutableList() ?: mutableListOf()
                 val runs = o.get("runs")?.map {
-                    RunRecord(it.getString("tune"), it.getBoolean("q"), it.getFloat("et"), it.getFloat("s60"), it.getFloat("mph"), it.getFloat("rt", 0f))
+                    RunRecord(it.getString("tune"), it.getInt("d", if (it.getBoolean("q")) 1 else 0), it.getFloat("et"), it.getFloat("s60"), it.getFloat("mph"), it.getFloat("rt", 0f))
                 }?.toMutableList() ?: mutableListOf()
                 save.cars.add(OwnedCar(o.getString("uid"), o.getString("car"), o.getInt("paint", 0), parts, cos, tunes,
                     o.getInt("activeTune", -1), runs, o.get("dyno")?.asFloatArray(), ints(o.get("owned"))))

@@ -7,6 +7,12 @@ import com.badlogic.gdx.math.MathUtils
  * shift and spray. [skill] 0..1 tightens the reaction, launch RPM and shift timing.
  */
 class AutoDriver(private val car: Vehicle, private val skill: Float, private val trackGrip: Float) {
+    private companion object {
+        /** Tyre slip (m/s) where a good driver lifts a little, and how far. */
+        const val PEDAL_SLIP = 6f
+        const val PEDAL = 0.8f
+    }
+
     private val reaction = MathUtils.lerp(0.42f, 0.17f, skill) + MathUtils.random(-0.04f, 0.04f)
     private val launchError = MathUtils.random(-1f, 1f) * MathUtils.lerp(0.2f, 0.03f, skill)
     private val shiftError = FloatArray(car.def.gears.size) { MathUtils.random(-1f, 1f) * MathUtils.lerp(0.09f, 0.012f, skill) }
@@ -44,8 +50,11 @@ class AutoDriver(private val car: Vehicle, private val skill: Float, private val
             Vehicle.Mode.LAUNCH, Vehicle.Mode.DRIVE, Vehicle.Mode.SHIFT -> {
                 if (car.mode == Vehicle.Mode.DRIVE && car.gear < car.def.gears.size - 1 &&
                     car.rpm >= car.shiftPoints[car.gear] * (1f + shiftError[car.gear])) wantsShift = true
-                if (car.gear >= 1 && car.mode == Vehicle.Mode.DRIVE) wantsNitrous = true
-                1f
+                // a sharp driver waits for the tyres to hook before spraying; a sloppy one sprays in first
+                val hooked = !car.spinning || car.slipSpeed < 1.5f
+                if (car.mode == Vehicle.Mode.DRIVE && hooked && (car.gear >= 1 || skill < 0.45f)) wantsNitrous = true
+                // and pedals it when the tyres go up in smoke, instead of sitting on the limiter
+                if (skill > 0.6f && car.spinning && car.slipSpeed > PEDAL_SLIP) PEDAL else 1f
             }
         }
     }

@@ -39,7 +39,19 @@ class UpgradeScreen(game: PixelStrip) : MenuScreen(game) {
     private val prevGroup = button("<", Color(BTN_PURPLE), keys = intArrayOf(Input.Keys.Q, Input.Keys.LEFT)) { pickGroup(-1) }
     private val nextGroup = button(">", Color(BTN_PURPLE), keys = intArrayOf(Input.Keys.E, Input.Keys.RIGHT)) { pickGroup(1) }
     private val slotButtons = List(MAX_SLOTS) { i -> button("", BTN_GREY) { pickSlot(i) } }
-    private val optButtons = List(MAX_OPTIONS) { i -> button("", BTN_GREY) { row()?.let { r -> visible(r).getOrNull(i)?.let { optSel = it } } } }
+    private val optButtons = List(MAX_OPTIONS) { i -> button("", BTN_GREY) { row()?.let { r -> visible(r).getOrNull(optTop + i)?.let { optSel = it } } } }
+    /** The first option shown when a slot has more than fit (the swaps): the list follows the selection, a row ahead. */
+    private var optTop = 0
+
+    private fun scrollTo(n: Int, pos: Int) {
+        if (n <= MAX_OPTIONS) {
+            optTop = 0
+            return
+        }
+        if (pos <= optTop) optTop = pos - 1
+        if (pos >= optTop + MAX_OPTIONS - 1) optTop = pos - MAX_OPTIONS + 2
+        optTop = optTop.coerceIn(0, n - MAX_OPTIONS)
+    }
     private val buy = button("BUY", BTN_RED, big = true, keys = intArrayOf(Input.Keys.ENTER)) { purchase() }
     private val back = button("BACK", BTN_GREY, keys = intArrayOf(Input.Keys.B)) { onBack() }
 
@@ -163,8 +175,9 @@ class UpgradeScreen(game: PixelStrip) : MenuScreen(game) {
         }
         val r = row()
         val n = r?.let { visible(it).size } ?: 0
+        scrollTo(n, r?.let { visible(it).indexOf(optSel) } ?: 0)
         optButtons.forEachIndexed { i, b ->
-            b.visible = i < n
+            b.visible = i < n - optTop
             b.x = w - 178f
             val tight = n > LONG_LIST
             b.y = h - 70f - i * (if (tight) 13f else 17f)
@@ -238,9 +251,17 @@ class UpgradeScreen(game: PixelStrip) : MenuScreen(game) {
         }
         val r = row() ?: return
         val shown = visible(r)
-        for (k in 0 until min(shown.size, MAX_OPTIONS)) {
+        if (optTop > 0) {
+            val above = "+$optTop MORE"
+            font.draw(batch, above, optButtons[0].x + optButtons[0].w - 4f - font.width(above), optButtons[0].y + optButtons[0].h + 3f, SOFT, 1, null)
+        }
+        if (shown.size - optTop > MAX_OPTIONS) {
+            val last = optButtons[MAX_OPTIONS - 1]
+            font.draw(batch, "+${shown.size - optTop - MAX_OPTIONS} MORE", last.x + 4f, last.y - 9f, SOFT, 1, null)
+        }
+        for (k in 0 until min(shown.size - optTop, MAX_OPTIONS)) {
             val b = optButtons[k]
-            val i = shown[k]
+            val i = shown[optTop + k]
             val sel = i == optSel
             if (sel) panel(b.x - 2f, b.y - 2f, b.w + 4f, b.h + 4f, YELLOW, 0f)
             val ty = b.y + if (b.h < 15f) 3f else 4f

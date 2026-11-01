@@ -96,9 +96,9 @@ Engine swaps (what each kit stands in for, and which chassis take it):
 
 | Swap | Real engine | Fits |
 |---|---|---|
-| K-SERIES (K24/K20 HYBRID) | Honda K24/K20 'frankenstein' hybrid | kite, kite_ef, kite_rx, kite_sol, arrow |
+| K-SERIES (K24/K20 HYBRID) | Honda K24/K20 'frankenstein' hybrid | kite, kite_ef, kite_rx, kite_sol, arrow, overture, tenshi |
 | B18C TYPE R | Honda B18C (Integra Type R) | kite, kite_ef, kite_rx, kite_sol |
-| H22A | Honda H22A (Prelude) | kite, kite_ef, kite_sol |
+| H22A | Honda H22A (Prelude) | kite, kite_ef, kite_rx, kite_sol, arrow |
 | RB26DETT TWIN TURBO | Nissan RB26DETT (Skyline GT-R) | sylph_13, sylph_15, sylph_180 |
 | 2JZ-GTE TWIN TURBO | Toyota 2JZ-GTE (Supra MK4) | sylph_13, sylph_15, sylph_180 |
 | LS1 5.7 V8 | GM LS1 5.7 | spiral_turbo, spiral_r, sylph_13, sylph_15, sylph_180, tsunami |
@@ -107,4 +107,11 @@ Engine swaps (what each kit stands in for, and which chassis take it):
 | 13B-REW SEQUENTIAL TWIN TURBO | Mazda 13B-REW (FD RX-7) | spiral_turbo, prairie |
 | 13B-T TURBO II | Mazda 13B-T (FC RX-7 Turbo II) | prairie |
 | 20B-REW 3-ROTOR TWIN TURBO | Mazda 20B-REW (Eunos Cosmo) | prairie, spiral_r, spiral_turbo |
+| D16Z6 SOHC VTEC | Honda D16Z6 (EG Civic Si SOHC VTEC) | kite, kite_ef, kite_rx, kite_sol |
+| B16A DOHC VTEC | Honda B16A (JDM Civic SiR / CRX) | kite, kite_ef, kite_rx, kite_sol |
+| LS/VTEC (B18B + VTEC HEAD) | Honda LS/VTEC hybrid (B18B1 block + B16/B18C head) | kite, kite_ef, kite_rx, kite_sol, arrow |
+| B20 VTEC (B20B + VTEC HEAD) | Honda B20 VTEC hybrid (CR-V B20B block + VTEC head) | kite, kite_ef, kite_rx, kite_sol, arrow |
+| K20A TYPE R | Honda K20A (JDM Civic/Integra Type R) | kite, kite_ef, kite_rx, kite_sol, arrow, overture |
+| F20C (S2000) | Honda F20C (S2000) | kite, kite_ef, kite_rx, kite_sol, arrow |
+| J32A2 V6 TYPE S | Honda J32A2 (Acura TL Type S) | kite, kite_rx, arrow, overture |
 | 26B 4-ROTOR, BRIDGE PORTED | Mazda 26B 4-rotor (787B-style) | prairie, spiral_r, spiral_turbo |

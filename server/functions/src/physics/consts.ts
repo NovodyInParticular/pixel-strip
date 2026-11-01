@@ -1,5 +1,5 @@
 /** Vehicle.kt's companion constants. */
-export const SPLITS_M = [18.288, 100.584, 201.168, 304.8, 402.336];
+export const SPLITS_M = [18.288, 100.584, 201.168, 304.8, 402.336, 804.672];
 export const LEAVE_M = 0.06;
 export const AIR_DENSITY = 1.2;
 export const ROLLING = 0.015;

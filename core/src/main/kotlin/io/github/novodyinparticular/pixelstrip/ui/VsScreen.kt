@@ -105,11 +105,12 @@ class VsScreen(game: PixelStrip, private val rival: Career.Rival, private val pi
         // the two cars' numbers
         val mineDef = game.effective(mine)
         val theirDef = game.effective(theirs)
-        val q = tier.quarter
-        fun et(d: io.github.novodyinparticular.pixelstrip.data.CarDef) = DragMath.perfectPass(d).let { if (q) it.quarter else it.eighth }
+        val q = game.career.distanceOf(rival)
+        fun et(d: io.github.novodyinparticular.pixelstrip.data.CarDef) =
+            DragMath.perfectEt(d, q, if (d === theirDef) io.github.novodyinparticular.pixelstrip.race.RivalPace.scale(game, rival) else 1f)
         font.draw(batch, "YOU", 8f, h - 24f, CYAN, 2)
         font.draw(batch, mineDef.name.uppercase(), 8f, h - 38f, SOFT)
-        font.draw(batch, "%s BEST %.2f".format(if (q) "1/4" else "1/8", et(mineDef)), 8f, h - 50f, YELLOW)
+        font.draw(batch, "%s BEST %.2f".format(q.short, et(mineDef)), 8f, h - 50f, YELLOW)
         font.draw(batch, theirDef.name.uppercase(), w - 112f - 8f - font.width(theirDef.name), h - 24f, SOFT)
         font.draw(batch, "%.2f".format(et(theirDef)), w - 112f - 8f - font.width("0.00"), h - 36f, YELLOW)
         if (talking) {

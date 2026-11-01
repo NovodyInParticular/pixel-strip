@@ -469,7 +469,7 @@ class Vehicle(val def: CarDef, private val powerScale: Float = 1f) {
 
     companion object {
         /** 60 ft, 330 ft, 1/8 mile, 1000 ft, 1/4 mile. */
-        val SPLITS_M = floatArrayOf(18.288f, 100.584f, 201.168f, 304.8f, 402.336f)
+        val SPLITS_M = floatArrayOf(18.288f, 100.584f, 201.168f, 304.8f, 402.336f, 804.672f)
         const val LEAVE_M = 0.06f   // rollout before the stage beam clears
         const val AIR_DENSITY = 1.2f
         const val ROLLING = 0.015f

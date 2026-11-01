@@ -333,7 +333,7 @@
     "type": "race",
     "t": 30000,
     "uid": "c1",
-    "rival": "tiny",
+    "rival": "deuce",
     "won": true,
     "pink": false
    },
@@ -341,17 +341,53 @@
     "type": "race",
     "t": 40000,
     "uid": "c1",
+    "rival": "lupe",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "race",
+    "t": 50000,
+    "uid": "c1",
+    "rival": "nina",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "race",
+    "t": 60000,
+    "uid": "c1",
+    "rival": "tiny",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "race",
+    "t": 70000,
+    "uid": "c1",
+    "rival": "rico",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "race",
+    "t": 80000,
+    "uid": "c1",
     "rival": "joe",
     "won": true,
     "pink": false
    }
   ],
   "expect": {
-   "cash": 30000,
+   "cash": 53500,
    "beaten": [
     "dash",
     "kat",
+    "deuce",
+    "lupe",
+    "nina",
     "tiny",
+    "rico",
     "joe"
    ],
    "cars": [
@@ -380,7 +416,7 @@
      "paint": 12
     }
    ],
-   "xp": 650,
+   "xp": 1050,
    "refused": []
   }
  },
@@ -412,7 +448,7 @@
     "type": "race",
     "t": 30000,
     "uid": "c1",
-    "rival": "tiny",
+    "rival": "deuce",
     "won": true,
     "pink": false
    },
@@ -420,7 +456,7 @@
     "type": "race",
     "t": 40000,
     "uid": "c1",
-    "rival": "joe",
+    "rival": "lupe",
     "won": true,
     "pink": false
    },
@@ -428,14 +464,46 @@
     "type": "race",
     "t": 50000,
     "uid": "c1",
+    "rival": "nina",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "race",
+    "t": 60000,
+    "uid": "c1",
+    "rival": "tiny",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "race",
+    "t": 70000,
+    "uid": "c1",
+    "rival": "rico",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "race",
+    "t": 80000,
+    "uid": "c1",
+    "rival": "joe",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "race",
+    "t": 90000,
+    "uid": "c1",
     "rival": "joe",
     "won": true,
     "pink": false
    }
   ],
   "expect": {
-   "cash": 38000,
-   "xp": 750,
+   "cash": 59500,
+   "xp": 1150,
    "cars": [
     {
      "uid": "c1",
@@ -492,7 +560,7 @@
     "type": "race",
     "t": 30000,
     "uid": "c1",
-    "rival": "tiny",
+    "rival": "deuce",
     "won": true,
     "pink": false
    },
@@ -500,18 +568,50 @@
     "type": "race",
     "t": 40000,
     "uid": "c1",
+    "rival": "lupe",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "race",
+    "t": 50000,
+    "uid": "c1",
+    "rival": "nina",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "race",
+    "t": 60000,
+    "uid": "c1",
+    "rival": "tiny",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "race",
+    "t": 70000,
+    "uid": "c1",
+    "rival": "rico",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "race",
+    "t": 80000,
+    "uid": "c1",
     "rival": "joe",
     "won": true,
     "pink": false
    },
    {
     "type": "sell",
-    "t": 50000,
+    "t": 90000,
     "uid": "c2"
    }
   ],
   "expect": {
-   "cash": 47040,
+   "cash": 70540,
    "cars": [
     {
      "uid": "c1",
@@ -791,7 +891,7 @@
     "type": "race",
     "t": 30000,
     "uid": "c1",
-    "rival": "tiny",
+    "rival": "deuce",
     "won": true,
     "pink": false
    },
@@ -802,7 +902,7 @@
    }
   ],
   "expect": {
-   "cash": 3000,
+   "cash": 4000,
    "cars": [
     {
      "uid": "c1",
@@ -1037,7 +1137,7 @@
     "type": "race",
     "t": 30000,
     "uid": "c1",
-    "rival": "tiny",
+    "rival": "deuce",
     "won": true,
     "pink": false
    },
@@ -1078,7 +1178,7 @@
    }
   ],
   "expect": {
-   "cash": 4000,
+   "cash": 5000,
    "cars": [
     {
      "uid": "c1",
@@ -1124,7 +1224,7 @@
     "type": "race",
     "t": 30000,
     "uid": "c1",
-    "rival": "tiny",
+    "rival": "deuce",
     "won": true,
     "pink": false
    },
@@ -1158,7 +1258,7 @@
    }
   ],
   "expect": {
-   "cash": 4000,
+   "cash": 5000,
    "refused": [
     7
    ]
@@ -1470,7 +1570,7 @@
     "type": "race",
     "t": 30000,
     "uid": "c1",
-    "rival": "tiny",
+    "rival": "deuce",
     "won": true,
     "pink": false
    },
@@ -1478,7 +1578,7 @@
     "type": "race",
     "t": 40000,
     "uid": "c1",
-    "rival": "joe",
+    "rival": "lupe",
     "won": true,
     "pink": false
    },
@@ -1486,7 +1586,7 @@
     "type": "race",
     "t": 50000,
     "uid": "c1",
-    "rival": "vega",
+    "rival": "nina",
     "won": true,
     "pink": false
    },
@@ -1494,7 +1594,7 @@
     "type": "race",
     "t": 60000,
     "uid": "c1",
-    "rival": "hollis",
+    "rival": "tiny",
     "won": true,
     "pink": false
    },
@@ -1502,7 +1602,7 @@
     "type": "race",
     "t": 70000,
     "uid": "c1",
-    "rival": "mika",
+    "rival": "rico",
     "won": true,
     "pink": false
    },
@@ -1510,28 +1610,92 @@
     "type": "race",
     "t": 80000,
     "uid": "c1",
+    "rival": "joe",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "race",
+    "t": 90000,
+    "uid": "c1",
+    "rival": "kenji",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "race",
+    "t": 100000,
+    "uid": "c1",
+    "rival": "juno",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "race",
+    "t": 110000,
+    "uid": "c1",
+    "rival": "dani",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "race",
+    "t": 120000,
+    "uid": "c1",
+    "rival": "vega",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "race",
+    "t": 130000,
+    "uid": "c1",
+    "rival": "hollis",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "race",
+    "t": 140000,
+    "uid": "c1",
+    "rival": "mika",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "race",
+    "t": 150000,
+    "uid": "c1",
+    "rival": "tank",
+    "won": true,
+    "pink": false
+   },
+   {
+    "type": "race",
+    "t": 160000,
+    "uid": "c1",
     "rival": "rotor",
     "won": true,
     "pink": false
    },
    {
     "type": "find",
-    "t": 91000,
+    "t": 180000,
     "car": "prairie"
    },
    {
     "type": "find",
-    "t": 91000,
+    "t": 180000,
     "car": "prairie"
    },
    {
     "type": "find",
-    "t": 91000,
+    "t": 180000,
     "car": "kite"
    }
   ],
   "expect": {
-   "cash": 167000,
+   "cash": 298500,
    "found": [
     "prairie"
    ],
@@ -1592,8 +1756,8 @@
    ],
    "refused": [
     1,
-    11,
-    12
+    19,
+    20
    ]
   }
  },

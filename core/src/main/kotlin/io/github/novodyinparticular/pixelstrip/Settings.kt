@@ -16,6 +16,8 @@ class Settings {
     var metric: Boolean = prefs.getBoolean("metric", false)
     /** Race from the driver's seat (the first-person view) instead of the side view. */
     var cockpit: Boolean = prefs.getBoolean("cockpit", false)
+    /** Career rivals' cars are paced to the player's build so races come down to driving (race/RivalPace). */
+    var closeRacing: Boolean = prefs.getBoolean("closeRacing", true)
 
     fun save() {
         prefs.putString("quality", quality.name)
@@ -24,6 +26,7 @@ class Settings {
         prefs.putBoolean("vibration", vibration)
         prefs.putBoolean("metric", metric)
         prefs.putBoolean("cockpit", cockpit)
+        prefs.putBoolean("closeRacing", closeRacing)
         prefs.flush()
     }
 }

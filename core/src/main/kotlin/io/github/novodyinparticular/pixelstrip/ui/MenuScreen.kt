@@ -185,6 +185,8 @@ abstract class MenuScreen(protected val game: PixelStrip) : ScreenAdapter() {
         "OUTLAW" -> RED
         "PRO" -> PINK
         "SPORT" -> CYAN
+        "HALF MILE" -> GREEN
+        "LEGENDS" -> ORANGE
         else -> YELLOW
     }
 

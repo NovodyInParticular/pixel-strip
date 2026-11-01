@@ -65,6 +65,9 @@ class EngineVoice(private val synth: Synth) {
     private var lastThrottle = 0f
     private var hissLp = 0f
     private var cam = 0f
+    private var camOn = false
+    private var camKick = 0f
+    private var howl = 0.0
     private var lope = 0.0
     private var bang = 0f
     private var bangLp = 0f
@@ -143,10 +146,13 @@ class EngineVoice(private val synth: Synth) {
             val depth = if (layout == "flat4") 0.35f else 0.45f * snd.lope * idleness
             pulse *= 1f - depth * 0.6f + depth * sin(2 * PI * lope).toFloat()
         }
-        // the cam switching over: an audible step up in rasp and brightness, on the gas
+        // the cam switching over: a hard step up in volume, rasp, brightness and intake howl, on the gas.
+        // The switch is near instant (it's an oil-pressure spool), so it lands as a kick, not a fade.
         val camTarget = if (vtecRpm > 0f && r > vtecRpm && thr > 0.5f) 1f else 0f
-        cam += (camTarget - cam) * 0.003f
-        val rasp = baseRasp() + snd.rasp * 0.6f + 0.25f * cam
+        cam += (camTarget - cam) * 0.01f
+        if (camTarget > 0f && !camOn) camKick = 1f
+        camOn = camTarget > 0f
+        val rasp = baseRasp() + snd.rasp * 0.6f + 0.6f * cam
         var s = pulse + synth.noise() * pulse * (0.25f + 0.45f * snd.loud + rasp) * (0.3f + thr)
 
         // the limiter: ignition cut and back, bouncing ~14 times a second, crackling
@@ -156,18 +162,30 @@ class EngineVoice(private val synth: Synth) {
             s *= if (bounce < 0.45) 0.12f + (if (synth.noise() > 0.6f) 0.6f else 0f) else 1f
         } else bounce = 0.0
 
-        val cutoff = 180f + r * (if (rotary) 0.4f else 0.32f) + thr * 900f + snd.loud * 700f + bright() + cam * 800f
-        val q = 0.55f - snd.loud * 0.22f - cam * 0.12f
+        val cutoff = 180f + r * (if (rotary) 0.4f else 0.32f) + thr * 900f + snd.loud * 700f + bright() + cam * 2400f
+        val q = 0.55f - snd.loud * 0.22f - cam * 0.2f
         var y = filter.run(s, cutoff, q, rate) + filter.band * (0.15f + 0.3f * snd.loud + (if (rotary) 0.1f * (cylinders - 2) else 0f))
         val dc = y - dcIn + 0.995f * dcOut                   // DC blocker
         dcIn = y
         dcOut = dc
-        y = dc * (0.35f + 0.65f * thr) * (0.8f + 0.45f * snd.loud)
+        y = dc * (0.35f + 0.65f * thr) * (0.8f + 0.45f * snd.loud) * (1f + 0.4f * cam)
 
-        // --- induction: a growl that rides the throttle -------------------------------------------
-        if (snd.growl > 0f) {
-            intake.run(synth.noise() * (0.4f + pulse), 260f + r * 0.11f, 0.35f, rate)
-            y += intake.band * snd.growl * thr * 0.22f
+        // --- induction: a growl that rides the throttle; past the VTEC crossover the intake howls -------
+        val growl = snd.growl + 0.8f * cam
+        if (growl > 0f) {
+            intake.run(synth.noise() * (0.4f + pulse), 260f + r * 0.11f + cam * 900f, 0.35f - 0.15f * cam, rate)
+            y += intake.band * growl * thr * 0.22f
+        }
+        if (cam > 0.01f) {
+            // the high cam's howl: the firing frequency's second harmonic, singing over the pulses
+            howl += cycleHz * firings * 2.0 / rate
+            if (howl >= 1.0) howl -= 1.0
+            y += (sin(2 * PI * howl) + 0.35 * sin(4 * PI * howl)).toFloat() * cam * thr * 0.09f
+        }
+        if (camKick > 0.001f) {
+            // the moment it hits: a short snarl of noise through the opened-up filter
+            y += synth.noise() * camKick * 0.22f * thr
+            camKick *= 0.9993f
         }
 
         // --- boost ------------------------------------------------------------------------------

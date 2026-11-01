@@ -14,6 +14,7 @@ import fx
 import icon
 import paint
 import portraits
+import rear
 import roster
 import scenes
 import track_neon
@@ -49,6 +50,7 @@ def main():
         scenes.build()
         portraits.build()
         cockpit.build()
+        rear.build()
 
     if preview_dir:
         # every car on one sheet, 3x, each in a different paint

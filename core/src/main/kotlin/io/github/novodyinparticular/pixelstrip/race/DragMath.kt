@@ -129,6 +129,25 @@ object DragMath {
 
     class Pass(val sixty: Float, val eighth: Float, val quarter: Float, val trapMph: Float)
 
+    private val etCache = HashMap<Triple<CarDef, Distance, Float>, Float>()
+
+    /** A perfect driver's ET over [dist], with the engine's torque scaled by [powerScale] (the rival pacing). */
+    fun perfectEt(def: CarDef, dist: Distance, powerScale: Float = 1f): Float = etCache.getOrPut(Triple(def, dist, powerScale)) {
+        if (powerScale == 1f && dist != Distance.HALF) return@getOrPut perfectPass(def).let { if (dist == Distance.QUARTER) it.quarter else it.eighth }
+        val car = Vehicle(def, powerScale)
+        car.prime(launchRpm(def, Vehicle.DEFAULT_PREP), 0.78f)
+        car.launch(0f, rate = false)
+        car.throttle = 1f
+        var t = 0f
+        while (car.x < dist.metres && t < 80f) {
+            if (car.mode == Vehicle.Mode.DRIVE && car.gear < def.gears.size - 1 && car.rpm >= car.shiftPoints[car.gear]) car.shift()
+            car.step(1f / 240f)
+            t += 1f / 240f
+        }
+        car.events.clear()
+        car.splits[dist.split].let { if (it < 0f) 99f else it }
+    }
+
     private val passCache = HashMap<CarDef, Pass>()
 
     /** A perfect driver's quarter mile on warm tyres: the basis for classes and the stat panels. */

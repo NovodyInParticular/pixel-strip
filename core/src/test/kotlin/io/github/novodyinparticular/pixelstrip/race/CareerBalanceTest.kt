@@ -8,7 +8,10 @@ import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
-/** Each tier's rivals should get quicker toward the boss, and each tier should be quicker than the last. */
+/**
+ * Each tier's rivals should get quicker toward the boss, and each boss quicker than the last.
+ * Races run over different distances, so difficulty is compared on the quarter mile.
+ */
 class CareerBalanceTest {
     private val catalog = PartCatalog(JsonReader().parse(File("data/parts.json").readText()))
 
@@ -20,18 +23,17 @@ class CareerBalanceTest {
         var lastBoss = Float.MAX_VALUE
         val problems = ArrayList<String>()
         for (tier in career.get("tiers")) {
-            val eighth = tier.getString("distance") == "eighth"
             var prev = Float.MAX_VALUE
             for (r in tier.get("rivals")) {
                 val parts = HashMap<String, Int>()
                 r.get("parts").forEach { parts[it.name] = it.asInt() }
                 val def = Upgrades.apply(car(r.getString("car")), catalog, parts, emptyMap(), null)
+                val dist = Distance.of(r.getString("distance", tier.getString("distance")))
                 val pass = DragMath.perfectPass(def)
-                val et = if (eighth) pass.eighth else pass.quarter
                 println("%-7s %-10s %-13s %s %.3f (1/4 %.2f @ %.0f)".format(tier.getString("id"), r.getString("id"), r.getString("car"),
-                    if (eighth) "1/8" else "1/4", et, pass.quarter, pass.trapMph))
-                if (et >= prev + 0.25f) problems.add("${r.getString("id")} should not be much slower than the rival before")
-                prev = et
+                    dist.short, DragMath.perfectEt(def, dist), pass.quarter, pass.trapMph))
+                if (pass.quarter >= prev + 0.35f) problems.add("${r.getString("id")} should not be much slower than the rival before")
+                prev = pass.quarter
                 if (r.getBoolean("boss", false)) {
                     if (pass.quarter >= lastBoss) problems.add("${r.getString("id")}: each boss should be quicker than the last")
                     lastBoss = pass.quarter

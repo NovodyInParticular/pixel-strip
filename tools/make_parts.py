@@ -74,11 +74,15 @@ ROTARIES = sorted(c for c, d in CARS.items() if d["engine"]["layout"] == "rotary
 # factory twin-turbo and sequential setups (the twin-to-single conversion)
 TWIN_TURBO = ["kaminari_mk1", "kaminari_mk2", "kaminari_mk3", "tsunami", "spiral_r", "typhoon"]
 
+# Honda chassis that take the B/D/K family: the Civics and del Sol, plus the Integra for the B/K/F swaps
+HONDA_SMALL = ["kite", "kite_ef", "kite_rx", "kite_sol"]
+HONDA_B = HONDA_SMALL + ["arrow"]
+
 # Swaps enthusiasts actually do, per platform. Every list needs a car: an empty carOnly fits every car.
 SWAPS = {
-    "k24": ["kite", "kite_ef", "kite_rx", "kite_sol", "arrow"],
+    "k24": ["kite", "kite_ef", "kite_rx", "kite_sol", "arrow", "overture", "tenshi"],
     "b18c": ["kite", "kite_ef", "kite_rx", "kite_sol"],
-    "h22": ["kite", "kite_ef", "kite_sol"],
+    "h22": ["kite", "kite_ef", "kite_rx", "kite_sol", "arrow"],
     "rb26": ["sylph_13", "sylph_15", "sylph_180"],
     "2jz": ["sylph_13", "sylph_15", "sylph_180"],
     "ls": ["spiral_turbo", "spiral_r", "sylph_13", "sylph_15", "sylph_180", "tsunami"],
@@ -88,6 +92,14 @@ SWAPS = {
     "13bt": ["prairie"],
     "20b": ROTARIES,
     "26b": ROTARIES,
+    # the classic Honda swaps (appended: the swap slot's option indices live in saves)
+    "d16z6": HONDA_SMALL,
+    "b16a": HONDA_SMALL,
+    "lsvtec": HONDA_B,
+    "b20vtec": HONDA_B,
+    "k20a": HONDA_B + ["overture"],
+    "f20c": HONDA_B,
+    "j32": ["kite", "kite_rx", "arrow", "overture"],
 }
 
 # What a swap puts in: replaces the car's engine numbers (net ratings). mass = the engine's kg; the
@@ -115,6 +127,20 @@ ENGINES = {
                  idleRpm=850, layout="rotary", cylinders=2, turbo=True, lag=0.75, spoolRpm=3200, mass=120),
     "20b": dict(name="20B-REW 3-ROTOR TWIN TURBO", hp=276, peakHpRpm=6500, torqueNm=402, peakTorqueRpm=3000, redline=8000,
                 idleRpm=850, layout="rotary", cylinders=3, turbo=True, lag=0.5, spoolRpm=2400, mass=150),
+    "d16z6": dict(name="D16Z6 SOHC VTEC", hp=125, peakHpRpm=6600, torqueNm=144, peakTorqueRpm=5200, redline=7200, idleRpm=750,
+                  layout="i4", cylinders=4, turbo=False, vtecRpm=5100, mass=112),
+    "b16a": dict(name="B16A DOHC VTEC", hp=160, peakHpRpm=7600, torqueNm=150, peakTorqueRpm=7000, redline=8200, idleRpm=800,
+                 layout="i4", cylinders=4, turbo=False, vtecRpm=5500, mass=120),
+    "lsvtec": dict(name="LS/VTEC (B18B + VTEC HEAD)", hp=205, peakHpRpm=7600, torqueNm=196, peakTorqueRpm=6600, redline=8200,
+                   idleRpm=800, layout="i4", cylinders=4, turbo=False, vtecRpm=5300, mass=128),
+    "b20vtec": dict(name="B20 VTEC (B20B + VTEC HEAD)", hp=215, peakHpRpm=7400, torqueNm=208, peakTorqueRpm=6200, redline=8000,
+                    idleRpm=800, layout="i4", cylinders=4, turbo=False, vtecRpm=5200, mass=130),
+    "k20a": dict(name="K20A TYPE R", hp=220, peakHpRpm=8000, torqueNm=206, peakTorqueRpm=7000, redline=8600, idleRpm=850,
+                 layout="i4", cylinders=4, turbo=False, vtecRpm=5800, mass=118),
+    "f20c": dict(name="F20C (S2000)", hp=240, peakHpRpm=8300, torqueNm=208, peakTorqueRpm=7500, redline=9000, idleRpm=900,
+                 layout="i4", cylinders=4, turbo=False, vtecRpm=6000, mass=125),
+    "j32": dict(name="J32A2 V6 TYPE S", hp=260, peakHpRpm=6100, torqueNm=315, peakTorqueRpm=3500, redline=6800, idleRpm=700,
+                layout="v6", cylinders=6, turbo=False, vtecRpm=4700, mass=165),
     "26b": dict(name="26B 4-ROTOR, BRIDGE PORTED", hp=520, peakHpRpm=8500, torqueNm=480, peakTorqueRpm=7000, redline=9500,
                 idleRpm=1100, layout="rotary", cylinders=4, turbo=False, mass=185),
 }
@@ -134,7 +160,9 @@ def swap(engine, price, info, brand, strength=0.0, **rules):
 
 # Swap kit names in the shop list (the engine's full name is in ENGINES)
 SHORT = {"k24": "K-SERIES", "b18c": "B18C", "h22": "H22", "rb26": "RB26", "2jz": "2JZ", "ls": "LS V8", "bb572": "572 BIG-BLOCK",
-         "coyote": "COYOTE V8", "13brew": "13B-REW", "13bt": "13B-T", "20b": "20B 3-ROTOR", "26b": "26B 4-ROTOR"}
+         "coyote": "COYOTE V8", "13brew": "13B-REW", "13bt": "13B-T", "20b": "20B 3-ROTOR", "26b": "26B 4-ROTOR",
+         "d16z6": "D16Z6", "b16a": "B16A", "lsvtec": "LS/VTEC", "b20vtec": "B20 VTEC", "k20a": "K20A TYPE R", "f20c": "F20C",
+         "j32": "J32 V6"}
 
 
 SLOTS = [
@@ -222,6 +250,13 @@ SLOTS = [
         swap("26b", 75000, "THE ULTIMATE: FOUR ROTORS TO 9,500 RPM", "ROTOHEAD",
              requiresAll=[["fuel", 2], ["ecu", 3], ["oilinject", 1]]),
         swap("13bt", 9000, "THE FC TURBO II'S 1.3 SINGLE-TURBO ROTARY", "ROTOHEAD"),
+        swap("d16z6", 2500, "CHEAP SOHC VTEC. A FIRST SWAP", "HASLER", strength=1.3),
+        swap("b16a", 6000, "THE ORIGINAL DOHC VTEC SCREAMER", "HASLER", strength=1.35),
+        swap("lsvtec", 8500, "B18B BLOCK, VTEC HEAD: TORQUE + REVS", "HASLER", strength=1.45, requiresAll=[["ecu", 1]]),
+        swap("b20vtec", 9500, "2.0 B20 BLOCK, VTEC HEAD. THE BIG B", "HASLER", strength=1.45, requiresAll=[["ecu", 1]]),
+        swap("k20a", 13000, "JDM TYPE R K20. VTEC AT 5,800", "HASLER", strength=1.7),
+        swap("f20c", 16000, "THE S2000 ENGINE. 9,000 RPM", "HASLER", strength=1.5),
+        swap("j32", 14000, "THE J-SWAP: TORQUEY VTEC V6", "HASLER", strength=1.6),
     ]),
     # --- ROTARY: only the Wankels take these ---------------------------------------------------------
     ("porting", "PORTING", "ROTARY", [
@@ -527,6 +562,9 @@ ENGINE_REFS = {
     "k24": "Honda K24/K20 'frankenstein' hybrid", "b18c": "Honda B18C (Integra Type R)", "h22": "Honda H22A (Prelude)",
     "rb26": "Nissan RB26DETT (Skyline GT-R)", "2jz": "Toyota 2JZ-GTE (Supra MK4)", "ls": "GM LS1 5.7", "bb572": "Chevrolet 572 big-block crate",
     "coyote": "Ford Coyote 5.0", "13brew": "Mazda 13B-REW (FD RX-7)", "13bt": "Mazda 13B-T (FC RX-7 Turbo II)", "20b": "Mazda 20B-REW (Eunos Cosmo)", "26b": "Mazda 26B 4-rotor (787B-style)",
+    "d16z6": "Honda D16Z6 (EG Civic Si SOHC VTEC)", "b16a": "Honda B16A (JDM Civic SiR / CRX)",
+    "lsvtec": "Honda LS/VTEC hybrid (B18B1 block + B16/B18C head)", "b20vtec": "Honda B20 VTEC hybrid (CR-V B20B block + VTEC head)",
+    "k20a": "Honda K20A (JDM Civic/Integra Type R)", "f20c": "Honda F20C (S2000)", "j32": "Honda J32A2 (Acura TL Type S)",
 }
 
 

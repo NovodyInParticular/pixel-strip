@@ -1,5 +1,6 @@
 package io.github.novodyinparticular.pixelstrip.race
 
+import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
@@ -92,7 +93,7 @@ class CockpitView(
             out.add(Thing(f, RIGHT_EDGE + WALL_GAP, Kind.FENCE, v = 1f))
             f += FENCE_M
         }
-        for ((at, label) in listOf(18.3f to "60'", 100.6f to "330'", 201.2f to "1/8", 304.8f to "1000'", 402.3f to "1/4")) {
+        for ((at, label) in listOf(18.3f to "60'", 100.6f to "330'", 201.2f to "1/8", 304.8f to "1000'", 402.3f to "1/4", 804.7f to "1/2")) {
             if (at <= finishM + 1f) out.add(Thing(at, RIGHT_EDGE + 1.2f, Kind.BOARD, label))
         }
         out.add(Thing(TREE_M, -LANE / 2f, Kind.TREE))                // between the lanes, just past the line
@@ -143,6 +144,20 @@ class CockpitView(
         }
     }
 
+    private val emptyRows = HashMap<String, Int>()
+
+    /** Transparent rows at the bottom of a layer image (read once). */
+    private fun emptyBelow(image: String): Int = emptyRows.getOrPut(image) {
+        val pm = com.badlogic.gdx.graphics.Pixmap(Gdx.files.internal(image))
+        var n = 0
+        rows@ for (y in pm.height - 1 downTo 0) {
+            for (x in 0 until pm.width) if (pm.getPixel(x, y) and 0xff != 0) break@rows
+            n++
+        }
+        pm.dispose()
+        n
+    }
+
     private var stuff: List<Thing> = emptyList()
     private var stuffFor = -1f
 
@@ -172,7 +187,9 @@ class CockpitView(
         }
         for (l in listOfNotNull(far, mid)) {
             val tex = art.tex(l.image)
-            val y = hz - 2f - (if (l === mid) 0f else 3f)
+            // stand each layer's buildings on the horizon: some side-view layers leave empty rows under them, which
+            // lifted the row off the ground and pushed tall buildings (the cathedral) up past the roof line
+            val y = hz - 2f - (if (l === mid) 0f else 3f) - emptyBelow(l.image)
             var x = -((time * l.drift * 2f) % tex.width) - tex.width
             while (x < w) {
                 batch.draw(tex, x, y)
@@ -812,46 +829,71 @@ class CockpitView(
 }
 
 /**
- * A car seen from behind, for the cockpit view: paint, glass, tail lamps (lit), the tyres either
- * side, scaled by [k] pixels per metre. Drawn from the car's paint until the rear sprites exist.
+ * A car seen from behind, for the cockpit view, scaled by [k] pixels per metre: the car's own rear
+ * sprite (tools/art/rear.py, traced from its rear photo) repainted in [paintRow], tail lamps lit
+ * (brighter on the brakes), flames, nitrous and tyre smoke. Cars without a rear sprite fall back
+ * to a plain box in the paint colour.
  */
-class RearView(private val white: Texture, private val paint: Color, private val widthM: Float = 1.78f, private val heightM: Float = 1.3f) {
+class RearView(
+    private val white: Texture, private val art: io.github.novodyinparticular.pixelstrip.gfx.Art,
+    carId: String, paintRow: Int, private val paint: Color,
+) : com.badlogic.gdx.utils.Disposable {
     var braking = false
     /** The backfire's size (0 = none), and the small nitrous flame. */
     var flame = 0f
     var spray = false
     var smoke = 0f
 
+    private val meta = "cars/$carId/rear.json".takeIf { art.has(it) }?.let { com.badlogic.gdx.utils.JsonReader().parse(Gdx.files.internal(it)) }
+    private val widthM = meta?.getFloat("widthM") ?: 1.78f
+    private val heightM = 1.3f
+    /** The trim drawn over the repainted paint layer, as one texture. */
+    private val sprite: Texture? = meta?.let { build(carId, paintRow) }
+    private val lamps: Texture? = meta?.let { art.tex("cars/$carId/rear_lamps.png") }
+
+    private fun build(carId: String, row: Int): Texture {
+        val trim = com.badlogic.gdx.graphics.Pixmap(Gdx.files.internal("cars/$carId/rear.png"))
+        val idx = com.badlogic.gdx.graphics.Pixmap(Gdx.files.internal("cars/$carId/rear_paint.png"))
+        val ramps = com.badlogic.gdx.graphics.Pixmap(Gdx.files.internal("paint/ramps.png"))
+        val out = com.badlogic.gdx.graphics.Pixmap(trim.width, trim.height, com.badlogic.gdx.graphics.Pixmap.Format.RGBA8888)
+        val r = row.coerceIn(0, ramps.height - 1)
+        for (y in 0 until trim.height) for (x in 0 until trim.width) {
+            val t = trim.getPixel(x, y)
+            val p = idx.getPixel(x, y)
+            out.drawPixel(x, y, when {
+                t and 0xff != 0 -> t
+                p and 0xff != 0 -> ramps.getPixel((p ushr 24) / 32, r)
+                else -> 0
+            })
+        }
+        trim.dispose()
+        idx.dispose()
+        ramps.dispose()
+        return Texture(out).apply {
+            // shrinking a detailed sprite with nearest sampling sparkles; smooth it down, keep it crisp up close
+            setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Nearest)
+            out.dispose()
+        }
+    }
+
     fun draw(b: SpriteBatch, x: Float, y: Float, k: Float, time: Float) {
+        val tex = sprite ?: return drawBox(b, x, y, k)
         val w = widthM * k
-        val h = heightM * k
-        val dark = Color(paint).mul(0.55f, 0.55f, 0.65f, 1f)
-        val lit = Color(paint).lerp(Color.WHITE, 0.25f)
-        // shadow, tyres
+        val h = w * tex.height / tex.width
         b.setColor(0f, 0f, 0.02f, 0.5f)
-        b.draw(white, x - w * 0.55f, y - 0.04f * k, w * 1.1f, 0.12f * k)
-        b.setColor(0.04f, 0.04f, 0.06f, 1f)
-        b.draw(white, x - w * 0.48f, y, 0.26f * k, 0.6f * k)
-        b.draw(white, x + w * 0.48f - 0.26f * k, y, 0.26f * k, 0.6f * k)
-        // body, cabin, glass
-        b.color = dark
-        b.draw(white, x - w / 2f, y + 0.18f * k, w, 0.62f * k)
-        b.color = paint
-        b.draw(white, x - w / 2f + 0.04f * k, y + 0.3f * k, w - 0.08f * k, 0.48f * k)
-        b.color = lit
-        b.draw(white, x - w / 2f + 0.04f * k, y + 0.74f * k, w - 0.08f * k, max(1f, 0.05f * k))
-        b.color = paint
-        b.draw(white, x - w * 0.36f, y + 0.8f * k, w * 0.72f, h - 0.8f * k)
-        b.setColor(0.08f, 0.1f, 0.2f, 1f)
-        b.draw(white, x - w * 0.31f, y + 0.86f * k, w * 0.62f, (h - 0.98f) * k)
-        // tail lamps, lit; brighter on the brakes
-        val tl = if (braking) Color(1f, 0.25f, 0.2f, 1f) else Color(0.85f, 0.1f, 0.12f, 1f)
-        b.color = tl
-        b.draw(white, x - w / 2f + 0.08f * k, y + 0.56f * k, 0.36f * k, max(1f, 0.12f * k))
-        b.draw(white, x + w / 2f - 0.44f * k, y + 0.56f * k, 0.36f * k, max(1f, 0.12f * k))
-        // plate
-        b.setColor(0.85f, 0.85f, 0.8f, 1f)
-        b.draw(white, x - 0.25f * k, y + 0.36f * k, 0.5f * k, max(1f, 0.12f * k))
+        b.draw(white, x - w * 0.53f, y - 0.04f * k, w * 1.06f, 0.12f * k)
+        b.color = Color.WHITE
+        b.draw(tex, x - w / 2f, y, w, h)
+        lamps?.let {
+            if (braking) {
+                b.setColor(1f, 0.35f, 0.25f, 0.85f)
+                b.draw(it, x - w / 2f, y, w, h)
+            }
+        }
+        drawExtras(b, x, y, k, w, time)
+    }
+
+    private fun drawExtras(b: SpriteBatch, x: Float, y: Float, k: Float, w: Float, time: Float) {
         // flames out the pipes on shifts and nitrous, smoke off the tyres at launch
         if (spray) {
             b.setColor(0.65f, 0.8f, 1f, 0.9f)
@@ -868,12 +910,45 @@ class RearView(private val white: Texture, private val paint: Color, private val
         b.color = Color.WHITE
     }
 
-    /** The lit pixels for the bloom pass. */
+    /** The old stand-in: a box in the paint colour, for a car with no rear sprite. */
+    private fun drawBox(b: SpriteBatch, x: Float, y: Float, k: Float) {
+        val w = widthM * k
+        val h = heightM * k
+        val dark = Color(paint).mul(0.55f, 0.55f, 0.65f, 1f)
+        b.setColor(0f, 0f, 0.02f, 0.5f)
+        b.draw(white, x - w * 0.55f, y - 0.04f * k, w * 1.1f, 0.12f * k)
+        b.setColor(0.04f, 0.04f, 0.06f, 1f)
+        b.draw(white, x - w * 0.48f, y, 0.26f * k, 0.6f * k)
+        b.draw(white, x + w * 0.48f - 0.26f * k, y, 0.26f * k, 0.6f * k)
+        b.color = dark
+        b.draw(white, x - w / 2f, y + 0.18f * k, w, 0.62f * k)
+        b.color = paint
+        b.draw(white, x - w / 2f + 0.04f * k, y + 0.3f * k, w - 0.08f * k, 0.48f * k)
+        b.draw(white, x - w * 0.36f, y + 0.8f * k, w * 0.72f, h - 0.8f * k)
+        b.setColor(0.08f, 0.1f, 0.2f, 1f)
+        b.draw(white, x - w * 0.31f, y + 0.86f * k, w * 0.62f, (h - 0.98f) * k)
+        b.color = if (braking) Color(1f, 0.25f, 0.2f, 1f) else Color(0.85f, 0.1f, 0.12f, 1f)
+        b.draw(white, x - w / 2f + 0.08f * k, y + 0.56f * k, 0.36f * k, max(1f, 0.12f * k))
+        b.draw(white, x + w / 2f - 0.44f * k, y + 0.56f * k, 0.36f * k, max(1f, 0.12f * k))
+        drawExtras(b, x, y, k, w, 0f)
+    }
+
+    /** The lit pixels for the bloom pass: the tail lamps, brighter on the brakes. */
     fun drawGlow(b: SpriteBatch, x: Float, y: Float, k: Float) {
         val w = widthM * k
-        b.setColor(1f, 0.2f, 0.15f, if (braking) 0.9f else 0.55f)
-        b.draw(white, x - w / 2f + 0.04f * k, y + 0.52f * k, 0.44f * k, max(1f, 0.2f * k))
-        b.draw(white, x + w / 2f - 0.48f * k, y + 0.52f * k, 0.44f * k, max(1f, 0.2f * k))
+        val l = lamps
+        if (l != null && sprite != null) {
+            b.setColor(1f, 0.2f, 0.15f, if (braking) 0.9f else 0.45f)
+            b.draw(l, x - w / 2f, y, w, w * sprite.height / sprite.width)
+        } else {
+            b.setColor(1f, 0.2f, 0.15f, if (braking) 0.9f else 0.55f)
+            b.draw(white, x - w / 2f + 0.04f * k, y + 0.52f * k, 0.44f * k, max(1f, 0.2f * k))
+            b.draw(white, x + w / 2f - 0.48f * k, y + 0.52f * k, 0.44f * k, max(1f, 0.2f * k))
+        }
         b.color = Color.WHITE
+    }
+
+    override fun dispose() {
+        sprite?.dispose()
     }
 }

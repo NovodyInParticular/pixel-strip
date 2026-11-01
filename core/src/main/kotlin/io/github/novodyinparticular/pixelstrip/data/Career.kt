@@ -2,6 +2,7 @@ package io.github.novodyinparticular.pixelstrip.data
 
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.utils.JsonReader
+import io.github.novodyinparticular.pixelstrip.race.Distance
 import io.github.novodyinparticular.pixelstrip.save.OwnedCar
 import io.github.novodyinparticular.pixelstrip.save.SaveGame
 
@@ -14,7 +15,7 @@ class Career(val tiers: List<Tier>, val barns: List<Barn> = emptyList()) {
     /** A rare car waiting on the map once [after] (a boss) is beaten: claimed once, for free. */
     class Barn(val carId: String, val after: String, val x: Float, val y: Float, val paint: Int, val story: List<String>)
 
-    class Tier(val id: String, val name: String, val quarter: Boolean, val rivals: List<Rival>)
+    class Tier(val id: String, val name: String, val distance: Distance, val rivals: List<Rival>)
 
     class Rival(
         val id: String,
@@ -35,6 +36,8 @@ class Career(val tiers: List<Tier>, val barns: List<Barn> = emptyList()) {
         val driver: String?,
         /** Where the race happens: Joe always on San Antonio, the others around the general tracks. */
         val track: String,
+        /** This race's length when it isn't the tier's (career.json "distance"). */
+        val distance: Distance?,
     ) {
         /** The rival's car as an OwnedCar, so the usual effective-stats and looks code applies. */
         fun asCar(): OwnedCar = OwnedCar("rival_$id", carId, paint, parts.toMutableMap(), cosmetics.toMutableMap())
@@ -43,6 +46,7 @@ class Career(val tiers: List<Tier>, val barns: List<Barn> = emptyList()) {
 
     val rivals get() = tiers.flatMap { it.rivals }
     fun tierOf(r: Rival) = tiers.first { it.id == r.tier }
+    fun distanceOf(r: Rival) = r.distance ?: tierOf(r).distance
 
     /** Unlocked: the first rival, then each one after a beaten rival; a tier opens after the previous boss. */
     fun unlocked(save: SaveGame, r: Rival): Boolean {
@@ -62,7 +66,7 @@ class Career(val tiers: List<Tier>, val barns: List<Barn> = emptyList()) {
             } ?: emptyList()
             return Career(root.get("tiers").map { t ->
                 val tid = t.getString("id")
-                Tier(tid, t.getString("name"), t.getString("distance") == "quarter", t.get("rivals").map { r ->
+                Tier(tid, t.getString("name"), Distance.of(t.getString("distance", "eighth")), t.get("rivals").map { r ->
                     val parts = HashMap<String, Int>()
                     r.get("parts").forEach { parts[it.name] = it.asInt() }
                     val cos = HashMap<String, Int>()
@@ -74,6 +78,7 @@ class Career(val tiers: List<Tier>, val barns: List<Barn> = emptyList()) {
                         r.getBoolean("boss", false), r.get("intro")?.asStringArray()?.toList() ?: emptyList(), tid,
                         r.getString("driver", null),
                         r.getString("track", TrackDef.GENERAL[n++ % TrackDef.GENERAL.size]),
+                        r.getString("distance", null)?.let { Distance.of(it) },
                     )
                 })
             }, barns)

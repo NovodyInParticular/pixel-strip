@@ -9,14 +9,14 @@ import kotlin.math.floor
 class RunLogScreen(game: PixelStrip) : MenuScreen(game) {
     private val owned = game.save.selectedCar()!!
     private val bg = art.tex("scenes/garage.png")
-    private var quarter = false
-    private val dist = button("1/8 MILE", BTN_PURPLE) { quarter = !quarter }
+    private var distance = io.github.novodyinparticular.pixelstrip.race.Distance.EIGHTH
+    private val dist = button("1/8 MILE", BTN_PURPLE) { distance = distance.next() }
     private val back = button("BACK", BTN_GREY, keys = intArrayOf(Input.Keys.B)) { onBack() }
 
     override fun onBack() = game.go(0) { TuneScreen(game) }
 
     override fun layout(w: Int, h: Int) {
-        dist.apply { x = w - 92f; y = h - 46f; this.w = 84f; this.h = 18f; label = if (quarter) "1/4 MILE" else "1/8 MILE" }
+        dist.apply { x = w - 92f; y = h - 46f; this.w = 84f; this.h = 18f; label = distance.label }
         back.apply { x = 8f; y = 8f; this.w = 60f; this.h = 22f }
     }
 
@@ -30,7 +30,7 @@ class RunLogScreen(game: PixelStrip) : MenuScreen(game) {
     override fun drawUi(w: Int, h: Int) {
         font.draw(batch, "RUN LOG", 8f, h - 24f, PINK, 2)
         font.draw(batch, game.car(owned.carId).name.uppercase(), 8f, h - 38f, SOFT)
-        val runs = owned.runs.filter { it.quarter == quarter }.takeLast(12).reversed()
+        val runs = owned.runs.filter { it.dist == distance.ordinal }.takeLast(12).reversed()
         val best = runs.groupBy { it.tune }.mapValues { (_, list) -> list.minOf { it.et } }
         val x = w / 2f - 150f
         var y = h - 70f

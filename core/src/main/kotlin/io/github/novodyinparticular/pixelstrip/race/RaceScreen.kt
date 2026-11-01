@@ -89,7 +89,15 @@ class RaceScreen(
     private val cockpit by lazy {
         CockpitView(track, art, trackView, white, font, tree).apply { camSide = if (carDef.rhd) CockpitView.SEAT_SIDE else -CockpitView.SEAT_SIDE }
     }
-    private val opponentRear by lazy { RearView(white, paintColor(rivalCar?.paint ?: 2)) }
+    private var rearMade = false
+    private val opponentRear by lazy {
+        rearMade = true
+        RearView(white, art, rivalCar?.carId ?: owned.carId, rivalCar?.paint ?: 2, paintColor(rivalCar?.paint ?: 2))
+    }
+
+    override fun dispose() {
+        if (rearMade) opponentRear.dispose()
+    }
 
     /** A paint row's mid tone, read from the ramp texture (the rear view isn't drawn through the paint shader yet). */
     private fun paintColor(row: Int): Color {
@@ -167,9 +175,10 @@ class RaceScreen(
 
     /** Nobody in the far lane: test-n-tune and tournament passes. */
     private val solo = test || tournament != null
-    private var quarter = online?.quarter ?: rival?.let { game.career.tierOf(it).quarter } ?: (tournament != null)
-    private val distanceM get() = if (quarter) Vehicle.SPLITS_M[4] else Vehicle.SPLITS_M[2]
-    private val finishSplit get() = if (quarter) 4 else 2
+    private var dist = online?.let { if (it.quarter) Distance.QUARTER else Distance.EIGHTH }
+        ?: rival?.let { game.career.distanceOf(it) } ?: if (tournament != null) Distance.QUARTER else Distance.EIGHTH
+    private val distanceM get() = dist.metres
+    private val finishSplit get() = dist.split
 
     private var phase = Phase.BURNOUT
     private var phaseTime = 0f
@@ -205,8 +214,11 @@ class RaceScreen(
     private fun newRace() {
         player = Vehicle(carDef).apply { trackGrip = track.trackGrip }
         val close = shots?.close == true
-        ghost = Vehicle(opponentDef, powerScale = if (close || rival != null) 1f else 0.98f).apply { trackGrip = track.trackGrip }
-        ghostDriver = AutoDriver(ghost, skill = rival?.skill ?: if (close) 0.9f else 0.6f, trackGrip = ghost.trackGrip)
+        // career rivals are paced to the player's build (close racing) and drive tighter with it on
+        val pace = rival?.let { RivalPace.scale(game, it) } ?: if (close) 1f else 0.98f
+        ghost = Vehicle(opponentDef, powerScale = pace).apply { trackGrip = track.trackGrip }
+        val skill = rival?.skill?.let { if (game.settings.closeRacing) 0.5f + 0.5f * it else it } ?: if (close) 0.9f else 0.6f
+        ghostDriver = AutoDriver(ghost, skill = skill, trackGrip = ghost.trackGrip)
         payout = 0L
         wonPrize = false
         cheered = false
@@ -277,7 +289,7 @@ class RaceScreen(
         // shown (dimmed) from staging so the thumb finds it before the green; it only sprays once the car has left
         nosButton.visible = player.def.nitrous.charges > 0 && (phase == Phase.STAGING || phase == Phase.COUNTDOWN || phase == Phase.RACING)
         distButton.visible = phase == Phase.BURNOUT && rival == null && online == null && tournament == null
-        distButton.label = if (quarter) "1/4 MILE" else "1/8 MILE"
+        distButton.label = dist.label
         gasButton.visible = phase != Phase.FINISHED && phase != Phase.PHOTO
         garageButton.apply { x = w - 78f; y = 10f; this.w = 68f; this.h = 22f; visible = phase == Phase.FINISHED || phase == Phase.BURNOUT && !gasButton.down }
         if (phase == Phase.BURNOUT) garageButton.apply { y = h - 72f }
@@ -312,7 +324,7 @@ class RaceScreen(
             }
         }
         if (distButton.justPressed) {
-            quarter = !quarter
+            dist = dist.next()
             trackView.finishPx = distanceM * PX_PER_M
         }
 
@@ -425,6 +437,7 @@ class RaceScreen(
             }
         }
         handleEvents(player, playerMotion, 0, true)
+        vtecCheck()
         handleEvents(ghost, ghostMotion, 1, false)
         updateFinish()
 
@@ -498,8 +511,8 @@ class RaceScreen(
             setPhase(Phase.FINISHED)
             if (!solo && online == null && playerWon()) celebrate()
             if (test && !playerFoul) {
-                bestBefore = owned.bestRun(owned.tuneName, quarter)
-                owned.logRun(RunRecord(owned.tuneName, quarter, player.splits[finishSplit], player.splits[0], player.splitSpeed[finishSplit] * 2.23694f, player.leaveTime))
+                bestBefore = owned.bestRun(owned.tuneName, dist.ordinal)
+                owned.logRun(RunRecord(owned.tuneName, dist.ordinal, player.splits[finishSplit], player.splits[0], player.splitSpeed[finishSplit] * 2.23694f, player.leaveTime))
                 game.save.write()
             }
         }
@@ -584,6 +597,21 @@ class RaceScreen(
             }
         }
         car.events.clear()
+    }
+
+    /** The VTEC crossover on the player's engine: a pop, an orange flash and a kick, every time it hits on the gas. */
+    private var vtecOn = false
+    private fun vtecCheck() {
+        val v = carDef.vtecRpm
+        val on = v > 0f && phase == Phase.RACING && player.throttle > 0.5f && player.rpm > v && player.mode != Vehicle.Mode.SHIFT
+        if (on && !vtecOn) {
+            hud.pop("VTEC!", VTEC_ORANGE, 172f)
+            popFlash(VTEC_ORANGE, 0.22f)
+            shake = max(shake, 1.6f)
+            playerMotion.kick(4f)
+            buzz(25)
+        }
+        vtecOn = on || (vtecOn && player.rpm > v - 300f && player.mode != Vehicle.Mode.SHIFT)
     }
 
     private fun popFlash(c: Color, amount: Float) {
@@ -822,7 +850,8 @@ class RaceScreen(
         batch.setBlendFunctionSeparate(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA, GL20.GL_ONE, GL20.GL_ONE_MINUS_SRC_ALPHA)
         drawHud(w, h, dt)
         batch.setBlendFunctionSeparate(GL20.GL_SRC_ALPHA, GL20.GL_ONE, GL20.GL_ZERO, GL20.GL_ONE)
-        if (phase != Phase.FINISHED && phase != Phase.PHOTO) hud.drawTachGlow(batch, TACH_X, TACH_Y, player.rpm, carDef.redline, tachZone())
+        // in the cockpit the dash gauges carry the revs, so the HUD tach stays out of the way
+        if (!firstPerson && phase != Phase.FINISHED && phase != Phase.PHOTO) hud.drawTachGlow(batch, TACH_X, TACH_Y, player.rpm, carDef.redline, tachZone())
         controls.drawGlow(batch)
         if (nosButton.visible) nosFace.drawGlow(batch, nosButton, player, nosArmed, screenTime)
         batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
@@ -969,7 +998,7 @@ class RaceScreen(
             return
         }
         font.draw(batch, track.name.uppercase(), 8f, h - 14f, CYAN)
-        font.draw(batch, if (quarter) "1/4 MILE" else "1/8 MILE", 8f, h - 24f, PINK)
+        font.draw(batch, dist.label, 8f, h - 24f, PINK)
         val speedText = if (game.settings.metric) "${(player.v * 3.6f).toInt()} KM/H" else "${(player.v * 2.23694f).toInt()} MPH"
         font.draw(batch, speedText, w - 8f - font.width(speedText, 2), h - 20f, Color.WHITE, 2)
         val clock = if (player.hasLeft) {
@@ -980,7 +1009,7 @@ class RaceScreen(
         font.draw(batch, timeText, w - 8f - font.width(timeText), h - 32f, Hud.YELLOW)
         drawDistanceBar(w, h)
 
-        if (phase != Phase.FINISHED) {
+        if (phase != Phase.FINISHED && !firstPerson) {
             val gearText = if (player.mode == Vehicle.Mode.SHIFT) "-" else (player.gear + 1).toString()
             hud.drawTach(batch, TACH_X, TACH_Y, player.rpm, carDef.redline, tachZone(), gearText, "${player.rpm.toInt()} RPM", player.limiter, trackView.time)
             if (carDef.boostGain > 0f) drawBoost()
@@ -1056,10 +1085,14 @@ class RaceScreen(
         lines.add(Hud.SlipLine("330'", fmt(player.splits[1]), fmt(ghost.splits[1])))
         lines.add(Hud.SlipLine("1/8 ET", fmt(player.splits[2]), fmt(ghost.splits[2])))
         lines.add(Hud.SlipLine("1/8 $unit", speedOf(player.splitSpeed[2]), speedOf(ghost.splitSpeed[2])))
-        if (quarter) {
-            lines.add(Hud.SlipLine("1000'", fmt(player.splits[3]), fmt(ghost.splits[3])))
+        if (dist == Distance.QUARTER) lines.add(Hud.SlipLine("1000'", fmt(player.splits[3]), fmt(ghost.splits[3])))
+        if (dist >= Distance.QUARTER) {
             lines.add(Hud.SlipLine("1/4 ET", fmt(player.splits[4]), fmt(ghost.splits[4])))
             lines.add(Hud.SlipLine("1/4 $unit", speedOf(player.splitSpeed[4]), speedOf(ghost.splitSpeed[4])))
+        }
+        if (dist == Distance.HALF) {
+            lines.add(Hud.SlipLine("1/2 ET", fmt(player.splits[5]), fmt(ghost.splits[5])))
+            lines.add(Hud.SlipLine("1/2 $unit", speedOf(player.splitSpeed[5]), speedOf(ghost.splitSpeed[5])))
         }
         val notes = ArrayList<String>()
         player.ratings.firstOrNull()?.let { notes.add("LAUNCH  ${it.name}") }
@@ -1091,7 +1124,7 @@ class RaceScreen(
         val lines = arrayListOf(
             Hud.SlipLine("R/T", r?.let { rt(it.mine) } ?: fmt(player.leaveTime), r?.let { rt(it.theirs) } ?: fmt(ghost.leaveTime)),
             Hud.SlipLine("60'", fmt(player.splits[0]), fmt(ghost.splits[0])),
-            Hud.SlipLine(if (quarter) "1/4 ET" else "1/8 ET", r?.let { et(it.mine) } ?: fmt(player.splits[finishSplit]), r?.let { et(it.theirs) } ?: fmt(ghost.splits[finishSplit])),
+            Hud.SlipLine("${dist.short} ET", r?.let { et(it.mine) } ?: fmt(player.splits[finishSplit]), r?.let { et(it.theirs) } ?: fmt(ghost.splits[finishSplit])),
             Hud.SlipLine(unit, r?.let { mph(it.mine) } ?: speedOf(player.splitSpeed[finishSplit]), r?.let { mph(it.theirs) } ?: "-"),
         )
         val notes = arrayListOf("VS ${o.them.tagged}")
@@ -1165,7 +1198,7 @@ class RaceScreen(
         val lines = arrayListOf(
             Hud.SlipLine("R/T", if (playerFoul) "%.3f".format(player.leaveTime) else fmt(player.leaveTime), bestOr(best?.rt)),
             Hud.SlipLine("60'", fmt(player.splits[0]), bestOr(best?.sixty)),
-            Hud.SlipLine(if (quarter) "1/4 ET" else "1/8 ET", fmt(player.splits[finishSplit]), bestOr(best?.et)),
+            Hud.SlipLine("${dist.short} ET", fmt(player.splits[finishSplit]), bestOr(best?.et)),
             Hud.SlipLine(unit, speedOf(player.splitSpeed[finishSplit]), best?.let { if (game.settings.metric) "%.1f".format(it.trapMph * 1.60934f) else "%.2f".format(it.trapMph) } ?: "-"),
         )
         val notes = arrayListOf("TUNE  ${owned.tuneName}")
@@ -1243,6 +1276,7 @@ class RaceScreen(
         const val TREE_BASE_TOP = 240f
         const val TACH_Y = 120f
         const val TACH_X = 52f
+        val VTEC_ORANGE = Color(1f, 0.55f, 0.1f, 1f)
         const val PHOTO_HOLD_S = 1.8f
         const val PHOTO_GAP_M = 2.5f
         // ET digits inside the finish_gantry sprite (tools/art/track_neon.py)

@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.Color
 import io.github.novodyinparticular.pixelstrip.PixelStrip
 import io.github.novodyinparticular.pixelstrip.data.Career
 import io.github.novodyinparticular.pixelstrip.race.DragMath
+import io.github.novodyinparticular.pixelstrip.race.RivalPace
 import kotlin.math.floor
 import kotlin.math.hypot
 import kotlin.math.sin
@@ -69,7 +70,14 @@ class CareerScreen(game: PixelStrip) : MenuScreen(game) {
 
     override fun onBack() = game.go(2) { GarageScreen(game) }
 
-    private fun bx(w: Int) = floor((w - map.width) / 2f)
+    /** The map is wider than the screen: it scrolls to keep the selected race in view, and drags by hand. */
+    private var scroll = -1f
+    private var dragX = -1f
+    private var dragged = false
+    private var following = true
+    private fun maxScroll(w: Int) = (map.width - w).toFloat().coerceAtLeast(0f)
+    private fun focusX() = barn?.x ?: rival.x
+    private fun bx(w: Int) = if (map.width <= w) floor((w - map.width) / 2f) else -floor(scroll)
     private fun nodeX(w: Int, r: Career.Rival) = bx(w) + r.x
     private fun nodeY(r: Career.Rival) = 270f - r.y
 
@@ -90,6 +98,25 @@ class CareerScreen(game: PixelStrip) : MenuScreen(game) {
 
     override fun update(dt: Float) {
         confirmSlip = (confirmSlip - dt).coerceAtLeast(0f)
+        val w = post.width
+        val target = (focusX() - w / 2f).coerceIn(0f, maxScroll(w))
+        if (scroll < 0f) scroll = target
+        if (following) scroll += (target - scroll) * kotlin.math.min(1f, dt * 6f)
+        // drag the map sideways; a drag isn't a tap
+        if (Gdx.input.isTouched && !game.transitioning) {
+            val tx = post.toBufferX(Gdx.input.x)
+            if (dragX >= 0f && kotlin.math.abs(tx - dragX) > 0.5f) {
+                if (kotlin.math.abs(tx - dragX) > 2f || dragged) {
+                    scroll = (scroll - (tx - dragX)).coerceIn(0f, maxScroll(w))
+                    dragged = true
+                    following = false
+                    dragX = tx
+                }
+            } else if (dragX < 0f) dragX = tx
+        } else {
+            dragX = -1f
+            dragged = false
+        }
         if (Gdx.input.justTouched() && !game.transitioning) {
             val tx = post.toBufferX(Gdx.input.x)
             val ty = post.toBufferY(Gdx.input.y)
@@ -97,11 +124,15 @@ class CareerScreen(game: PixelStrip) : MenuScreen(game) {
                 if (hypot(tx - nodeX(post.width, r), ty - nodeY(r)) < (if (r.boss) 18f else 13f)) {
                     selected = i
                     barn = null
+                    following = true
                 }
             }
             for (b in barns) if (hypot(tx - (bx(post.width) + b.x), ty - (270f - b.y)) < 14f) barn = b
         }
-        if (prev.justPressed || next.justPressed) barn = null
+        if (prev.justPressed || next.justPressed) {
+            barn = null
+            following = true
+        }
     }
 
     override fun drawScene(w: Int, h: Int) {
@@ -228,13 +259,12 @@ class CareerScreen(game: PixelStrip) : MenuScreen(game) {
         val r = rival
         val def = game.effective(r.asCar())
         val tier = career.tierOf(r)
-        val pass = DragMath.perfectPass(def)
         panel(130f, 4f, w - 236f, 44f, classColor(tier.name), 0.9f)
         font.draw(batch, r.title, 138f, 36f, if (r.boss) RED else Color.WHITE, 1, null)
         font.draw(batch, "${def.brand} ${def.name}".uppercase(), 138f, 25f, SOFT, 1, null)
-        val dist = if (tier.quarter) "1/4" else "1/8"
-        val et = if (tier.quarter) pass.quarter else pass.eighth
-        font.draw(batch, "$dist MILE  BEST %.2f".format(et), 138f, 14f, YELLOW, 1, null)
+        val d = career.distanceOf(r)
+        val et = DragMath.perfectEt(def, d, RivalPace.scale(game, r))
+        font.draw(batch, "${d.label}  BEST %.2f".format(et), 138f, 14f, YELLOW, 1, null)
         val purse = if (r.id in save.beaten) "REMATCH $" + "%,d".format(r.payout / 2) else "PURSE $" + "%,d".format(r.payout)
         font.draw(batch, if (r.boss && r.id !in save.beaten) "PINK SLIPS" else purse, w - 110f - font.width(purse), 36f, if (r.boss) RED else GREEN, 1, null)
         font.draw(batch, "CAREER", 8f, h - 20f, PINK, 2)

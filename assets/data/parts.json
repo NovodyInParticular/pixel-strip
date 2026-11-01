@@ -480,7 +480,9 @@
       "kite_ef",
       "kite_rx",
       "kite_sol",
-      "arrow"
+      "arrow",
+      "overture",
+      "tenshi"
      ],
      "strength": 1.8
     },
@@ -573,7 +575,9 @@
      "carOnly": [
       "kite",
       "kite_ef",
-      "kite_sol"
+      "kite_rx",
+      "kite_sol",
+      "arrow"
      ],
      "strength": 1.4
     },
@@ -645,6 +649,121 @@
      "carOnly": [
       "prairie"
      ]
+    },
+    {
+     "name": "D16Z6 SWAP",
+     "price": 2500,
+     "info": "CHEAP SOHC VTEC. A FIRST SWAP",
+     "brand": "HASLER",
+     "engine": "d16z6",
+     "carOnly": [
+      "kite",
+      "kite_ef",
+      "kite_rx",
+      "kite_sol"
+     ],
+     "strength": 1.3
+    },
+    {
+     "name": "B16A SWAP",
+     "price": 6000,
+     "info": "THE ORIGINAL DOHC VTEC SCREAMER",
+     "brand": "HASLER",
+     "engine": "b16a",
+     "carOnly": [
+      "kite",
+      "kite_ef",
+      "kite_rx",
+      "kite_sol"
+     ],
+     "strength": 1.35
+    },
+    {
+     "name": "LS/VTEC SWAP",
+     "price": 8500,
+     "info": "B18B BLOCK, VTEC HEAD: TORQUE + REVS",
+     "brand": "HASLER",
+     "engine": "lsvtec",
+     "carOnly": [
+      "kite",
+      "kite_ef",
+      "kite_rx",
+      "kite_sol",
+      "arrow"
+     ],
+     "requiresAll": [
+      [
+       "ecu",
+       1
+      ]
+     ],
+     "strength": 1.45
+    },
+    {
+     "name": "B20 VTEC SWAP",
+     "price": 9500,
+     "info": "2.0 B20 BLOCK, VTEC HEAD. THE BIG B",
+     "brand": "HASLER",
+     "engine": "b20vtec",
+     "carOnly": [
+      "kite",
+      "kite_ef",
+      "kite_rx",
+      "kite_sol",
+      "arrow"
+     ],
+     "requiresAll": [
+      [
+       "ecu",
+       1
+      ]
+     ],
+     "strength": 1.45
+    },
+    {
+     "name": "K20A TYPE R SWAP",
+     "price": 13000,
+     "info": "JDM TYPE R K20. VTEC AT 5,800",
+     "brand": "HASLER",
+     "engine": "k20a",
+     "carOnly": [
+      "kite",
+      "kite_ef",
+      "kite_rx",
+      "kite_sol",
+      "arrow",
+      "overture"
+     ],
+     "strength": 1.7
+    },
+    {
+     "name": "F20C SWAP",
+     "price": 16000,
+     "info": "THE S2000 ENGINE. 9,000 RPM",
+     "brand": "HASLER",
+     "engine": "f20c",
+     "carOnly": [
+      "kite",
+      "kite_ef",
+      "kite_rx",
+      "kite_sol",
+      "arrow"
+     ],
+     "strength": 1.5
+    },
+    {
+     "name": "J32 V6 SWAP",
+     "price": 14000,
+     "info": "THE J-SWAP: TORQUEY VTEC V6",
+     "brand": "HASLER",
+     "engine": "j32",
+     "carOnly": [
+      "kite",
+      "kite_rx",
+      "arrow",
+      "overture"
+     ],
+     "strength": 1.6
     }
    ],
    "excludes": []
@@ -2461,6 +2580,104 @@
    "lag": 0.5,
    "spoolRpm": 2400,
    "mass": 150
+  },
+  "d16z6": {
+   "name": "D16Z6 SOHC VTEC",
+   "hp": 125,
+   "peakHpRpm": 6600,
+   "torqueNm": 144,
+   "peakTorqueRpm": 5200,
+   "redline": 7200,
+   "idleRpm": 750,
+   "layout": "i4",
+   "cylinders": 4,
+   "turbo": false,
+   "vtecRpm": 5100,
+   "mass": 112
+  },
+  "b16a": {
+   "name": "B16A DOHC VTEC",
+   "hp": 160,
+   "peakHpRpm": 7600,
+   "torqueNm": 150,
+   "peakTorqueRpm": 7000,
+   "redline": 8200,
+   "idleRpm": 800,
+   "layout": "i4",
+   "cylinders": 4,
+   "turbo": false,
+   "vtecRpm": 5500,
+   "mass": 120
+  },
+  "lsvtec": {
+   "name": "LS/VTEC (B18B + VTEC HEAD)",
+   "hp": 205,
+   "peakHpRpm": 7600,
+   "torqueNm": 196,
+   "peakTorqueRpm": 6600,
+   "redline": 8200,
+   "idleRpm": 800,
+   "layout": "i4",
+   "cylinders": 4,
+   "turbo": false,
+   "vtecRpm": 5300,
+   "mass": 128
+  },
+  "b20vtec": {
+   "name": "B20 VTEC (B20B + VTEC HEAD)",
+   "hp": 215,
+   "peakHpRpm": 7400,
+   "torqueNm": 208,
+   "peakTorqueRpm": 6200,
+   "redline": 8000,
+   "idleRpm": 800,
+   "layout": "i4",
+   "cylinders": 4,
+   "turbo": false,
+   "vtecRpm": 5200,
+   "mass": 130
+  },
+  "k20a": {
+   "name": "K20A TYPE R",
+   "hp": 220,
+   "peakHpRpm": 8000,
+   "torqueNm": 206,
+   "peakTorqueRpm": 7000,
+   "redline": 8600,
+   "idleRpm": 850,
+   "layout": "i4",
+   "cylinders": 4,
+   "turbo": false,
+   "vtecRpm": 5800,
+   "mass": 118
+  },
+  "f20c": {
+   "name": "F20C (S2000)",
+   "hp": 240,
+   "peakHpRpm": 8300,
+   "torqueNm": 208,
+   "peakTorqueRpm": 7500,
+   "redline": 9000,
+   "idleRpm": 900,
+   "layout": "i4",
+   "cylinders": 4,
+   "turbo": false,
+   "vtecRpm": 6000,
+   "mass": 125
+  },
+  "j32": {
+   "name": "J32A2 V6 TYPE S",
+   "hp": 260,
+   "peakHpRpm": 6100,
+   "torqueNm": 315,
+   "peakTorqueRpm": 3500,
+   "redline": 6800,
+   "idleRpm": 700,
+   "layout": "v6",
+   "cylinders": 6,
+   "turbo": false,
+   "vtecRpm": 4700,
+   "mass": 165
   },
   "26b": {
    "name": "26B 4-ROTOR, BRIDGE PORTED",
