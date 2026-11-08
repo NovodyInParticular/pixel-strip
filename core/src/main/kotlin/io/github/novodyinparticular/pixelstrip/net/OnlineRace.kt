@@ -9,7 +9,7 @@ import io.github.novodyinparticular.pixelstrip.race.Vehicle
  * One online race: the room the server opened (players, track, distance, the starter's delay),
  * the live lanes both phones stream through the Realtime Database, and the server's verdict.
  */
-class OnlineRace(private val cloud: Cloud, val raceId: String, room: JsonValue) {
+class OnlineRace(private val cloud: Cloud, val raceId: String, room: JsonValue) : HeadsUp {
     class Player(
         val uid: String, val name: String, val car: String, val paint: Int, val parts: Map<String, Int>, val cosmetics: Map<String, Int>, val rating: Int,
         /** Their crew's tag and emblem (null when they race solo). */
@@ -40,12 +40,14 @@ class OnlineRace(private val cloud: Cloud, val raceId: String, room: JsonValue) 
         }
     }
 
-    val me: Player
-    val them: Player
-    val track: String = room.getString("track")
+    override val me: Player
+    override val them: Player
+    override val track: String = room.getString("track")
     val quarter: Boolean = room.getBoolean("quarter", true)
-    val treeDelay: Float = room.getFloat("treeDelay", 1f)
-    val wager = room.get("wager")?.let { Wager(it.getString("kind", "none"), it.getLong("amount", 0)) } ?: Wager("none", 0)
+    override val distance get() = if (quarter) io.github.novodyinparticular.pixelstrip.race.Distance.QUARTER else io.github.novodyinparticular.pixelstrip.race.Distance.EIGHTH
+    override val treeDelay: Float = room.getFloat("treeDelay", 1f)
+    override val local get() = false
+    override val wager = room.get("wager")?.let { Wager(it.getString("kind", "none"), it.getLong("amount", 0)) } ?: Wager("none", 0)
     /** confirm (both must accept the stakes), racing, off or done. */
     var state: String = room.getString("state", "racing")
         private set
@@ -93,14 +95,14 @@ class OnlineRace(private val cloud: Cloud, val raceId: String, room: JsonValue) 
         them = players.first { it.uid != uid }
     }
 
-    @Volatile var live: Live? = null
+    @Volatile override var live: Live? = null
         private set
     /** Seconds since the opponent's phone last reported. */
-    var silence = 0f
+    override var silence = 0f
         private set
-    var result: Result? = null
+    override var result: Result? = null
         private set
-    var error: String? = null
+    override var error: String? = null
         private set
     var submitted = false
         private set
@@ -111,7 +113,7 @@ class OnlineRace(private val cloud: Cloud, val raceId: String, room: JsonValue) 
     private var resultTimer = 0f
 
     /** Streams our car and pulls theirs, ten times a second. */
-    fun update(dt: Float, car: Vehicle, clock: Float) {
+    override fun update(dt: Float, car: Vehicle, clock: Float) {
         silence += dt
         pushTimer -= dt
         if (pushTimer <= 0f) {
@@ -127,11 +129,7 @@ class OnlineRace(private val cloud: Cloud, val raceId: String, room: JsonValue) 
                 if (j != null && !j.isNull) {
                     val t = j.getFloat("t", 0f)
                     if (live == null || t > live!!.t) silence = 0f
-                    live = Live(
-                        j.getFloat("x"), j.getFloat("v"), j.getFloat("rpm", 900f), j.getInt("g", 0),
-                        runCatching { Vehicle.Mode.valueOf(j.getString("m", "BURNOUT")) }.getOrDefault(Vehicle.Mode.BURNOUT),
-                        j.get("lt")?.takeIf { it.isNumber }?.asFloat(), j.get("sp")?.asFloatArray(), j.getBoolean("n", false), t,
-                    )
+                    live = parseLive(j)
                 }
             }
         }
@@ -146,16 +144,8 @@ class OnlineRace(private val cloud: Cloud, val raceId: String, room: JsonValue) 
         }
     }
 
-    private fun liveJson(car: Vehicle, clock: Float) = JsonValue(JsonValue.ValueType.`object`).also { o ->
-        o.addChild("x", JsonValue(car.x.toDouble()))
-        o.addChild("v", JsonValue(car.v.toDouble()))
-        o.addChild("t", JsonValue(clock.toDouble()))
-        o.addChild("rpm", JsonValue(car.rpm.toDouble()))
-        o.addChild("g", JsonValue(car.gear.toLong()))
-        o.addChild("m", JsonValue(car.mode.name))
-        o.addChild("n", JsonValue(car.nitrousActive))
-        if (car.hasLeft) o.addChild("lt", JsonValue(car.leaveTime.toDouble()))
-        o.addChild("sp", JsonValue(JsonValue.ValueType.array).also { a -> car.splits.forEach { a.addChild(JsonValue(it.toDouble())) } })
+    override fun finish(car: Vehicle, red: Boolean, split: Int) {
+        car.recorder?.let { submit(it) }
     }
 
     /** Sends our run for the server to replay. */
@@ -193,6 +183,24 @@ class OnlineRace(private val cloud: Cloud, val raceId: String, room: JsonValue) 
         const val RESULT_POLL = 1.5f
         /** No word from the other phone for this long: they're shown as gone. */
         const val GONE_S = 8f
+
+        fun liveJson(car: Vehicle, clock: Float) = JsonValue(JsonValue.ValueType.`object`).also { o ->
+            o.addChild("x", JsonValue(car.x.toDouble()))
+            o.addChild("v", JsonValue(car.v.toDouble()))
+            o.addChild("t", JsonValue(clock.toDouble()))
+            o.addChild("rpm", JsonValue(car.rpm.toDouble()))
+            o.addChild("g", JsonValue(car.gear.toLong()))
+            o.addChild("m", JsonValue(car.mode.name))
+            o.addChild("n", JsonValue(car.nitrousActive))
+            if (car.hasLeft) o.addChild("lt", JsonValue(car.leaveTime.toDouble()))
+            o.addChild("sp", JsonValue(JsonValue.ValueType.array).also { a -> car.splits.forEach { a.addChild(JsonValue(it.toDouble())) } })
+        }
+
+        fun parseLive(j: JsonValue) = Live(
+            j.getFloat("x"), j.getFloat("v"), j.getFloat("rpm", 900f), j.getInt("g", 0),
+            runCatching { Vehicle.Mode.valueOf(j.getString("m", "BURNOUT")) }.getOrDefault(Vehicle.Mode.BURNOUT),
+            j.get("lt")?.takeIf { it.isNumber }?.asFloat(), j.get("sp")?.asFloatArray(), j.getBoolean("n", false), j.getFloat("t", 0f),
+        )
 
         private fun ints(j: JsonValue?): Map<String, Int> = j?.associate { it.name to it.asInt() } ?: emptyMap()
     }

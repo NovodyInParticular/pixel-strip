@@ -8,6 +8,9 @@ interface Platform {
     val isMobile: Boolean
     fun vibrate(millis: Int) {}
 
+    /** Wi-Fi races: phones drop broadcast packets unless the app asks to hear them (Android's multicast lock). */
+    fun lanDiscovery(on: Boolean) {}
+
     /** Where save files live. Android: app-private storage; desktop overrides to stay out of assets/. */
     fun saveFile(name: String): FileHandle = Gdx.files.local(name)
 }

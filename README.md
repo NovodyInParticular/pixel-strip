@@ -75,6 +75,14 @@ Done so far:
 - Online races (Firebase): matchmaking by build, the opponent shown live, and both runs
   replayed by the server to decide the winner (see below)
 
+- Wi-Fi races: two phones on the same Wi-Fi race each other with no server (GARAGE > WI-FI;
+  one hosts, the other joins). For fun only: no stakes, no XP (see below)
+
+- Difficulty (SETUP > DIFFICULTY): EASY, NORMAL, HARD (the default) or INSANE sets where career
+  rivals are paced against your build, how sharp they drive and react, and how much power
+  pacing may give them (race/Difficulty.kt; `DifficultyTest` simulates races to keep each
+  level harder than the last)
+
 - Bets and pink slips online: cash stakes of any size you can cover, or the car you race;
   both players accept, the server holds the stakes and pays the winner (see below)
 
@@ -205,6 +213,24 @@ What the replay can't prove: the race clock at the launch comes from the phone (
 when the other car staged), so a modified client could claim a perfect light, and a bot could
 press the buttons perfectly. If the other side never finishes, the race goes to whoever did after
 150 s.
+
+### Wi-Fi races
+
+GARAGE > WI-FI races another phone on the same network with no server. One player taps HOST,
+the other taps JOIN and picks the game from the list (the host announces itself by UDP
+broadcast on port 47013; if the network blocks broadcasts, TYPE ADDRESS and enter the address
+the host's screen shows). The host picks the track and distance and starts each race; after a
+race both tap LOBBY for a rematch. To race in another car, go back, pick it and rejoin.
+
+Each phone runs its own car and streams it to the other 20 times a second over TCP port 47014
+(net/Lan.kt, net/LanRace.kt). Both phones settle the race the same way: a red light loses,
+otherwise the lower reaction time + ET wins, each measured against that phone's own tree, so
+lag can't help either side. Nothing is staked and no XP is given, since no server checks the
+runs. Both phones need the same game version (the hello message carries a protocol number).
+
+Desktop test (two copies on one machine): `JAVA_OPTS="-Dpixelstrip.profile=p1
+-Dpixelstrip.lan=host"` and `JAVA_OPTS="-Dpixelstrip.profile=p2 -Dpixelstrip.lan=join"`, each
+with `--screen lan --shots DIR 2,9,14,28`.
 
 ### Retired cars
 

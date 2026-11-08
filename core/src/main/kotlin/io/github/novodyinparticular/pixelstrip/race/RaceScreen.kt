@@ -42,8 +42,8 @@ class RaceScreen(
     private val rival: Career.Rival? = null,
     /** Cars on the line: win theirs, lose yours (never offered with your last car). */
     private val pinkSlip: Boolean = false,
-    /** Another player in the far lane, streamed live; the server replays both runs to decide it. */
-    private val online: io.github.novodyinparticular.pixelstrip.net.OnlineRace? = null,
+    /** Another player in the far lane, streamed live: online (the server replays both runs) or over the Wi-Fi. */
+    private val online: io.github.novodyinparticular.pixelstrip.net.HeadsUp? = null,
     /** A timed tournament pass: solo over the quarter mile, replayed and scored by the server. */
     private val tournament: io.github.novodyinparticular.pixelstrip.net.Tournaments.Event? = null,
 ) : ScreenAdapter() {
@@ -175,7 +175,7 @@ class RaceScreen(
 
     /** Nobody in the far lane: test-n-tune and tournament passes. */
     private val solo = test || tournament != null
-    private var dist = online?.let { if (it.quarter) Distance.QUARTER else Distance.EIGHTH }
+    private var dist = online?.distance
         ?: rival?.let { game.career.distanceOf(it) } ?: if (tournament != null) Distance.QUARTER else Distance.EIGHTH
     private val distanceM get() = dist.metres
     private val finishSplit get() = dist.split
@@ -217,8 +217,10 @@ class RaceScreen(
         // career rivals are paced to the player's build (close racing) and drive tighter with it on
         val pace = rival?.let { RivalPace.scale(game, it) } ?: if (close) 1f else 0.98f
         ghost = Vehicle(opponentDef, powerScale = pace).apply { trackGrip = track.trackGrip }
-        val skill = rival?.skill?.let { if (game.settings.closeRacing) 0.5f + 0.5f * it else it } ?: if (close) 0.9f else 0.6f
-        ghostDriver = AutoDriver(ghost, skill = skill, trackGrip = ghost.trackGrip)
+        val diff = game.settings.difficulty
+        val skill = rival?.skill?.let { if (game.settings.closeRacing) diff.skill(it) else it } ?: if (close) 0.9f else 0.6f
+        ghostDriver = if (rival != null) AutoDriver(ghost, skill, ghost.trackGrip, diff.reactSlow, diff.reactFast, diff.errorScale)
+            else AutoDriver(ghost, skill = skill, trackGrip = ghost.trackGrip)
         payout = 0L
         wonPrize = false
         cheered = false
@@ -310,7 +312,10 @@ class RaceScreen(
         if (garageButton.justPressed && !game.transitioning && shots == null) {
             if (rival != null) game.go(0) { io.github.novodyinparticular.pixelstrip.ui.CareerScreen(game) }
             else if (tournament != null) game.go(0) { io.github.novodyinparticular.pixelstrip.ui.TournamentScreen(game, tournament.id) }
-            else game.go(2) { GarageScreen(game) }
+            else {
+                online?.quit()
+                game.go(2) { GarageScreen(game) }
+            }
             return
         }
         if (viewButton.justPressed && viewSwitch <= 0f) viewSwitch = VIEW_SWITCH_S
@@ -350,7 +355,9 @@ class RaceScreen(
             }
             Phase.FINISHED -> if (phaseTime > 1.5f && actionButton.justPressed) {
                 val r = rival
-                if (online != null) {
+                if (online is io.github.novodyinparticular.pixelstrip.net.LanRace) {
+                    if (!game.transitioning) game.go(0) { io.github.novodyinparticular.pixelstrip.ui.LanScreen(game, online.session) }
+                } else if (online != null) {
                     if (!game.transitioning) game.go(0) { io.github.novodyinparticular.pixelstrip.ui.OnlineScreen(game) }
                 } else if (tournament != null) {
                     if (!game.transitioning) game.go(0) { io.github.novodyinparticular.pixelstrip.ui.TournamentScreen(game, tournament.id) }
@@ -425,7 +432,7 @@ class RaceScreen(
         }
 
         if (phase == Phase.FINISHED && rival != null && !settled) settleCareer()
-        if (phase == Phase.FINISHED && online != null) player.recorder?.let { online.submit(it) }
+        if (phase == Phase.FINISHED && online != null) online.finish(player, playerFoul, finishSplit)
         // online and tournaments: the server's word decides whether to celebrate
         if (online?.result?.let { it.won && !it.off } == true || tResult?.newBest == true) celebrate()
         updateCelebration(dt)
@@ -1114,7 +1121,7 @@ class RaceScreen(
     }
 
     /** Online slip: the server's replay of both runs decides it; until then it says so. */
-    private fun drawOnlineSlip(w: Int, h: Int, o: io.github.novodyinparticular.pixelstrip.net.OnlineRace) {
+    private fun drawOnlineSlip(w: Int, h: Int, o: io.github.novodyinparticular.pixelstrip.net.HeadsUp) {
         val unit = if (game.settings.metric) "KMH" else "MPH"
         val r = o.result
         fun et(run: io.github.novodyinparticular.pixelstrip.net.OnlineRace.Run?) = run?.et?.let { fmt(it) } ?: "-"
@@ -1131,9 +1138,11 @@ class RaceScreen(
         player.ratings.firstOrNull()?.let { notes.add("LAUNCH  ${it.name}") }
         when {
             o.error != null -> notes.add("SERVER: ${o.error!!.uppercase().take(28)}")
+            r == null && o.local -> notes.add("WAITING FOR THEIR RUN...")
             r == null -> notes.add(if (o.silence > io.github.novodyinparticular.pixelstrip.net.OnlineRace.GONE_S) "OPPONENT GONE: WAITING TO SETTLE" else "SERVER CHECKING BOTH RUNS...")
             r.off -> notes.add("CALLED OFF: ${(r.reason ?: "").uppercase().take(24)}")
             r.forfeit -> notes.add(if (r.won) "THEY NEVER FINISHED: YOU WIN" else "YOU DIDN'T FINISH")
+            o.local -> notes.add(if (r.won) "WI-FI RACE: YOU TOOK IT" else "WI-FI RACE: THEY TOOK IT")
             else -> notes.add("VERIFIED BY THE SERVER")
         }
         if (r != null && !r.off && !o.wager.none) notes.add(when {
@@ -1143,7 +1152,7 @@ class RaceScreen(
             else -> "LOST  $" + "%,d".format(o.wager.amount)
         })
         if (r?.off == true && !o.wager.none) notes.add("STAKES RETURNED")
-        if (r != null && !r.off) notes.add("+${if (r.won) game.rules.xp.onlineWin else game.rules.xp.onlineLoss} XP")
+        if (r != null && !r.off && !o.local) notes.add("+${if (r.won) game.rules.xp.onlineWin else game.rules.xp.onlineLoss} XP")
         val (stamp, color) = when {
             r == null -> "..." to Hud.INK_FAINT
             r.off -> "OFF" to Hud.INK_FAINT
@@ -1151,7 +1160,7 @@ class RaceScreen(
             r.won -> "WIN" to Color(0.2f, 0.55f, 0.3f, 1f)
             else -> "LOSS" to Hud.RED
         }
-        hud.drawTimeslip(batch, w, h, "${track.name.uppercase()} ONLINE", lines, notes, stamp, color, phaseTime / 1.2f, them = o.them.name.takeLast(4))
+        hud.drawTimeslip(batch, w, h, "${track.name.uppercase()} ${if (o.local) "WI-FI" else "ONLINE"}", lines, notes, stamp, color, phaseTime / 1.2f, them = o.them.name.takeLast(4))
     }
 
     private var tSent = false

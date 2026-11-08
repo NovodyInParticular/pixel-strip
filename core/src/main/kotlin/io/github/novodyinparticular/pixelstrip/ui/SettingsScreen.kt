@@ -21,6 +21,7 @@ class SettingsScreen(game: PixelStrip) : MenuScreen(game) {
         Row("UNITS") { if (s.metric) "KM/H" else "MPH" },
         Row("RACE VIEW") { if (s.cockpit) "COCKPIT" else "SIDE" },
         Row("CLOSE RACING") { if (s.closeRacing) "ON" else "OFF" },
+        Row("DIFFICULTY") { s.difficulty.label },
     )
     private val toggles = rows.mapIndexed { i, r ->
         button(r.value(), BTN_TEAL) { change(i) }
@@ -44,6 +45,7 @@ class SettingsScreen(game: PixelStrip) : MenuScreen(game) {
             4 -> s.metric = !s.metric
             5 -> s.cockpit = !s.cockpit
             6 -> s.closeRacing = !s.closeRacing
+            7 -> s.difficulty = s.difficulty.next()
         }
         s.save()
         flash = 0.2f
@@ -57,7 +59,7 @@ class SettingsScreen(game: PixelStrip) : MenuScreen(game) {
             b.x = w / 2f + 10f
             b.y = h - TOP - 20f - i * ROW
             b.w = 90f
-            b.h = 20f
+            b.h = 18f
             b.label = rows[i].value()
         }
         back.apply { x = 8f; y = 8f; this.w = 60f; this.h = 22f }
@@ -79,7 +81,7 @@ class SettingsScreen(game: PixelStrip) : MenuScreen(game) {
     override fun drawUi(w: Int, h: Int) {
         font.drawCentered(batch, "SETTINGS", w / 2f, h - 36f, PINK, 3)
         panel(w / 2f - 120f, h - TOP - rows.size * ROW, 240f, rows.size * ROW + 4f, CYAN, 0.7f)
-        rows.forEachIndexed { i, r -> font.draw(batch, r.label, w / 2f - 108f, h - TOP - 13f - i * ROW, SOFT, 1, null) }
+        rows.forEachIndexed { i, r -> font.draw(batch, r.label, w / 2f - 108f, h - TOP - 16f - i * ROW, SOFT, 1, null) }
         val hint = when (s.quality) {
             Quality.LOW -> "LOW: LIGHT BLOOM, NO HAZE OR ABERRATION"
             Quality.MEDIUM -> "MEDIUM: FULL EFFECTS, LIGHTER BLUR"
@@ -100,8 +102,8 @@ class SettingsScreen(game: PixelStrip) : MenuScreen(game) {
     }
 
     private companion object {
-        const val ROW = 24f
+        const val ROW = 21f
         /** The rows' panel hangs this far below the top. */
-        const val TOP = 56f
+        const val TOP = 52f
     }
 }

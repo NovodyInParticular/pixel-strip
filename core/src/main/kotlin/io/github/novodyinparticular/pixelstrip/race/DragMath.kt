@@ -5,7 +5,7 @@ import kotlin.math.PI
 
 /** Car-level numbers derived from the stats: torque curve, best shift points, best launch RPM. */
 object DragMath {
-    private val launchCache = HashMap<Pair<CarDef, Float>, Float>()
+    private val launchCache = HashMap<Triple<CarDef, Float, Float>, Float>()
 
     /** Naturally aspirated torque (Nm) at an RPM: the stock curve, reshaped by the parts' torque bands. */
     fun torqueAt(def: CarDef, r: Float): Float = rawTorque(def, r) * def.ratingFactor * band(def, r) * def.powerMult
@@ -112,7 +112,8 @@ object DragMath {
      * The launch sweet spot. A car that can overpower its tyres in first gear wants just enough
      * RPM to stay out of the bog; a car that can't wants to launch nearer its torque peak.
      */
-    fun launchRpm(def: CarDef, trackGrip: Float): Float = launchCache.getOrPut(def to trackGrip) {
+    /** [powerScale]: a paced rival's torque multiplier (more torque hooks at a lower launch RPM). */
+    fun launchRpm(def: CarDef, trackGrip: Float, powerScale: Float = 1f): Float = launchCache.getOrPut(Triple(def, trackGrip, powerScale)) {
         val g = 9.81f * def.weightKg
         val load = when (def.drivetrain) {
             "AWD" -> g
@@ -123,7 +124,7 @@ object DragMath {
         val ratio = def.gears[0] * def.finalDrive
         val bogEdge = def.idleRpm * 2.0f / (1f - Vehicle.LAUNCH_SAG)
         var rpm = def.idleRpm * 1.5f
-        while (rpm < def.peakTorqueRpm && torqueAt(def, rpm) * ratio * Vehicle.DRIVELINE_EFF / def.tireRadiusM < grip * 1.6f) rpm += 50f
+        while (rpm < def.peakTorqueRpm && torqueAt(def, rpm) * powerScale * ratio * Vehicle.DRIVELINE_EFF / def.tireRadiusM < grip * 1.6f) rpm += 50f
         rpm.coerceIn(bogEdge, def.peakHpRpm * 0.85f)
     }
 
@@ -135,7 +136,7 @@ object DragMath {
     fun perfectEt(def: CarDef, dist: Distance, powerScale: Float = 1f): Float = etCache.getOrPut(Triple(def, dist, powerScale)) {
         if (powerScale == 1f && dist != Distance.HALF) return@getOrPut perfectPass(def).let { if (dist == Distance.QUARTER) it.quarter else it.eighth }
         val car = Vehicle(def, powerScale)
-        car.prime(launchRpm(def, Vehicle.DEFAULT_PREP), 0.78f)
+        car.prime(launchRpm(def, Vehicle.DEFAULT_PREP, powerScale), 0.78f)
         car.launch(0f, rate = false)
         car.throttle = 1f
         var t = 0f

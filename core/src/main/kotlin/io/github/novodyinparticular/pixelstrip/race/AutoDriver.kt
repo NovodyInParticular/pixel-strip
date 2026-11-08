@@ -6,16 +6,24 @@ import com.badlogic.gdx.math.MathUtils
  * Drives a [Vehicle] through the whole sequence: burnout, stage, rev, react to the green,
  * shift and spray. [skill] 0..1 tightens the reaction, launch RPM and shift timing.
  */
-class AutoDriver(private val car: Vehicle, private val skill: Float, private val trackGrip: Float) {
+class AutoDriver(
+    private val car: Vehicle,
+    private val skill: Float,
+    private val trackGrip: Float,
+    /** Reaction to the green at skill 0 and 1 (seconds), and a scale on launch/shift mistakes. */
+    reactSlow: Float = 0.42f,
+    reactFast: Float = 0.17f,
+    errorScale: Float = 1f,
+) {
     private companion object {
         /** Tyre slip (m/s) where a good driver lifts a little, and how far. */
         const val PEDAL_SLIP = 6f
         const val PEDAL = 0.8f
     }
 
-    private val reaction = MathUtils.lerp(0.42f, 0.17f, skill) + MathUtils.random(-0.04f, 0.04f)
-    private val launchError = MathUtils.random(-1f, 1f) * MathUtils.lerp(0.2f, 0.03f, skill)
-    private val shiftError = FloatArray(car.def.gears.size) { MathUtils.random(-1f, 1f) * MathUtils.lerp(0.09f, 0.012f, skill) }
+    private val reaction = MathUtils.lerp(reactSlow, reactFast, skill) + MathUtils.random(-0.04f, 0.04f) * errorScale
+    private val launchError = MathUtils.random(-1f, 1f) * MathUtils.lerp(0.2f, 0.03f, skill) * errorScale
+    private val shiftError = FloatArray(car.def.gears.size) { MathUtils.random(-1f, 1f) * MathUtils.lerp(0.09f, 0.012f, skill) * errorScale }
     var burnoutTime = MathUtils.random(1.8f, 2.6f)
     var wantsStage = false
         private set
@@ -43,7 +51,7 @@ class AutoDriver(private val car: Vehicle, private val skill: Float, private val
             Vehicle.Mode.CREEP -> 0f
             Vehicle.Mode.HELD -> {
                 if (!staged || !treeRunning) return 0f
-                val target = DragMath.launchRpm(car.def, trackGrip) * (1f + launchError)
+                val target = DragMath.launchRpm(car.def, trackGrip, car.powerScale) * (1f + launchError)
                 if (raceClock >= reaction) wantsLaunch = true
                 if (car.rpm < target - 120f) 1f else if (car.rpm > target + 120f) 0f else 0.5f
             }

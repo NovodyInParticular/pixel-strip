@@ -223,6 +223,7 @@ class PixelStrip(val platform: Platform, val shots: ShotPlan? = null, private va
         "career" -> io.github.novodyinparticular.pixelstrip.ui.CareerScreen(this)
         "vs" -> io.github.novodyinparticular.pixelstrip.ui.VsScreen(this, career.rivals.first { it.id == "joe" })
         "online" -> io.github.novodyinparticular.pixelstrip.ui.OnlineScreen(this)
+        "lan" -> io.github.novodyinparticular.pixelstrip.ui.LanScreen(this)
         "crew" -> io.github.novodyinparticular.pixelstrip.ui.CrewScreen(this)
         "tournament" -> io.github.novodyinparticular.pixelstrip.ui.TournamentScreen(this)
         "ranks" -> io.github.novodyinparticular.pixelstrip.ui.LeaderboardScreen(this)

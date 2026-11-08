@@ -11,7 +11,7 @@ import kotlin.math.min
  * own inertia once the tyres break loose; weight transfer onto the driven wheels; gears with
  * timed shifts. Stats from [CarDef] (and later upgrades) meaningfully change every part of it.
  */
-class Vehicle(val def: CarDef, private val powerScale: Float = 1f) {
+class Vehicle(val def: CarDef, val powerScale: Float = 1f) {
     enum class Mode { HELD, BURNOUT, CREEP, LAUNCH, DRIVE, SHIFT }
     enum class Rating { PERFECT, GOOD, EARLY, LATE, BOG, SPIN }
 
@@ -139,7 +139,7 @@ class Vehicle(val def: CarDef, private val powerScale: Float = 1f) {
         gear = 0
         launchRpm = rpm
         feather = 1f
-        val sweet = DragMath.launchRpm(def, trackGrip)
+        val sweet = DragMath.launchRpm(def, trackGrip, powerScale)
         if (rpm > sweet) {
             // The extra engine speed above the sweet spot dumps into the tyres as a spin burst
             val extraW = (rpm - sweet) * RPM_TO_RAD
